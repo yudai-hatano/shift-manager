@@ -634,8 +634,10 @@ function fbArr(v) {
 }
 
 // Promise を返す。呼び出し元で await して保存完了を確認する
+// JSON.parse(JSON.stringify()) で undefined フィールドを除去してから保存する
 function persist() {
-  return fdb.ref(DB_PATH).set({ workplaces, shifts });
+  const payload = JSON.parse(JSON.stringify({ workplaces, shifts }));
+  return fdb.ref(DB_PATH).set(payload);
 }
 
 async function loadData() {
@@ -662,9 +664,12 @@ async function loadData() {
   }
   // シフトのフィールド補完
   for (const s of shifts) {
-    if (s.manualOvertimeMin === undefined) s.manualOvertimeMin = 0;
-    if (s.earlyDepartureMin === undefined) s.earlyDepartureMin = 0;
-    if (s.location          === undefined) s.location          = '';
+    if (s.breakMinutes      == null) s.breakMinutes      = 60;
+    if (s.manualOvertimeMin == null) s.manualOvertimeMin = 0;
+    if (s.earlyDepartureMin == null) s.earlyDepartureMin = 0;
+    if (s.location          === undefined) s.location    = '';
+    // breakMinutes は必ず数値で持つ
+    s.breakMinutes = Number(s.breakMinutes);
   }
 
   // データが存在しない（初回起動）ときだけデフォルト勤務先を作成
@@ -1410,10 +1415,10 @@ async function saveShift() {
   const workplaceId      = document.getElementById('sWP').value;
   const startTime        = document.getElementById('sStart').value;
   const endTime          = document.getElementById('sEnd').value;
-  const breakMinutes      = Math.max(0, parseInt(document.getElementById('sBreak').value) || 0);
-  const manualOvertimeMin = Math.max(0, parseInt(document.getElementById('sManualOT').value) || 0);
-  const earlyDepartureMin = Math.max(0, parseInt(document.getElementById('sEarlyDep').value) || 0);
-  const breakZoneId       = document.getElementById('sBreakZone').value || undefined;
+  const breakMinutes      = Math.max(0, parseInt(document.getElementById('sBreak').value,    10) || 0);
+  const manualOvertimeMin = Math.max(0, parseInt(document.getElementById('sManualOT').value, 10) || 0);
+  const earlyDepartureMin = Math.max(0, parseInt(document.getElementById('sEarlyDep').value, 10) || 0);
+  const breakZoneId       = document.getElementById('sBreakZone').value || null;
   const location          = document.getElementById('sLocation').value.trim();
 
   if (!date || !workplaceId || !startTime || !endTime) {
