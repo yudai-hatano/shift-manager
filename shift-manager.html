@@ -599,9 +599,10 @@ function persist() {
 }
 
 function loadData() {
+  let rawWP, rawSH;
   try {
-    const rawWP = localStorage.getItem('sm_wp');
-    const rawSH = localStorage.getItem('sm_sh');
+    rawWP = localStorage.getItem('sm_wp');
+    rawSH = localStorage.getItem('sm_sh');
     workplaces = rawWP ? JSON.parse(rawWP) : [];
     shifts     = rawSH ? JSON.parse(rawSH) : [];
   } catch(e) {
@@ -622,9 +623,11 @@ function loadData() {
     if (s.location          === undefined) s.location          = '';
   }
 
-  if (!workplaces.length) {
+  // sm_wp が未保存（初回起動）のときだけデフォルト勤務先を作成・保存する
+  // 既存データがある場合は上書きしない
+  if (rawWP === null) {
     workplaces.push(makeDefaultWP());
-    persist();
+    localStorage.setItem('sm_wp', JSON.stringify(workplaces));
   }
 }
 
