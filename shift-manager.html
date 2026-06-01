@@ -625,9 +625,17 @@ let tempZones   = [];
 // ══════════════════════════════════════
 // ストレージ
 // ══════════════════════════════════════
+
+// Firebase は配列をオブジェクト {"0":...,"1":...} で返すことがあるため変換する
+function fbArr(v) {
+  if (!v) return [];
+  if (Array.isArray(v)) return v;
+  return Object.values(v);
+}
+
+// Promise を返す。呼び出し元で await して保存完了を確認する
 function persist() {
-  fdb.ref(DB_PATH).set({ workplaces, shifts })
-    .catch(() => toast('保存に失敗しました（通信エラー）'));
+  return fdb.ref(DB_PATH).set({ workplaces, shifts });
 }
 
 async function loadData() {
@@ -635,8 +643,8 @@ async function loadData() {
     const snap = await fdb.ref(DB_PATH).get();
     if (snap.exists()) {
       const data = snap.val();
-      workplaces = Array.isArray(data.workplaces) ? data.workplaces : [];
-      shifts     = Array.isArray(data.shifts)     ? data.shifts     : [];
+      workplaces = fbArr(data.workplaces);
+      shifts     = fbArr(data.shifts);
     } else {
       workplaces = []; shifts = [];
     }
@@ -1397,7 +1405,7 @@ function livePreview() {
   document.getElementById('wTotal').textContent = `¥${res.totalWage.toLocaleString()}`;
 }
 
-function saveShift() {
+async function saveShift() {
   const date             = document.getElementById('sDate').value;
   const workplaceId      = document.getElementById('sWP').value;
   const startTime        = document.getElementById('sStart').value;
@@ -1413,22 +1421,32 @@ function saveShift() {
   }
 
   const data = { date, workplaceId, startTime, endTime, breakMinutes, manualOvertimeMin, earlyDepartureMin, breakZoneId, location };
-  if (editShiftId) {
+  const isEdit = !!editShiftId;
+  if (isEdit) {
     const i = shifts.findIndex(s => s.id === editShiftId);
     if (i >= 0) shifts[i] = { ...shifts[i], ...data };
-    toast('シフトを更新しました');
   } else {
     shifts.push({ id: uid(), ...data });
-    toast('シフトを追加しました');
   }
-  persist(); closeShift(); render();
+  try {
+    await persist();
+    toast(isEdit ? 'シフトを更新しました' : 'シフトを追加しました');
+    closeShift(); render();
+  } catch(e) {
+    toast('保存に失敗しました（通信エラー）');
+  }
 }
 
-function deleteShift() {
+async function deleteShift() {
   if (!editShiftId) return;
   if (!confirm('このシフトを削除しますか？')) return;
   shifts = shifts.filter(s => s.id !== editShiftId);
-  persist(); closeShift(); render(); toast('削除しました');
+  try {
+    await persist();
+    closeShift(); render(); toast('削除しました');
+  } catch(e) {
+    toast('削除に失敗しました（通信エラー）');
+  }
 }
 
 // ══════════════════════════════════════
@@ -1547,7 +1565,7 @@ function pickColor(c) {
   document.querySelectorAll('#colorPicker .colop').forEach(el => el.classList.toggle('on', el.dataset.c === c));
 }
 
-function saveWP() {
+async function saveWP() {
   const name = document.getElementById('wpName').value.trim();
   if (!name)          { toast('勤務先名を入力してください'); return; }
   if (!tempZones.length) { toast('時間帯を1つ以上設定してください'); return; }
@@ -1575,24 +1593,34 @@ function saveWP() {
 
   const wpData = { name, color, zones, overtimeThreshold, payPeriodStartDay, paymentDay, paymentMonthOffset };
 
-  if (editWPId) {
+  const isEdit = !!editWPId;
+  if (isEdit) {
     const i = workplaces.findIndex(w => w.id === editWPId);
     if (i >= 0) workplaces[i] = { ...workplaces[i], ...wpData };
-    toast('勤務先を更新しました');
   } else {
     workplaces.push({ id: uid(), ...wpData });
-    toast('勤務先を追加しました');
   }
-  persist(); closeWPEdit(); renderWPList(); render();
+  try {
+    await persist();
+    toast(isEdit ? '勤務先を更新しました' : '勤務先を追加しました');
+    closeWPEdit(); renderWPList(); render();
+  } catch(e) {
+    toast('保存に失敗しました（通信エラー）');
+  }
 }
 
-function deleteWP() {
+async function deleteWP() {
   if (!editWPId) return;
   const w = workplaces.find(x => x.id === editWPId);
   if (!confirm(`「${w?.name}」を削除しますか？\n関連するシフトも全て削除されます。`)) return;
   workplaces = workplaces.filter(x => x.id !== editWPId);
   shifts     = shifts.filter(s => s.workplaceId !== editWPId);
-  persist(); closeWPEdit(); closeWPList(); render(); toast('削除しました');
+  try {
+    await persist();
+    closeWPEdit(); closeWPList(); render(); toast('削除しました');
+  } catch(e) {
+    toast('削除に失敗しました（通信エラー）');
+  }
 }
 
 // ══════════════════════════════════════
@@ -1828,7 +1856,7 @@ function toggleAllImports(val) {
   renderParsedList(document.getElementById('importWP').value);
 }
 
-function doImport() {
+async function doImport() {
   const wpId     = document.getElementById('importWP').value;
   const toImport = parsedImports.filter(r => r.selected && r.startTime);
   if (!toImport.length) { toast('インポートするシフトを選択してください'); return; }
@@ -1850,8 +1878,13 @@ function doImport() {
     });
     added++;
   }
-  persist(); closeImport(); render();
-  toast(`${added}件を追加${updated ? `・${updated}件を更新` : ''}しました`);
+  try {
+    await persist();
+    closeImport(); render();
+    toast(`${added}件を追加${updated ? `・${updated}件を更新` : ''}しました`);
+  } catch(e) {
+    toast('インポートの保存に失敗しました（通信エラー）');
+  }
 }
 
 // ══════════════════════════════════════
