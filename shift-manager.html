@@ -282,6 +282,19 @@ select.fc{font-size:14px}
   .chip.wk{font-size:10px}
   .wk-cell{min-height:110px}
 }
+
+/* ── Loading overlay ── */
+#loadingOverlay{
+  position:fixed;inset:0;background:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  flex-direction:column;gap:14px;z-index:9999;
+}
+.spinner{
+  width:34px;height:34px;border:3px solid var(--bd);
+  border-top-color:var(--pri);border-radius:50%;
+  animation:spin .7s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
@@ -551,8 +564,31 @@ select.fc{font-size:14px}
   </div>
 </div>
 
+<div id="loadingOverlay">
+  <div class="spinner"></div>
+  <div style="font-size:13px;color:var(--muted)">データを読み込み中...</div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 <script>
 'use strict';
+// ══════════════════════════════════════
+// Firebase
+// ══════════════════════════════════════
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyB0L16Q4nlRNWVovmKXSUp1yO096PP-vmQ",
+  authDomain: "shopping-list-9c5a8.firebaseapp.com",
+  databaseURL: "https://shopping-list-9c5a8-default-rtdb.firebaseio.com",
+  projectId: "shopping-list-9c5a8",
+  storageBucket: "shopping-list-9c5a8.firebasestorage.app",
+  messagingSenderId: "477469568777",
+  appId: "1:477469568777:web:257324bf44ee1f8536edd8"
+};
+firebase.initializeApp(FIREBASE_CONFIG);
+const fdb     = firebase.database();
+const DB_PATH = 'shift-manager';
+
 // ══════════════════════════════════════
 // 定数
 // ══════════════════════════════════════
@@ -590,23 +626,23 @@ let tempZones   = [];
 // ストレージ
 // ══════════════════════════════════════
 function persist() {
-  try {
-    localStorage.setItem('sm_wp', JSON.stringify(workplaces));
-    localStorage.setItem('sm_sh', JSON.stringify(shifts));
-  } catch(e) {
-    toast('保存に失敗しました（ストレージ容量不足の可能性）');
-  }
+  fdb.ref(DB_PATH).set({ workplaces, shifts })
+    .catch(() => toast('保存に失敗しました（通信エラー）'));
 }
 
-function loadData() {
-  let rawWP, rawSH;
+async function loadData() {
   try {
-    rawWP = localStorage.getItem('sm_wp');
-    rawSH = localStorage.getItem('sm_sh');
-    workplaces = rawWP ? JSON.parse(rawWP) : [];
-    shifts     = rawSH ? JSON.parse(rawSH) : [];
+    const snap = await fdb.ref(DB_PATH).get();
+    if (snap.exists()) {
+      const data = snap.val();
+      workplaces = Array.isArray(data.workplaces) ? data.workplaces : [];
+      shifts     = Array.isArray(data.shifts)     ? data.shifts     : [];
+    } else {
+      workplaces = []; shifts = [];
+    }
   } catch(e) {
     workplaces = []; shifts = [];
+    toast('データの読み込みに失敗しました');
   }
 
   // マイグレーション: 旧形式から新形式へ全フィールド補完
@@ -623,11 +659,10 @@ function loadData() {
     if (s.location          === undefined) s.location          = '';
   }
 
-  // sm_wp が未保存（初回起動）のときだけデフォルト勤務先を作成・保存する
-  // 既存データがある場合は上書きしない
-  if (rawWP === null) {
+  // データが存在しない（初回起動）ときだけデフォルト勤務先を作成
+  if (!workplaces.length) {
     workplaces.push(makeDefaultWP());
-    localStorage.setItem('sm_wp', JSON.stringify(workplaces));
+    persist();
   }
 }
 
@@ -1988,8 +2023,10 @@ document.getElementById('delWP').onclick       = deleteWP;
 // ══════════════════════════════════════
 // 初期化
 // ══════════════════════════════════════
-loadData();
-render();
+loadData().then(() => {
+  document.getElementById('loadingOverlay').style.display = 'none';
+  render();
+});
 </script>
 </body>
 </html>
