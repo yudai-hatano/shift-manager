@@ -295,17 +295,114 @@ select.fc{font-size:14px}
   animation:spin .7s linear infinite;
 }
 @keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Attendance Reconciliation ── */
+.att-row{
+  display:flex;align-items:flex-start;gap:10px;padding:10px 11px;
+  border-radius:var(--rs);border:1.5px solid var(--bd);
+  background:var(--sur2);margin-bottom:5px;
+  transition:background .12s;
+}
+.att-row.clickable{cursor:pointer;user-select:none}
+.att-row.has-diff{background:#fff7ed;border-color:var(--org)}
+.att-row.has-diff.selected{background:#fff3e0}
+.att-row.no-diff{background:#f0fdf4;border-color:#bbf7d0}
+.att-row.no-shift{opacity:.7}
+.att-badge{border-radius:4px;padding:1px 6px;font-size:9px;font-weight:700;white-space:nowrap}
+.att-badge-diff{background:#fee2e2;color:#b91c1c}
+.att-badge-match{background:#d1fae5;color:#065f46}
+.att-badge-none{background:#f1f5f9;color:#64748b}
+.att-badge-rem{background:#fff7ed;color:#92400e}
+.att-cmp{display:grid;grid-template-columns:auto 1fr 1fr;gap:3px 8px;font-size:11px;align-items:center;margin-top:5px}
+.att-cmp-hd{font-size:9.5px;font-weight:700;color:var(--muted)}
+.att-cmp-lbl{font-size:9.5px;color:var(--muted)}
+.att-val-same{font-weight:600;color:var(--tx)}
+.att-val-old{color:var(--muted);text-decoration:line-through}
+.att-val-new{color:var(--red);font-weight:700}
+.att-fix-btn{
+  display:inline-block;margin-top:8px;padding:4px 12px;font-size:11px;font-weight:700;
+  border:none;background:var(--org);color:#fff;border-radius:6px;
+  cursor:pointer;min-height:30px;
+}
+.att-fix-btn:hover{background:#ea6c00}
+.att-stat-box{
+  display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:10px;
+}
+.att-stat-cell{
+  text-align:center;border-radius:var(--rs);padding:8px 4px;border:1px solid transparent;
+}
+.att-stat-cell.active-filter{border-width:2px !important;box-shadow:0 0 0 2px rgba(249,115,22,.3)}
+
+/* ── Login Screen ── */
+#loginScreen{
+  position:fixed;inset:0;background:var(--bg);z-index:10000;
+  display:none;align-items:center;justify-content:center;
+  flex-direction:column;padding:24px;overflow-y:auto;
+}
+#loginScreen.on{display:flex}
+.login-card{
+  width:100%;max-width:380px;background:var(--sur);border-radius:var(--r);
+  padding:26px 22px;box-shadow:var(--shl);
+}
+.login-logo{text-align:center;margin-bottom:22px}
+.login-logo-icon{font-size:44px;margin-bottom:6px}
+.login-logo-title{font-size:22px;font-weight:800;color:var(--pri)}
+.login-logo-sub{font-size:11px;color:var(--muted);margin-top:4px}
+.login-err{
+  color:var(--red);font-size:12px;margin-bottom:10px;
+  background:#fee2e2;padding:8px 10px;border-radius:6px;display:none;
+}
+/* ── User Bar ── */
+.user-bar{
+  display:flex;align-items:center;justify-content:flex-end;gap:6px;
+  padding:3px 12px;background:var(--sur2);border-bottom:1px solid var(--bd);
+  font-size:11px;
+}
+.user-bar>span{color:var(--muted);font-weight:600}
+.ub-btn{
+  background:transparent;border:none;font-size:11px;font-weight:600;
+  cursor:pointer;padding:2px 8px;border-radius:4px;min-height:22px;
+}
+.ub-btn:hover{background:var(--bd)}
+.ub-admin{color:var(--org)}
+.ub-logout{color:var(--muted)}
+/* ── Viewing Banner ── */
+#viewingBanner{
+  display:none;background:#fff7ed;border-bottom:2px solid var(--org);
+  padding:5px 12px;align-items:center;justify-content:space-between;
+  font-size:12px;gap:8px;
+}
+#viewingBanner.on{display:flex}
+.vb-label{color:#92400e;font-weight:600;flex:1;min-width:0}
+.vb-back{
+  background:var(--org);color:#fff;border:none;border-radius:6px;
+  padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer;
+  white-space:nowrap;min-height:26px;flex-shrink:0;
+}
+.vb-back:hover{background:#ea6c00}
 </style>
 </head>
 <body>
 
 <header class="hdr">
+  <div class="user-bar">
+    <span id="userBarId" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+    <button class="ub-btn" id="btnChangePw" title="パスワード変更">🔑 PW変更</button>
+    <button class="ub-btn ub-admin" id="btnAdminPanel" style="display:none" title="管理者パネル">👑 管理者</button>
+    <button class="ub-btn ub-logout" id="btnLogout">ログアウト</button>
+  </div>
+  <div id="viewingBanner">
+    <span class="vb-label">👀 <b id="viewingUserLabel"></b> のデータを閲覧中（読み取り専用）</span>
+    <button class="vb-back" onclick="stopViewingUserData()">自分のデータに戻る</button>
+  </div>
   <div class="hdr-top">
     <div class="app-title">📋 シフト管理</div>
     <div style="display:flex;gap:4px">
       <button class="icon-btn" id="btnImport" title="シフトをインポート" style="font-size:18px">📥</button>
+      <button class="icon-btn" id="btnAttend" title="日別勤怠表との突合" style="font-size:18px">📋</button>
       <button class="icon-btn" id="btnHY" title="半期集計" style="font-size:18px">📊</button>
       <button class="icon-btn" id="btnWP" title="勤務先管理" style="font-size:18px">🏢</button>
+      <button class="icon-btn" id="btnSettings" title="設定・旧データ移行" style="font-size:18px">⚙️</button>
     </div>
   </div>
   <div class="hdr-nav">
@@ -543,6 +640,68 @@ select.fc{font-size:14px}
   </div>
 </div>
 
+<!-- ── Attendance Reconciliation Modal ── -->
+<div class="overlay" id="attendOverlay" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-ttl">日別勤怠表との突合</div>
+      <button class="close-btn" id="closeAttend" aria-label="閉じる">✕</button>
+    </div>
+
+    <!-- Step 1: データ入力 -->
+    <div id="attendStep1">
+      <div style="background:#ede9fe;border:1px solid #c4b5fd;border-radius:var(--rs);padding:11px 13px;margin-bottom:14px;line-height:1.7">
+        <div style="font-size:12px;font-weight:800;color:var(--pri);margin-bottom:4px">操作手順</div>
+        <div style="font-size:12px;color:#4c1d95">
+          会社から発行された日別勤怠表PDFを開き、表の部分を全て選択してコピーし、下のテキストエリアに貼り付けてください。
+        </div>
+      </div>
+
+      <div class="fg">
+        <label class="fl">対象勤務先</label>
+        <select class="fc" id="attendWP"></select>
+      </div>
+      <div class="fg">
+        <label class="fl">対象年月</label>
+        <input type="month" class="fc" id="attendYM">
+      </div>
+
+      <details style="margin-bottom:12px">
+        <summary style="font-size:10.5px;font-weight:700;color:var(--muted);cursor:pointer;padding:4px 0;letter-spacing:.4px">フォーマット例を確認する</summary>
+        <div style="margin-top:8px">
+          <pre style="font-size:10px;background:var(--sur2);border:1px solid var(--bd);border-radius:var(--rs);padding:8px;line-height:1.75;margin:0;white-space:pre-wrap;color:var(--tx);font-family:monospace">02(土) 999 999 * 013272 9:15 - 17:45 9:15 - 22:00 60 11:45
+05(火) 999 999 * 013272 9:00 - 17:30 8:45 - 18:00 60 9:15 残業
+10(日) 999 999 * 013272 10:00 - 19:00 10:00 - 19:00 60 9:00</pre>
+          <p style="font-size:11px;color:var(--muted);margin-top:6px;line-height:1.65">
+            各行から <b>日付・勤務予定時間・勤務実績時間・休憩時間（分）</b> を自動抽出します。<br>
+            時刻範囲が2つある場合：1つ目 = 予定、2つ目 = 実績として突合します。
+          </p>
+        </div>
+      </details>
+
+      <div class="fg">
+        <label class="fl">日別勤怠表を貼り付け</label>
+        <textarea class="fc" id="attendText"
+          style="height:210px;resize:vertical;font-size:12px;line-height:1.7;font-family:monospace"
+          placeholder="ここに日別勤怠表のテキストをコピー＆ペーストしてください..."></textarea>
+      </div>
+      <button class="btn btn-pri" id="parseAttendBtn">突合する</button>
+    </div>
+
+    <!-- Step 2: 突合結果 -->
+    <div id="attendStep2" style="display:none">
+      <div id="attendSummary"></div>
+      <div id="attendList" style="max-height:48vh;overflow-y:auto"></div>
+      <div style="margin-top:10px;display:flex;gap:8px">
+        <button class="btn" id="backToAttendStep1"
+          style="flex:1;background:var(--sur2);border:1.5px solid var(--bd);color:var(--tx)">← 戻る</button>
+        <button class="btn btn-pri" id="bulkApplyAttend"
+          style="flex:2;background:var(--org)">チェックした日を一括修正</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ── Half-year Summary Modal ── -->
 <div class="overlay" id="hyOverlay" role="dialog" aria-modal="true">
   <div class="modal">
@@ -561,6 +720,157 @@ select.fc{font-size:14px}
       <button class="vtbtn"    id="hyAnnual" style="flex:1;font-size:11px">年間</button>
     </div>
     <div id="hyContent"></div>
+  </div>
+</div>
+
+<!-- ── Login Screen ── -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-logo-icon">📋</div>
+      <div class="login-logo-title">シフト管理</div>
+      <div class="login-logo-sub">社員番号でログインして利用できます</div>
+    </div>
+
+    <!-- ログインフォーム -->
+    <div id="loginForm">
+      <div class="fg">
+        <label class="fl">社員番号</label>
+        <input type="text" class="fc" id="loginId" inputmode="numeric"
+          placeholder="例: 72581646" autocomplete="username">
+      </div>
+      <div class="fg">
+        <label class="fl">パスワード</label>
+        <input type="password" class="fc" id="loginPass"
+          placeholder="パスワードを入力" autocomplete="current-password">
+      </div>
+      <div class="login-err" id="loginErr"></div>
+      <button class="btn btn-pri" id="loginBtn">ログイン</button>
+      <button class="btn" id="showRegBtn"
+        style="background:transparent;color:var(--pri);margin-top:8px;border:1.5px solid var(--pri)">
+        はじめての方はこちら（新規登録）
+      </button>
+    </div>
+
+    <!-- 新規登録フォーム -->
+    <div id="registerForm" style="display:none">
+      <div style="font-size:14px;font-weight:700;text-align:center;margin-bottom:14px">新規アカウント登録</div>
+      <div class="fg">
+        <label class="fl">社員番号（ログインID）</label>
+        <input type="text" class="fc" id="regId" inputmode="numeric"
+          placeholder="例: 12345678" autocomplete="username">
+      </div>
+      <div class="fg">
+        <label class="fl">お名前</label>
+        <input type="text" class="fc" id="regName" placeholder="例: 山田 太郎" autocomplete="name">
+      </div>
+      <div class="fg">
+        <label class="fl">パスワード</label>
+        <input type="password" class="fc" id="regPass" autocomplete="new-password">
+      </div>
+      <div class="fg">
+        <label class="fl">パスワード（確認）</label>
+        <input type="password" class="fc" id="regPass2" autocomplete="new-password">
+      </div>
+      <div class="login-err" id="regErr"></div>
+      <button class="btn btn-pri" id="registerBtn">登録してはじめる</button>
+      <button class="btn" id="backLoginBtn"
+        style="background:transparent;color:var(--muted);margin-top:8px">
+        ← ログイン画面に戻る
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Admin Panel Modal ── -->
+<div class="overlay" id="adminOverlay" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-ttl">管理者パネル — ユーザー一覧</div>
+      <button class="close-btn" id="closeAdmin" aria-label="閉じる">✕</button>
+    </div>
+    <div id="adminContent"></div>
+  </div>
+</div>
+
+<!-- ── Password Change Modal ── -->
+<div class="overlay" id="changePasswordOverlay" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-ttl" id="cpTitle">パスワード変更</div>
+      <button class="close-btn" id="closeChangePassword" aria-label="閉じる">✕</button>
+    </div>
+    <div class="fg" id="cpCurrentFg">
+      <label class="fl">現在のパスワード</label>
+      <input type="password" class="fc" id="cpCurrent" autocomplete="current-password">
+    </div>
+    <div class="fg">
+      <label class="fl">新しいパスワード</label>
+      <input type="password" class="fc" id="cpNew" autocomplete="new-password">
+    </div>
+    <div class="fg">
+      <label class="fl">新しいパスワード（確認）</label>
+      <input type="password" class="fc" id="cpNew2" autocomplete="new-password">
+    </div>
+    <div class="login-err" id="cpErr"></div>
+    <button class="btn btn-pri" id="cpSubmitBtn">変更する</button>
+  </div>
+</div>
+
+<!-- ── Settings Modal ── -->
+<div class="overlay" id="settingsOverlay" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-ttl">設定</div>
+      <button class="close-btn" id="closeSettings" aria-label="閉じる">✕</button>
+    </div>
+
+    <div class="sec-ttl"><span>旧データのインポート</span></div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.7">
+      旧バージョン（<code style="font-size:11px;background:var(--sur2);padding:1px 5px;border-radius:4px">yudai-hatano.github.io</code>）のデータを現在のアカウントにインポートします。<b>既存データは上書きされます。</b>
+    </p>
+
+    <!-- Step 1: 方法選択 -->
+    <div id="settingsImportStep1">
+      <!-- 方法A: Firebase旧パス -->
+      <div style="background:var(--sur2);border:1px solid var(--bd);border-radius:var(--rs);padding:12px;margin-bottom:10px">
+        <div style="font-size:12px;font-weight:700;margin-bottom:4px">方法A — 旧FirebaseデータをURLから自動読み込み</div>
+        <p style="font-size:11px;color:var(--muted);margin-bottom:8px;line-height:1.6">
+          旧バージョンがFirebase（同じプロジェクト）を使っていた場合、<code style="background:var(--bd);padding:1px 4px;border-radius:3px">shift-manager</code> パスのデータを自動取得します。
+        </p>
+        <button class="btn btn-pri btn-sm" id="btnImportOldFB" style="width:100%;min-height:40px">
+          🔥 旧Firebaseデータを自動読み込み
+        </button>
+      </div>
+
+      <!-- 方法B: JSON貼り付け -->
+      <div style="background:var(--sur2);border:1px solid var(--bd);border-radius:var(--rs);padding:12px">
+        <div style="font-size:12px;font-weight:700;margin-bottom:4px">方法B — JSONデータを手動で貼り付け</div>
+        <p style="font-size:11px;color:var(--muted);margin-bottom:4px;line-height:1.6">
+          旧バージョンをブラウザで開き、DevTools（F12）→ Console で以下を実行してコピー：
+        </p>
+        <div style="background:var(--tx);color:#a5f3fc;border-radius:6px;padding:7px 10px;font-family:monospace;font-size:11px;margin-bottom:8px;word-break:break-all">
+          copy(localStorage.getItem('shift-manager'))
+        </div>
+        <textarea class="fc" id="settingsImportJson"
+          style="height:90px;resize:vertical;font-size:11px;font-family:monospace;line-height:1.5"
+          placeholder='{"workplaces":[...],"shifts":[...]}'></textarea>
+        <button class="btn btn-sm" id="btnParseImportJson"
+          style="width:100%;margin-top:8px;min-height:38px;background:var(--bd);border:none">
+          📋 JSONを解析して確認する
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 2: 確認 -->
+    <div id="settingsImportStep2" style="display:none">
+      <div id="settingsImportPreview" style="margin-bottom:12px"></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn" id="btnSettingsImportBack"
+          style="flex:1;background:var(--sur2);border:1.5px solid var(--bd);color:var(--tx)">← 戻る</button>
+        <button class="btn btn-pri" id="btnSettingsImportExec" style="flex:2">インポートする</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -587,7 +897,25 @@ const FIREBASE_CONFIG = {
 };
 firebase.initializeApp(FIREBASE_CONFIG);
 const fdb     = firebase.database();
-const DB_PATH = 'shift-manager';
+const DB_BASE = 'shift-manager'; // ベースパス。実際は DB_BASE/{userId} を使用
+
+// アクティブユーザー ID（閲覧中は閲覧対象、それ以外はログイン中ユーザー）
+function getActiveUid() {
+  return viewingUserId || (currentUser && currentUser.id) || null;
+}
+function getDBPath(uid) {
+  return DB_BASE + '/' + (uid || getActiveUid());
+}
+
+// ══════════════════════════════════════
+// 認証定数
+// ══════════════════════════════════════
+const AUTH_SESSION_KEY = 'shiftMgrSession'; // セッションは localStorage に保持
+const USERS_PATH = 'users'; // Firebase のユーザーデータパス
+const INIT_USERS_DATA = { // 初回起動時に Firebase に書き込む初期ユーザー
+  '72581646': { password: '1', name: '幡野 雄大', isAdmin: true },
+  '99999999': { password: '1', name: '管理者',   isAdmin: true },
+};
 
 // ══════════════════════════════════════
 // 定数
@@ -621,6 +949,9 @@ let shifts      = [];
 let editShiftId = null;
 let editWPId    = null;
 let tempZones   = [];
+let currentUser  = null;
+let viewingUserId = null; // 管理者が他ユーザーのデータを閲覧中の場合にセット
+let attendFilter = null; // null | 'diff'
 
 // ══════════════════════════════════════
 // ストレージ
@@ -633,16 +964,23 @@ function fbArr(v) {
   return Object.values(v);
 }
 
-// Promise を返す。呼び出し元で await して保存完了を確認する
-// JSON.parse(JSON.stringify()) で undefined フィールドを除去してから保存する
+// 閲覧モード中は保存しない。それ以外はユーザー別パスに保存する
 function persist() {
+  if (viewingUserId) return Promise.resolve(); // 閲覧モードでは読み取り専用
+  if (!currentUser)  return Promise.resolve();
   const payload = JSON.parse(JSON.stringify({ workplaces, shifts }));
-  return fdb.ref(DB_PATH).set(payload);
+  return fdb.ref(getDBPath()).set(payload);
 }
 
-async function loadData() {
+async function loadData(uid) {
+  const targetUid = uid || getActiveUid();
+  if (!targetUid) { workplaces = []; shifts = []; return; }
   try {
-    const snap = await fdb.ref(DB_PATH).get();
+    // 10秒でタイムアウト（Firebase が応答しない場合に無限待機を防ぐ）
+    const timeoutP = new Promise((_, rej) =>
+      setTimeout(() => rej(new Error('timeout')), 10000)
+    );
+    const snap = await Promise.race([fdb.ref(getDBPath(targetUid)).get(), timeoutP]);
     if (snap.exists()) {
       const data = snap.val();
       workplaces = fbArr(data.workplaces);
@@ -652,7 +990,9 @@ async function loadData() {
     }
   } catch(e) {
     workplaces = []; shifts = [];
-    toast('データの読み込みに失敗しました');
+    try { toast(e?.message === 'timeout'
+      ? '通信がタイムアウトしました（オフラインで動作します）'
+      : 'データの読み込みに失敗しました'); } catch(_) {}
   }
 
   // マイグレーション: 旧形式から新形式へ全フィールド補完
@@ -1893,6 +2233,822 @@ async function doImport() {
 }
 
 // ══════════════════════════════════════
+// 日別勤怠表との突合
+// ══════════════════════════════════════
+let attendResults = [];
+
+function openAttend() {
+  const sel = document.getElementById('attendWP');
+  sel.innerHTML = workplaces.map(w =>
+    `<option value="${escHtml(w.id)}">${escHtml(w.name)}</option>`
+  ).join('');
+  const now = new Date();
+  document.getElementById('attendYM').value =
+    `${now.getFullYear()}-${padZ(now.getMonth() + 1)}`;
+  document.getElementById('attendText').value = '';
+  document.getElementById('attendStep1').style.display = 'block';
+  document.getElementById('attendStep2').style.display = 'none';
+  attendResults = [];
+  document.getElementById('attendOverlay').classList.add('on');
+}
+
+function closeAttend() {
+  document.getElementById('attendOverlay').classList.remove('on');
+  attendResults = [];
+}
+
+function parseAttendanceLine(line, yearMonth) {
+  // 行頭: DD(曜) or DD（曜）
+  const dayMatch = line.match(/^(\d{1,2})\s*[\(（]([月火水木金土日])[\)）]/);
+  if (!dayMatch) return null;
+
+  const day = parseInt(dayMatch[1]);
+  if (day < 1 || day > 31) return null;
+  const date = `${yearMonth}-${padZ(day)}`;
+
+  // 時刻範囲をすべて抽出: H:MM - H:MM
+  const timeRe = /(\d{1,2}):(\d{2})\s*[-－]\s*(\d{1,2}):(\d{2})/g;
+  const ranges = [];
+  let tm, lastEnd = 0;
+  while ((tm = timeRe.exec(line)) !== null) {
+    const h1 = +tm[1], m1 = +tm[2], h2 = +tm[3], m2 = +tm[4];
+    if (h1 <= 29 && h2 <= 29 && m1 <= 59 && m2 <= 59) {
+      ranges.push({
+        start: `${padZ(h1)}:${padZ(m1)}`,
+        end:   `${padZ(h2)}:${padZ(m2)}`,
+      });
+      lastEnd = tm.index + tm[0].length;
+    }
+  }
+  if (ranges.length < 2) return null;
+
+  const scheduled = ranges[0]; // 勤務予定時間
+  const actual    = ranges[1]; // 勤務実績時間
+
+  // 時刻範囲後の最初の数字（コロンが続かない）= 休憩時間（分）
+  const afterRanges = line.slice(lastEnd);
+  const brkMatch = afterRanges.match(/\s+(\d{1,3})(?!\s*[:：]|\d)/);
+  const breakMinutes = brkMatch ? parseInt(brkMatch[1]) : null;
+
+  // 備考キーワード
+  const remarks = [];
+  if (/残業/.test(line))      remarks.push('残業');
+  if (/早出/.test(line))      remarks.push('早出');
+  if (/部解|一部解消/.test(line)) remarks.push('部解');
+  if (/休日出勤/.test(line))  remarks.push('休出');
+
+  return { date, day, scheduled, actual, breakMinutes, remarks };
+}
+
+function calcAttendDiffs(shift, att) {
+  const diffs = [];
+  if (!shift) return diffs;
+
+  // 開始時間
+  if (t2m(shift.startTime) !== t2m(att.actual.start))
+    diffs.push({ field: 'startTime', label: '開始',
+      registered: shift.startTime, actual: att.actual.start,
+      applyValue: att.actual.start });
+
+  // 終了時間 / 一部解消の判定
+  const schedEndMin  = t2m(att.scheduled.end);
+  const actualEndMin = t2m(att.actual.end);
+  const isEarlyDep   = actualEndMin < schedEndMin;
+
+  if (isEarlyDep) {
+    // 一部解消ケース: 実績終了 < 予定終了
+    // → 予定終了時刻を維持し、差分を earlyDepartureMin としてセット
+    const newEdMin = schedEndMin - actualEndMin;
+    const curEdMin = shift.earlyDepartureMin || 0;
+    if (t2m(shift.endTime) !== schedEndMin)
+      diffs.push({ field: 'endTime', label: '予定終了',
+        registered: shift.endTime, actual: att.scheduled.end,
+        applyValue: att.scheduled.end });
+    if (curEdMin !== newEdMin)
+      diffs.push({ field: 'earlyDepartureMin', label: '一部解消',
+        registered: `${curEdMin}分`, actual: `${newEdMin}分`,
+        applyValue: newEdMin });
+  } else {
+    // 通常ケース: 実績終了を終了時間として更新
+    if (t2m(shift.endTime) !== actualEndMin)
+      diffs.push({ field: 'endTime', label: '終了',
+        registered: shift.endTime, actual: att.actual.end,
+        applyValue: att.actual.end });
+    // 一部解消が設定済みで実績≥予定ならクリア
+    if ((shift.earlyDepartureMin || 0) > 0)
+      diffs.push({ field: 'earlyDepartureMin', label: '一部解消',
+        registered: `${shift.earlyDepartureMin}分`, actual: '0分（クリア）',
+        applyValue: 0 });
+  }
+
+  // 休憩時間
+  if (att.breakMinutes !== null && shift.breakMinutes !== att.breakMinutes)
+    diffs.push({ field: 'breakMinutes', label: '休憩',
+      registered: `${shift.breakMinutes}分`, actual: `${att.breakMinutes}分`,
+      applyValue: att.breakMinutes });
+
+  return diffs;
+}
+
+function runParseAttend() {
+  const text = document.getElementById('attendText').value;
+  const wpId = document.getElementById('attendWP').value;
+  const ym   = document.getElementById('attendYM').value; // YYYY-MM
+  if (!text.trim()) { toast('勤怠データを貼り付けてください'); return; }
+  if (!ym)          { toast('対象年月を選択してください');   return; }
+
+  const parsed = text.split(/\r?\n/)
+    .map(l => parseAttendanceLine(l.trim(), ym))
+    .filter(Boolean);
+
+  if (!parsed.length) { toast('勤怠データを抽出できませんでした'); return; }
+
+  attendResults = parsed.map(att => {
+    const shift   = shifts.find(s => s.date === att.date && s.workplaceId === wpId);
+    const diffs   = calcAttendDiffs(shift, att);
+    return { att, shift, diffs, hasShift: !!shift, hasDiffs: diffs.length > 0, selected: diffs.length > 0 };
+  });
+
+  renderAttendList(wpId);
+  document.getElementById('attendStep1').style.display = 'none';
+  document.getElementById('attendStep2').style.display = 'block';
+}
+
+function renderAttendList(wpId) {
+  const total    = attendResults.length;
+  const withDiff = attendResults.filter(r => r.hasDiffs).length;
+  const noShift  = attendResults.filter(r => !r.hasShift).length;
+  const matched  = total - withDiff - noShift;
+  const selCnt   = attendResults.filter(r => r.selected).length;
+
+  // サマリー（差異ありセルはクリックでフィルター）
+  const isDiffFilter = attendFilter === 'diff';
+  let sumH = `<div class="att-stat-box">
+    <div class="att-stat-cell" style="background:var(--sur2);border-color:var(--bd)">
+      <div style="font-size:18px;font-weight:800">${total}</div>
+      <div style="font-size:10px;color:var(--muted)">抽出件数</div>
+    </div>
+    <div class="att-stat-cell${isDiffFilter?' active-filter':''}"
+      style="background:#fff7ed;border-color:${isDiffFilter?'var(--org)':'#fed7aa'};cursor:pointer"
+      onclick="toggleAttendFilter('diff')" title="タップで差異がある日だけ表示">
+      <div style="font-size:18px;font-weight:800;color:var(--org)">${withDiff}</div>
+      <div style="font-size:10px;color:#92400e">差異あり${isDiffFilter?' ✓':' 🔍'}</div>
+    </div>
+    <div class="att-stat-cell" style="background:#f0fdf4;border-color:#bbf7d0">
+      <div style="font-size:18px;font-weight:800;color:var(--grn)">${matched}</div>
+      <div style="font-size:10px;color:#166534">一致</div>
+    </div>
+    <div class="att-stat-cell" style="background:var(--sur2);border-color:var(--bd)">
+      <div style="font-size:18px;font-weight:800;color:var(--muted)">${noShift}</div>
+      <div style="font-size:10px;color:var(--muted)">未登録</div>
+    </div>
+  </div>`;
+
+  if (withDiff > 0) {
+    sumH += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <span style="font-size:12px;color:var(--muted)"><b>${selCnt}</b>件選択中</span>
+      <div style="display:flex;gap:5px">
+        <button onclick="toggleAllAttend(true)"  class="btn btn-sm" style="background:var(--sur2);border:1px solid var(--bd);color:var(--tx)">全選択</button>
+        <button onclick="toggleAllAttend(false)" class="btn btn-sm" style="background:var(--sur2);border:1px solid var(--bd);color:var(--tx)">全解除</button>
+      </div>
+    </div>`;
+  }
+  document.getElementById('attendSummary').innerHTML = sumH;
+
+  // リスト（フィルター適用）
+  const displayIdxs = isDiffFilter
+    ? attendResults.map((_, i) => i).filter(i => attendResults[i].hasDiffs)
+    : attendResults.map((_, i) => i);
+
+  let h = '';
+  if (isDiffFilter) {
+    h += `<div style="display:flex;align-items:center;justify-content:space-between;
+      background:#fff7ed;border:1px solid #fed7aa;border-radius:var(--rs);
+      padding:8px 11px;margin-bottom:8px">
+      <span style="font-size:12px;font-weight:700;color:#92400e">差異がある日のみ表示（${withDiff}件）</span>
+      <button onclick="toggleAttendFilter('diff')" class="btn btn-sm"
+        style="background:var(--sur2);border:1px solid var(--bd);color:var(--tx)">全件表示</button>
+    </div>`;
+  }
+  h += '<div style="display:flex;flex-direction:column;gap:5px">';
+  for (const i of displayIdxs) {
+    const r  = attendResults[i];
+    const d  = new Date(r.att.date + 'T00:00:00');
+    const ds = `${d.getMonth()+1}/${padZ(d.getDate())}（${DOW[d.getDay()]}）`;
+    const canSelect = r.hasShift && r.hasDiffs;
+
+    let cls   = 'att-row';
+    let badge = '';
+    if (!r.hasShift) {
+      cls   += ' no-shift';
+      badge  = '<span class="att-badge att-badge-none">未登録</span>';
+    } else if (r.hasDiffs) {
+      cls   += ' has-diff' + (r.selected ? ' selected' : '') + ' clickable';
+      badge  = '<span class="att-badge att-badge-diff">差異あり</span>';
+    } else {
+      cls   += ' no-diff';
+      badge  = '<span class="att-badge att-badge-match">一致</span>';
+    }
+
+    const remBadges = r.att.remarks.map(rk =>
+      `<span class="att-badge att-badge-rem">${escHtml(rk)}</span>`
+    ).join('');
+
+    // チェックボックス
+    const chkColor = (r.selected && canSelect) ? 'var(--org)' : '#fff';
+    const chkBd    = (r.selected && canSelect) ? 'var(--org)' : 'var(--bd)';
+    const chkMark  = (r.selected && canSelect) ? '✓' : '';
+
+    h += `<div class="${cls}" ${canSelect ? `onclick="toggleAttend(${i})"` : ''}>`;
+    h += `<span style="width:17px;height:17px;border-radius:4px;flex-shrink:0;margin-top:2px;
+      background:${chkColor};border:2px solid ${chkBd};
+      display:flex;align-items:center;justify-content:center;
+      font-size:10px;font-weight:800;color:#fff">${chkMark}</span>`;
+    h += `<div style="flex:1;min-width:0">
+      <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:4px">
+        <span style="font-size:13px;font-weight:700">${ds}</span>${badge}${remBadges}
+      </div>`;
+
+    if (r.hasShift) {
+      // 比較テーブル（一部解消ケースで動的に切り替え）
+      const isEarlyDep = t2m(r.att.actual.end) < t2m(r.att.scheduled.end);
+      const startDiff  = r.diffs.find(x => x.field === 'startTime');
+      const endDiff    = r.diffs.find(x => x.field === 'endTime');
+      const edDiff     = r.diffs.find(x => x.field === 'earlyDepartureMin');
+      const brkDiff    = r.diffs.find(x => x.field === 'breakMinutes');
+      const curEdMin   = r.shift.earlyDepartureMin || 0;
+
+      h += `<div class="att-cmp">
+        <div></div>
+        <div class="att-cmp-hd">シフト登録</div>
+        <div class="att-cmp-hd">勤怠${isEarlyDep ? '予定' : '実績'}</div>
+        <div class="att-cmp-lbl">開始</div>
+        <div class="${startDiff ? 'att-val-old' : 'att-val-same'}">${r.shift.startTime}</div>
+        <div class="${startDiff ? 'att-val-new' : 'att-val-same'}">${r.att.actual.start}</div>`;
+
+      if (isEarlyDep) {
+        // 予定終了行
+        h += `<div class="att-cmp-lbl">終了<br><span style="font-size:8px;color:var(--muted)">(予定)</span></div>
+          <div class="${endDiff ? 'att-val-old' : 'att-val-same'}">${r.shift.endTime}</div>
+          <div class="${endDiff ? 'att-val-new' : 'att-val-same'}">${r.att.scheduled.end}</div>
+          <div class="att-cmp-lbl">終了<br><span style="font-size:8px;color:var(--muted)">(実績)</span></div>
+          <div style="color:var(--muted);font-size:11px">— </div>
+          <div style="font-weight:600;font-size:11px">${r.att.actual.end}</div>
+          <div class="att-cmp-lbl">一部解消</div>
+          <div class="${edDiff ? 'att-val-old' : 'att-val-same'}">${curEdMin}分</div>
+          <div class="${edDiff ? 'att-val-new' : 'att-val-same'}">${t2m(r.att.scheduled.end) - t2m(r.att.actual.end)}分</div>`;
+      } else {
+        h += `<div class="att-cmp-lbl">終了</div>
+          <div class="${endDiff ? 'att-val-old' : 'att-val-same'}">${r.shift.endTime}</div>
+          <div class="${endDiff ? 'att-val-new' : 'att-val-same'}">${r.att.actual.end}</div>`;
+        if (edDiff)
+          h += `<div class="att-cmp-lbl">一部解消</div>
+            <div class="att-val-old">${curEdMin}分</div>
+            <div class="att-val-new">0分（クリア）</div>`;
+      }
+
+      if (r.att.breakMinutes !== null)
+        h += `<div class="att-cmp-lbl">休憩</div>
+          <div class="${brkDiff ? 'att-val-old' : 'att-val-same'}">${r.shift.breakMinutes}分</div>
+          <div class="${brkDiff ? 'att-val-new' : 'att-val-same'}">${r.att.breakMinutes}分</div>`;
+
+      h += '</div>';
+
+      if (r.hasDiffs) {
+        h += `<button class="att-fix-btn" onclick="event.stopPropagation();applyOneDiff(${i})">この日を修正</button>`;
+      }
+    } else {
+      h += `<div style="font-size:11px;color:var(--muted);margin-top:2px">
+        予定: ${r.att.scheduled.start}〜${r.att.scheduled.end}&emsp;
+        実績: ${r.att.actual.start}〜${r.att.actual.end}
+        ${r.att.breakMinutes !== null ? `&emsp;休憩: ${r.att.breakMinutes}分` : ''}
+      </div>`;
+    }
+    h += '</div></div>'; // content + row
+  }
+  h += '</div>';
+  document.getElementById('attendList').innerHTML = h;
+  document.getElementById('bulkApplyAttend').style.display = withDiff > 0 ? '' : 'none';
+}
+
+function toggleAttend(i) {
+  if (i >= 0 && i < attendResults.length && attendResults[i].hasDiffs) {
+    attendResults[i].selected = !attendResults[i].selected;
+    renderAttendList(document.getElementById('attendWP').value);
+  }
+}
+
+function toggleAllAttend(val) {
+  attendResults.forEach(r => { if (r.hasDiffs) r.selected = val; });
+  renderAttendList(document.getElementById('attendWP').value);
+}
+
+async function applyOneDiff(i) {
+  if (i < 0 || i >= attendResults.length) return;
+  const r = attendResults[i];
+  if (!r.hasDiffs || !r.shift) return;
+
+  const d      = new Date(r.att.date + 'T00:00:00');
+  const dateStr = `${d.getMonth()+1}/${d.getDate()}（${DOW[d.getDay()]}）`;
+  const summary = r.diffs.map(x => `・${x.label}: ${x.registered} → ${x.actual}`).join('\n');
+  if (!confirm(`${dateStr} のシフトを勤怠データで修正します。\n\n${summary}\n\nよろしいですか？`)) return;
+
+  const idx = shifts.findIndex(s => s.id === r.shift.id);
+  if (idx < 0) return;
+
+  for (const diff of r.diffs) {
+    if (diff.field === 'startTime')         shifts[idx].startTime        = diff.applyValue;
+    if (diff.field === 'endTime')           shifts[idx].endTime          = diff.applyValue;
+    if (diff.field === 'earlyDepartureMin') shifts[idx].earlyDepartureMin = diff.applyValue;
+    if (diff.field === 'breakMinutes')      shifts[idx].breakMinutes     = diff.applyValue;
+  }
+
+  try {
+    await persist();
+    toast(`${dateStr} を修正しました`);
+    attendResults[i].shift    = { ...shifts[idx] };
+    attendResults[i].diffs    = calcAttendDiffs(shifts[idx], r.att);
+    attendResults[i].hasDiffs = attendResults[i].diffs.length > 0;
+    attendResults[i].selected = false;
+    renderAttendList(document.getElementById('attendWP').value);
+    render();
+  } catch(e) {
+    toast('保存に失敗しました（通信エラー）');
+  }
+}
+
+async function bulkApplyAttend() {
+  const targets = attendResults.filter(r => r.selected && r.hasDiffs && r.shift);
+  if (!targets.length) { toast('修正する日を選択してください'); return; }
+
+  const lines = targets.map(r => {
+    const d = new Date(r.att.date + 'T00:00:00');
+    const ds = `${d.getMonth()+1}/${d.getDate()}（${DOW[d.getDay()]}）`;
+    return `・${ds}: ` + r.diffs.map(x => `${x.label} ${x.registered}→${x.actual}`).join('、');
+  });
+  if (!confirm(`以下の${targets.length}件を勤怠データで一括修正します。\n\n${lines.join('\n')}\n\nよろしいですか？`)) return;
+
+  let updated = 0;
+  for (const r of targets) {
+    const idx = shifts.findIndex(s => s.id === r.shift.id);
+    if (idx < 0) continue;
+    for (const diff of r.diffs) {
+      if (diff.field === 'startTime')         shifts[idx].startTime        = diff.applyValue;
+      if (diff.field === 'endTime')           shifts[idx].endTime          = diff.applyValue;
+      if (diff.field === 'earlyDepartureMin') shifts[idx].earlyDepartureMin = diff.applyValue;
+      if (diff.field === 'breakMinutes')      shifts[idx].breakMinutes     = diff.applyValue;
+    }
+    updated++;
+  }
+
+  try {
+    await persist();
+    toast(`${updated}件を修正しました`);
+    closeAttend();
+    render();
+  } catch(e) {
+    toast('保存に失敗しました（通信エラー）');
+  }
+}
+
+// ══════════════════════════════════════
+// 認証（Firebase Realtime Database 連携）
+// ══════════════════════════════════════
+
+// Firebase からユーザー情報を取得
+async function fbGetUser(uid) {
+  const snap = await fdb.ref(`${USERS_PATH}/${uid}`).get();
+  return snap.exists() ? { id: uid, ...snap.val() } : null;
+}
+
+// Firebase から全ユーザーを取得
+async function fbGetAllUsers() {
+  const snap = await fdb.ref(USERS_PATH).get();
+  if (!snap.exists()) return {};
+  const res = {};
+  for (const [id, u] of Object.entries(snap.val()))
+    res[id] = { id, ...u };
+  return res;
+}
+
+// 初回起動時のみ初期ユーザーを Firebase に書き込む
+async function ensureInitialUsers() {
+  const snap = await fdb.ref(USERS_PATH).get();
+  if (!snap.exists()) await fdb.ref(USERS_PATH).set(INIT_USERS_DATA);
+}
+
+// セッションを localStorage で確認 → Firebase でユーザー照合
+async function initAuth() {
+  try {
+    const sessStr = localStorage.getItem(AUTH_SESSION_KEY);
+    if (!sessStr) return false;
+    const sess = JSON.parse(sessStr);
+    if (!sess?.id) return false;
+    const tp = new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 5000));
+    const user = await Promise.race([fbGetUser(sess.id), tp]);
+    if (!user) { localStorage.removeItem(AUTH_SESSION_KEY); return false; }
+    currentUser = { id: user.id, name: user.name || '', isAdmin: !!user.isAdmin };
+    return true;
+  } catch(e) { return false; }
+}
+
+async function doLogin() {
+  const id   = (document.getElementById('loginId').value || '').trim();
+  const pass = document.getElementById('loginPass').value;
+  const err  = document.getElementById('loginErr');
+  err.style.display = 'none';
+  if (!id || !pass) { showAuthErr(err, '社員番号とパスワードを入力してください'); return; }
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true; btn.textContent = '確認中...';
+  try {
+    const user = await fbGetUser(id);
+    if (!user || user.password !== pass) {
+      showAuthErr(err, '社員番号またはパスワードが正しくありません'); return;
+    }
+    currentUser   = { id: user.id, name: user.name || '', isAdmin: !!user.isAdmin };
+    viewingUserId = null;
+    localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify({ id: currentUser.id }));
+    loadAppSettings();
+    hideLoginScreen();
+    document.getElementById('loadingOverlay').style.display = 'flex';
+    await loadData();
+    document.getElementById('loadingOverlay').style.display = 'none';
+    updateUserBar(); render();
+  } catch(e) {
+    showAuthErr(err, '接続エラーが発生しました。再試行してください。');
+  } finally { btn.disabled = false; btn.textContent = 'ログイン'; }
+}
+
+async function doRegister() {
+  const id    = (document.getElementById('regId').value || '').trim();
+  const name  = (document.getElementById('regName').value || '').trim();
+  const pass  = document.getElementById('regPass').value;
+  const pass2 = document.getElementById('regPass2').value;
+  const err   = document.getElementById('regErr');
+  err.style.display = 'none';
+  if (!id || !name || !pass) { showAuthErr(err, '全ての項目を入力してください'); return; }
+  if (!/^\d+$/.test(id))    { showAuthErr(err, '社員番号は数字で入力してください'); return; }
+  if (pass !== pass2)        { showAuthErr(err, 'パスワードが一致しません'); return; }
+  const btn = document.getElementById('registerBtn');
+  btn.disabled = true; btn.textContent = '登録中...';
+  try {
+    const existing = await fbGetUser(id);
+    if (existing) { showAuthErr(err, 'この社員番号は既に登録されています'); return; }
+    await fdb.ref(`${USERS_PATH}/${id}`).set({ password: pass, name, isAdmin: false });
+    currentUser   = { id, name, isAdmin: false };
+    viewingUserId = null;
+    localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify({ id }));
+    loadAppSettings();
+    hideLoginScreen(); switchToLogin();
+    document.getElementById('loadingOverlay').style.display = 'flex';
+    await loadData();
+    document.getElementById('loadingOverlay').style.display = 'none';
+    updateUserBar(); render();
+  } catch(e) {
+    showAuthErr(err, '登録に失敗しました。再試行してください。');
+  } finally { btn.disabled = false; btn.textContent = '登録してはじめる'; }
+}
+
+function doLogout() {
+  localStorage.removeItem(AUTH_SESSION_KEY);
+  currentUser = null; viewingUserId = null;
+  workplaces = []; shifts = []; appSettings = { bonusThreshold: 900 };
+  document.getElementById('viewingBanner').classList.remove('on');
+  showLoginScreen();
+}
+
+function showAuthErr(el, msg) { el.textContent = msg; el.style.display = 'block'; }
+function showLoginScreen()    { document.getElementById('loginScreen').classList.add('on'); }
+function hideLoginScreen()    { document.getElementById('loginScreen').classList.remove('on'); }
+
+function switchToRegister() {
+  document.getElementById('loginForm').style.display    = 'none';
+  document.getElementById('registerForm').style.display = 'block';
+  document.getElementById('loginErr').style.display     = 'none';
+}
+function switchToLogin() {
+  document.getElementById('registerForm').style.display = 'none';
+  document.getElementById('loginForm').style.display    = 'block';
+  document.getElementById('regErr').style.display       = 'none';
+}
+
+function updateUserBar() {
+  if (!currentUser) return;
+  const label = currentUser.name
+    ? `${currentUser.name}（${currentUser.id}）`
+    : `社員番号: ${currentUser.id}`;
+  document.getElementById('userBarId').textContent = label;
+  document.getElementById('btnAdminPanel').style.display = currentUser.isAdmin ? 'inline-block' : 'none';
+}
+
+// ── パスワード変更 ──
+let _cpTarget = null; // null = 自分、'id' = 管理者が対象ユーザーのPWを変更
+
+function openChangePassword(uid) {
+  _cpTarget = (uid && uid !== currentUser?.id) ? uid : null;
+  const isOther = !!_cpTarget;
+  document.getElementById('cpTitle').textContent = isOther ? `PW変更（社員番号: ${uid}）` : 'パスワード変更';
+  document.getElementById('cpCurrentFg').style.display = isOther ? 'none' : 'block';
+  ['cpCurrent','cpNew','cpNew2'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  document.getElementById('cpErr').style.display = 'none';
+  document.getElementById('changePasswordOverlay').classList.add('on');
+}
+function closeChangePassword() {
+  document.getElementById('changePasswordOverlay').classList.remove('on');
+  _cpTarget = null;
+}
+async function doChangePassword() {
+  const newPass  = document.getElementById('cpNew').value;
+  const newPass2 = document.getElementById('cpNew2').value;
+  const err = document.getElementById('cpErr');
+  err.style.display = 'none';
+  if (!newPass || !newPass2) { showAuthErr(err, '新しいパスワードを入力してください'); return; }
+  if (newPass !== newPass2)  { showAuthErr(err, 'パスワードが一致しません'); return; }
+  const targetId = _cpTarget || currentUser?.id;
+  if (!_cpTarget) {
+    const curPass = document.getElementById('cpCurrent').value;
+    if (!curPass) { showAuthErr(err, '現在のパスワードを入力してください'); return; }
+    try {
+      const user = await fbGetUser(currentUser.id);
+      if (!user || user.password !== curPass) { showAuthErr(err, '現在のパスワードが正しくありません'); return; }
+    } catch(e) { showAuthErr(err, '確認に失敗しました'); return; }
+  }
+  const btn = document.getElementById('cpSubmitBtn');
+  btn.disabled = true; btn.textContent = '変更中...';
+  try {
+    await fdb.ref(`${USERS_PATH}/${targetId}/password`).set(newPass);
+    closeChangePassword();
+    if (_cpTarget) { renderAdminContent(); toast(`社員番号 ${targetId} のPWを変更しました`); }
+    else           { toast('パスワードを変更しました'); }
+  } catch(e) {
+    showAuthErr(err, '変更に失敗しました');
+  } finally { btn.disabled = false; btn.textContent = '変更する'; }
+}
+
+// ── 管理者パネル ──
+async function openAdmin() {
+  if (!currentUser?.isAdmin) return;
+  document.getElementById('adminOverlay').classList.add('on');
+  await renderAdminContent();
+}
+function closeAdmin() { document.getElementById('adminOverlay').classList.remove('on'); }
+
+async function renderAdminContent() {
+  const el = document.getElementById('adminContent');
+  el.innerHTML = '<div style="text-align:center;padding:24px;color:var(--muted)">読み込み中...</div>';
+  try {
+    const users = await fbGetAllUsers();
+    const rows  = Object.values(users).sort((a, b) => a.id.localeCompare(b.id));
+    let h = `<div style="font-size:11px;color:var(--muted);margin-bottom:10px">登録ユーザー ${rows.length} 名</div>`;
+    for (const u of rows) {
+      const isMe  = u.id === currentUser.id;
+      const kind  = u.isAdmin ? '管理者' : '一般';
+      const kindC = u.isAdmin ? 'var(--org)' : 'var(--muted)';
+      const bg    = isMe ? '#ede9fe' : u.isAdmin ? '#fff7ed' : 'var(--sur2)';
+      const viewBtn = !isMe
+        ? `<button class="btn btn-sm" style="background:var(--pri);color:#fff;min-height:28px;padding:2px 8px;font-size:11px"
+             onclick="viewUserData('${escHtml(u.id)}')">📋 閲覧</button>` : '';
+      const cpBtn = `<button class="btn btn-sm" style="min-height:28px;padding:2px 8px;font-size:11px;border:1.5px solid var(--bd)"
+             onclick="openChangePassword('${escHtml(u.id)}')">🔑 PW</button>`;
+      const delBtn = !u.isAdmin && !isMe
+        ? `<button class="btn btn-del btn-sm" style="min-height:28px;padding:2px 8px;font-size:11px"
+             onclick="adminDeleteUser('${escHtml(u.id)}')">削除</button>` : '';
+      h += `<div style="background:${bg};border-radius:var(--rs);padding:10px 11px;margin-bottom:5px">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:5px">
+          <div style="flex:1;min-width:80px">
+            <div style="font-size:9.5px;color:var(--muted)">社員番号</div>
+            <div style="font-weight:700">${escHtml(u.id)}${isMe?'<span style="font-size:9px;color:var(--pri);margin-left:3px">自分</span>':''}</div>
+          </div>
+          <div style="flex:1;min-width:80px">
+            <div style="font-size:9.5px;color:var(--muted)">名前</div>
+            <div style="font-weight:600">${escHtml(u.name || '—')}</div>
+          </div>
+          <div style="flex:1;min-width:60px">
+            <div style="font-size:9.5px;color:var(--muted)">パスワード</div>
+            <div style="font-family:monospace;font-weight:600">${escHtml(u.password)}</div>
+          </div>
+          <div style="font-weight:700;font-size:11px;color:${kindC}">${kind}</div>
+        </div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap">${viewBtn}${cpBtn}${delBtn}</div>
+      </div>`;
+    }
+    el.innerHTML = h;
+  } catch(e) {
+    el.innerHTML = '<div class="empty">ユーザー情報の取得に失敗しました</div>';
+  }
+}
+
+async function adminDeleteUser(uid) {
+  try {
+    const u = await fbGetUser(uid);
+    if (!u || u.isAdmin) { toast('管理者は削除できません'); return; }
+    if (!confirm(`社員番号 ${uid}（${u.name || ''}）を削除しますか？`)) return;
+    await fdb.ref(`${USERS_PATH}/${uid}`).remove();
+    await renderAdminContent();
+    toast('削除しました');
+  } catch(e) { toast('削除に失敗しました'); }
+}
+
+// ── 他ユーザーデータ閲覧（管理者専用） ──
+async function viewUserData(uid) {
+  if (!currentUser?.isAdmin) return;
+  closeAdmin();
+  viewingUserId = uid;
+  let displayName = `社員番号 ${uid}`;
+  try { const u = await fbGetUser(uid); if (u?.name) displayName = `${u.name}（${uid}）`; } catch(e) {}
+  document.getElementById('viewingBanner').classList.add('on');
+  document.getElementById('viewingUserLabel').textContent = displayName;
+  document.getElementById('loadingOverlay').style.display = 'flex';
+  await loadData(uid);
+  document.getElementById('loadingOverlay').style.display = 'none';
+  render();
+  toast(`${displayName} のデータを表示しています`);
+}
+
+async function stopViewingUserData() {
+  viewingUserId = null;
+  document.getElementById('viewingBanner').classList.remove('on');
+  document.getElementById('loadingOverlay').style.display = 'flex';
+  await loadData();
+  document.getElementById('loadingOverlay').style.display = 'none';
+  render();
+}
+
+// ══════════════════════════════════════
+// 設定・旧データインポート
+// ══════════════════════════════════════
+let _pendingImportData = null;
+
+function openSettings() {
+  // Step1 に戻してから開く
+  document.getElementById('settingsImportStep1').style.display = 'block';
+  document.getElementById('settingsImportStep2').style.display = 'none';
+  document.getElementById('settingsImportJson').value = '';
+  _pendingImportData = null;
+  document.getElementById('settingsOverlay').classList.add('on');
+}
+function closeSettings() {
+  document.getElementById('settingsOverlay').classList.remove('on');
+  _pendingImportData = null;
+}
+
+// 方法A: 旧 Firebase パス "shift-manager" から自動取得
+async function importFromOldFirebase() {
+  const btn = document.getElementById('btnImportOldFB');
+  btn.disabled = true; btn.textContent = '読み込み中...';
+  try {
+    const tp   = new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 8000));
+    const snap = await Promise.race([fdb.ref('shift-manager').get(), tp]);
+    if (!snap.exists()) { toast('旧データが見つかりませんでした（旧パスにデータなし）'); return; }
+    const raw = snap.val();
+    // 旧パスが { workplaces, shifts } 形式か、ユーザー別 { uid: { workplaces, shifts } } 形式か判定
+    const data = (raw.workplaces || raw.shifts) ? raw
+               : (raw[currentUser?.id]?.workplaces || raw[currentUser?.id]?.shifts)
+                 ? raw[currentUser.id]
+                 : null;
+    if (!data) { toast('旧データの形式を認識できませんでした'); return; }
+    showSettingsImportPreview(data, '旧Firebase（shift-manager パス）');
+  } catch(e) {
+    toast(e?.message === 'timeout' ? '接続タイムアウト' : '旧データの読み込みに失敗しました');
+  } finally {
+    btn.disabled = false; btn.textContent = '🔥 旧Firebaseデータを自動読み込み';
+  }
+}
+
+// 方法B: 貼り付けた JSON を解析
+function parseSettingsImportJson() {
+  const text = (document.getElementById('settingsImportJson').value || '').trim();
+  if (!text) { toast('JSONデータを貼り付けてください'); return; }
+  try {
+    const data = JSON.parse(text);
+    if (!data || typeof data !== 'object') throw new Error();
+    if (!data.workplaces && !data.shifts) throw new Error();
+    showSettingsImportPreview(data, 'JSON貼り付け（localStorage）');
+  } catch(e) {
+    toast('JSONの解析に失敗しました。形式を確認してください');
+  }
+}
+
+// 確認画面を表示
+function showSettingsImportPreview(data, sourceLabel) {
+  const wps = fbArr(data.workplaces);
+  const shs = fbArr(data.shifts);
+  const targetId = currentUser?.id || '—';
+
+  document.getElementById('settingsImportPreview').innerHTML = `
+    <div style="background:var(--sur2);border:1px solid var(--bd);border-radius:var(--rs);padding:12px;margin-bottom:10px">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:6px">読み込み元: ${escHtml(sourceLabel)}</div>
+      <div style="display:flex;flex-direction:column;gap:4px;font-size:13px">
+        <div>🏢 勤務先: <b>${wps.length}件</b></div>
+        <div>📅 シフト: <b>${shs.length}件</b></div>
+        ${shs.length ? `<div style="font-size:11px;color:var(--muted)">
+          期間: ${shs.map(s=>s.date).sort()[0]} 〜 ${shs.map(s=>s.date).sort().at(-1)}
+        </div>` : ''}
+      </div>
+    </div>
+    <div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:var(--rs);padding:10px;font-size:12px;color:#b91c1c;line-height:1.7">
+      ⚠️ <b>社員番号 ${escHtml(targetId)} のデータを上書きします。</b><br>
+      現在のシフト・勤務先は全て削除されます。この操作は元に戻せません。
+    </div>`;
+
+  _pendingImportData = { workplaces: wps, shifts: shs };
+  document.getElementById('settingsImportStep1').style.display = 'none';
+  document.getElementById('settingsImportStep2').style.display = 'block';
+}
+
+// 実際にインポート実行
+async function executeSettingsImport() {
+  if (!_pendingImportData || !currentUser) return;
+  const btn = document.getElementById('btnSettingsImportExec');
+  btn.disabled = true; btn.textContent = 'インポート中...';
+  try {
+    const payload = JSON.parse(JSON.stringify({
+      workplaces: _pendingImportData.workplaces,
+      shifts:     _pendingImportData.shifts,
+    }));
+    await fdb.ref(getDBPath(currentUser.id)).set(payload);
+
+    // 現在表示中のデータを再読み込み
+    if (!viewingUserId || viewingUserId === currentUser.id) {
+      workplaces = fbArr(payload.workplaces);
+      shifts     = fbArr(payload.shifts);
+      // フィールド補完
+      for (const w of workplaces) {
+        if (!w.zones?.length) w.zones = DEFAULT_ZONES.map(z => ({ ...z, id: uid() }));
+        for (const [k, v] of Object.entries(DEFAULT_WP_SETTINGS))
+          if (w[k] == null) w[k] = v;
+      }
+      for (const s of shifts) {
+        if (s.breakMinutes == null) s.breakMinutes = 60;
+        if (s.manualOvertimeMin == null) s.manualOvertimeMin = 0;
+        if (s.earlyDepartureMin == null) s.earlyDepartureMin = 0;
+        if (s.location === undefined) s.location = '';
+        s.breakMinutes = Number(s.breakMinutes);
+      }
+      render();
+    }
+
+    closeSettings();
+    toast(`${_pendingImportData.shifts.length}件のシフト・${_pendingImportData.workplaces.length}件の勤務先をインポートしました`);
+    _pendingImportData = null;
+  } catch(e) {
+    toast('インポートに失敗しました');
+  } finally {
+    btn.disabled = false; btn.textContent = 'インポートする';
+  }
+}
+
+// 突合フィルター切り替え
+function toggleAttendFilter(f) {
+  attendFilter = attendFilter === f ? null : f;
+  renderAttendList(document.getElementById('attendWP').value);
+}
+
+// ══════════════════════════════════════
+// アプリ設定（localStorage）
+// ══════════════════════════════════════
+let appSettings = { bonusThreshold: 900 };
+
+function getSettingsKey() {
+  // 社員番号ごとに設定キーを分ける（例: shiftMgrSettings_72581646）
+  return 'shiftMgrSettings_' + (currentUser ? currentUser.id : '_anon');
+}
+
+function loadAppSettings() {
+  try {
+    appSettings = { bonusThreshold: 900 }; // デフォルトにリセットしてからロード
+    const s = localStorage.getItem(getSettingsKey());
+    if (s) appSettings = { ...appSettings, ...JSON.parse(s) };
+  } catch(e) { appSettings = { bonusThreshold: 900 }; }
+}
+
+function saveAppSetting(key, value) {
+  appSettings[key] = value;
+  try { localStorage.setItem(getSettingsKey(), JSON.stringify(appSettings)); } catch(e) {}
+}
+
+function updateBonusThreshold(val) {
+  const v = parseInt(val);
+  if (!isNaN(v) && v > 0) { saveAppSetting('bonusThreshold', v); renderHY(); }
+}
+
+// 賞与算定用統計（期間内全勤務先合計）
+function collectBonusStats(startStr, endStr) {
+  let totalWorkMin = 0, totalOTMin = 0, totalEdMin = 0, totalShifts = 0;
+  for (const wp of workplaces) {
+    const wpShifts = shifts.filter(s => s.workplaceId === wp.id && s.date >= startStr && s.date <= endStr);
+    for (const sh of wpShifts) {
+      const r = calcShiftWage(sh, wp);
+      totalWorkMin += r.workMin;
+      totalOTMin   += r.overtimeWorkMin;
+      totalEdMin   += Math.max(0, sh.earlyDepartureMin || 0);
+      totalShifts++;
+    }
+  }
+  return { totalWorkMin, totalOTMin, totalEdMin, totalShifts };
+}
+
+// ══════════════════════════════════════
 // 半期別集計モーダル
 // ══════════════════════════════════════
 let hyYear   = new Date().getFullYear();
@@ -1981,6 +3137,56 @@ function renderHY() {
     h += '</div>';
   }
 
+  // ── 賞与算定セクション ──
+  const bs        = collectBonusStats(startStr, endStr);
+  const thrH      = appSettings.bonusThreshold || 900;
+  const thrMin    = thrH * 60;
+  const bonusBase = bs.totalWorkMin + bs.totalEdMin; // 実働 + 一部解消時間
+  const remaining = Math.max(0, thrMin - bonusBase);
+  const pct       = thrMin > 0 ? Math.min(100, Math.round(bonusBase / thrMin * 100)) : 0;
+  const barColor  = pct >= 100 ? 'var(--grn)' : pct >= 70 ? 'var(--pri)' : 'var(--org)';
+
+  h += `<div class="sumbox" style="margin-top:10px;border-color:var(--pri-l)">
+    <div class="sumbox-ttl" style="color:var(--pri)">目標勤務時間</div>
+    <div class="sum-row">
+      <div class="sum-left">実働時間</div>
+      <div class="sum-right"><b>${fmtHM(bs.totalWorkMin)}</b></div>
+    </div>
+    <div class="sum-row">
+      <div class="sum-left">一部解消時間</div>
+      <div class="sum-right">${fmtHM(bs.totalEdMin)}</div>
+    </div>
+    <div class="sum-row">
+      <div class="sum-left"><b>算定対象時間</b><br><span style="font-size:10px;color:var(--muted)">実働 + 一部解消</span></div>
+      <div class="sum-right"><span class="sum-total" style="font-size:16px">${fmtHM(bonusBase)}</span></div>
+    </div>
+    <div class="sum-row">
+      <div class="sum-left">所定外労働時間</div>
+      <div class="sum-right"><span class="ot-badge">${fmtHM(bs.totalOTMin)}</span></div>
+    </div>
+    <div class="sum-row" style="align-items:center">
+      <div class="sum-left">目標勤務時間</div>
+      <div class="sum-right" style="display:flex;align-items:center;gap:4px">
+        <input type="number" id="bonusThrInp" value="${thrH}" min="1" max="5000"
+          inputmode="numeric"
+          style="width:58px;padding:4px 6px;border:1.5px solid var(--bd);border-radius:6px;
+                 font-size:13px;font-weight:700;text-align:right;background:#fff;outline:none"
+          onchange="updateBonusThreshold(this.value)">
+        <span style="font-size:11px;color:var(--muted)">時間</span>
+      </div>
+    </div>
+    <div style="margin-top:10px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:11px">
+        <span style="color:var(--muted)">達成率 <b style="color:${barColor}">${pct}%</b></span>
+        <span style="color:var(--muted)">残り <b>${fmtHM(remaining)}</b></span>
+      </div>
+      <div style="height:11px;background:var(--bd);border-radius:6px;overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:${barColor};border-radius:6px;transition:width .4s"></div>
+      </div>
+      ${pct >= 100 ? `<div style="text-align:center;font-size:11px;color:var(--grn);font-weight:700;margin-top:5px">算定ラインを達成しました！</div>` : ''}
+    </div>
+  </div>`;
+
   document.getElementById('hyContent').innerHTML = h;
 }
 
@@ -2027,6 +3233,41 @@ document.getElementById('backToStep1').onclick = () => {
 };
 document.getElementById('doImportBtn').onclick = doImport;
 
+// 認証イベント
+document.getElementById('loginBtn').onclick      = doLogin;
+document.getElementById('showRegBtn').onclick    = switchToRegister;
+document.getElementById('registerBtn').onclick   = doRegister;
+document.getElementById('backLoginBtn').onclick  = switchToLogin;
+document.getElementById('btnLogout').onclick     = doLogout;
+document.getElementById('btnAdminPanel').onclick = openAdmin;
+document.getElementById('closeAdmin').onclick    = closeAdmin;
+document.getElementById('btnChangePw').onclick   = () => openChangePassword();
+document.getElementById('closeChangePassword').onclick = closeChangePassword;
+document.getElementById('cpSubmitBtn').onclick   = doChangePassword;
+document.getElementById('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+document.getElementById('loginId').addEventListener('keydown',   e => { if (e.key === 'Enter') document.getElementById('loginPass').focus(); });
+
+// 設定・インポートイベント
+document.getElementById('btnSettings').onclick          = openSettings;
+document.getElementById('closeSettings').onclick        = closeSettings;
+document.getElementById('btnImportOldFB').onclick       = importFromOldFirebase;
+document.getElementById('btnParseImportJson').onclick   = parseSettingsImportJson;
+document.getElementById('btnSettingsImportBack').onclick = () => {
+  document.getElementById('settingsImportStep1').style.display = 'block';
+  document.getElementById('settingsImportStep2').style.display = 'none';
+  _pendingImportData = null;
+};
+document.getElementById('btnSettingsImportExec').onclick = executeSettingsImport;
+
+document.getElementById('btnAttend').onclick        = openAttend;
+document.getElementById('closeAttend').onclick      = closeAttend;
+document.getElementById('parseAttendBtn').onclick   = runParseAttend;
+document.getElementById('backToAttendStep1').onclick = () => {
+  document.getElementById('attendStep1').style.display = 'block';
+  document.getElementById('attendStep2').style.display = 'none';
+};
+document.getElementById('bulkApplyAttend').onclick  = bulkApplyAttend;
+
 document.getElementById('closeHY').onclick    = closeHY;
 document.getElementById('hyPrevYear').onclick = () => { hyYear--; renderHY(); };
 document.getElementById('hyNextYear').onclick = () => { hyYear++; renderHY(); };
@@ -2052,7 +3293,7 @@ document.getElementById('delWP').onclick       = deleteWP;
   el.addEventListener('change', livePreview);
 });
 
-['shiftOverlay','wpOverlay','wpEditOverlay','hyOverlay','importOverlay'].forEach(id => {
+['shiftOverlay','wpOverlay','wpEditOverlay','hyOverlay','importOverlay','attendOverlay','adminOverlay','changePasswordOverlay','settingsOverlay'].forEach(id => {
   document.getElementById(id).addEventListener('click', function(e) {
     if (e.target === this) this.classList.remove('on');
   });
@@ -2061,9 +3302,52 @@ document.getElementById('delWP').onclick       = deleteWP;
 // ══════════════════════════════════════
 // 初期化
 // ══════════════════════════════════════
-loadData().then(() => {
+let _startupDone = false;
+
+function _hideLoading() {
   document.getElementById('loadingOverlay').style.display = 'none';
-  render();
+}
+
+async function _startup() {
+  // 初期ユーザーを Firebase に書き込み（初回のみ）
+  await ensureInitialUsers().catch(() => {});
+
+  // セッション確認 → Firebase でユーザー照合
+  let authed = false;
+  try { authed = await initAuth(); } catch(e) { console.error('initAuth error:', e); }
+
+  if (_startupDone) return; // タイムアウトがすでに発火した場合
+  _startupDone = true;
+
+  loadAppSettings(); // currentUser 確定後にユーザー別設定をロード
+  _hideLoading();
+
+  if (authed) {
+    await loadData().catch(() => {});
+    updateUserBar();
+    render();
+  } else {
+    showLoginScreen();
+  }
+}
+
+// 3秒後に強制的にログイン画面へ進む（安全弁）
+setTimeout(() => {
+  if (!_startupDone) {
+    _startupDone = true;
+    console.warn('Startup timeout – forcing login screen');
+    _hideLoading();
+    showLoginScreen();
+  }
+}, 3000);
+
+_startup().catch(e => {
+  console.error('Startup failed:', e);
+  if (!_startupDone) {
+    _startupDone = true;
+    _hideLoading();
+    showLoginScreen();
+  }
 });
 </script>
 </body>
