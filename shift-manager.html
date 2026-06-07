@@ -276,6 +276,72 @@ select.fc{font-size:14px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--bd);border-radius:2px}
 
+/* ── Wage type radio ── */
+.wage-radio-group{display:flex;gap:16px;padding:4px 0}
+.wage-radio-label{display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600}
+.wage-radio-label input[type=radio]{width:16px;height:16px;cursor:pointer;accent-color:var(--pri)}
+
+/* ── Choice modal buttons ── */
+.choice-btn{
+  display:flex;align-items:center;gap:12px;padding:16px 14px;
+  background:var(--sur2);border:1.5px solid var(--bd);border-radius:var(--rs);
+  cursor:pointer;text-align:left;font-size:14px;font-weight:700;width:100%;
+  transition:background .15s,border-color .15s;
+}
+.choice-btn:hover{background:var(--bd);border-color:var(--pri-l)}
+.choice-btn-icon{font-size:26px;flex-shrink:0}
+.choice-btn-desc{font-size:11px;font-weight:400;color:var(--muted);margin-top:2px}
+
+/* ── Settings nav buttons ── */
+.settings-nav-btn{
+  display:flex;align-items:center;gap:10px;padding:13px 14px;
+  background:var(--sur2);border:1.5px solid var(--bd);border-radius:var(--rs);
+  cursor:pointer;text-align:left;font-size:13px;font-weight:700;width:100%;
+  transition:background .15s;margin-bottom:7px;
+}
+.settings-nav-btn:hover{background:var(--bd)}
+
+/* ── Monthly wage badge ── */
+.monthly-badge{background:#ede9fe;color:#5b21b6;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700;white-space:nowrap;display:inline-block}
+
+/* ── Paid leave ── */
+.pl-dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:rgba(34,197,94,.95);margin-left:2px;vertical-align:middle;flex-shrink:0}
+.pl-badge{background:#dcfce7;color:#166534;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700;white-space:nowrap;display:inline-block}
+.pl-warn{background:#fff7ed;color:#92400e;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700;white-space:nowrap;display:inline-block}
+.pl-err{background:#fee2e2;color:#b91c1c;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700;white-space:nowrap;display:inline-block}
+.pl-panel{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:var(--rs);padding:10px 12px;margin-bottom:11px}
+.pl-check-label{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:700;padding:4px 0}
+.pl-check-label input[type=checkbox]{width:17px;height:17px;cursor:pointer;accent-color:var(--grn)}
+.att-badge-pl{background:#dcfce7;color:#166534}
+.mki-pl{background:#dcfce7;color:#166534}
+/* PL schedule editor */
+.pl-schedule-row{display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--sur2);border:1px solid var(--bd);border-radius:var(--rs);margin-bottom:4px}
+.pl-schedule-inp{width:52px;padding:4px 6px;border:1.5px solid var(--bd);border-radius:6px;font-size:12px;text-align:center;font-weight:600;background:#fff;outline:none}
+.pl-schedule-inp:focus{border-color:var(--pri)}
+.pl-info-box{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:var(--rs);padding:9px 11px;font-size:11px;line-height:1.9;color:#166534;margin:6px 0}
+/* Bulk delete */
+.btn-danger{background:#fee2e2;color:#b91c1c;border:1.5px solid #fca5a5;border-radius:var(--rs);padding:11px 0;font-size:13px;font-weight:700;width:100%;cursor:pointer;transition:background .15s}
+.btn-danger:hover{background:#fecaca}
+.btn-danger:disabled{background:#f1f5f9;color:var(--muted);border-color:var(--bd);cursor:not-allowed}
+.bd-wp-check{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--sur2);border:1.5px solid var(--bd);border-radius:var(--rs);cursor:pointer;font-size:13px;font-weight:600;transition:all .15s}
+.bd-wp-check.on{background:#fee2e2;border-color:#fca5a5;color:#b91c1c}
+.notice-bell{position:relative}
+#noticeBadge{position:absolute;top:0;right:0;min-width:17px;height:17px;background:#ef4444;border-radius:9px;font-size:10px;font-weight:700;color:#fff;display:none;align-items:center;justify-content:center;padding:0 4px;pointer-events:none;line-height:1;border:2px solid var(--bg,#f8fafc);box-sizing:border-box}
+.notice-item{border-radius:var(--rs);padding:10px 12px;margin-bottom:8px;border:1.5px solid var(--bd);transition:background .2s,border-color .2s}
+.notice-item.unread{background:#fff;border-color:#93c5fd}
+.notice-item.unread .notice-title{color:#111827;font-weight:700}
+.notice-item.unread .notice-body{color:#374151}
+.notice-item.unread .notice-date{color:#6b7280}
+.notice-item.read{background:#f3f4f6;border-color:#e5e7eb}
+.notice-item.read .notice-title{color:#6b7280;font-weight:600}
+.notice-item.read .notice-body{color:#9ca3af}
+.notice-item.read .notice-date{color:#9ca3af}
+.notice-date{font-size:10px;margin-bottom:3px}
+.notice-title{font-size:13px;margin-bottom:5px}
+.notice-body{font-size:12px;line-height:1.6;white-space:pre-wrap}
+.notice-actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;align-items:center}
+.notice-admin-badge{font-size:10px;padding:1px 6px;background:#dbeafe;color:#1d4ed8;border-radius:4px;font-weight:700}
+
 /* ── Small screen tweaks ── */
 @media(max-width:380px){
   .nav-title{font-size:11px;max-width:120px}
@@ -387,7 +453,6 @@ select.fc{font-size:14px}
 <header class="hdr">
   <div class="user-bar">
     <span id="userBarId" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
-    <button class="ub-btn" id="btnChangePw" title="パスワード変更">🔑 PW変更</button>
     <button class="ub-btn ub-admin" id="btnAdminPanel" style="display:none" title="管理者パネル">👑 管理者</button>
     <button class="ub-btn ub-logout" id="btnLogout">ログアウト</button>
   </div>
@@ -398,11 +463,10 @@ select.fc{font-size:14px}
   <div class="hdr-top">
     <div class="app-title">📋 シフト管理</div>
     <div style="display:flex;gap:4px">
-      <button class="icon-btn" id="btnImport" title="シフトをインポート" style="font-size:18px">📥</button>
-      <button class="icon-btn" id="btnAttend" title="日別勤怠表との突合" style="font-size:18px">📋</button>
+      <button class="icon-btn notice-bell" id="btnNotices" title="お知らせ" style="font-size:18px">🔔<span id="noticeBadge"></span></button>
+      <button class="icon-btn" id="btnImport" title="インポート" style="font-size:18px">📥</button>
       <button class="icon-btn" id="btnHY" title="半期集計" style="font-size:18px">📊</button>
-      <button class="icon-btn" id="btnWP" title="勤務先管理" style="font-size:18px">🏢</button>
-      <button class="icon-btn" id="btnSettings" title="設定・旧データ移行" style="font-size:18px">⚙️</button>
+      <button class="icon-btn" id="btnSettings" title="設定" style="font-size:18px">⚙️</button>
     </div>
   </div>
   <div class="hdr-nav">
@@ -432,7 +496,7 @@ select.fc{font-size:14px}
     </div>
 
     <div class="fg"><label class="fl">日付</label><input type="date" class="fc" id="sDate"></div>
-    <div class="fg"><label class="fl">勤務先</label><select class="fc" id="sWP"></select></div>
+    <div class="fg"><label class="fl">勤務先</label><select class="fc" id="sWP" onchange="livePreview()"></select></div>
     <div class="frow">
       <div class="fg"><label class="fl">開始時間</label><input type="time" class="fc" id="sStart"></div>
       <div class="fg"><label class="fl">終了時間</label><input type="time" class="fc" id="sEnd"></div>
@@ -441,6 +505,17 @@ select.fc{font-size:14px}
       <label class="fl">休憩時間（分）</label>
       <input type="number" class="fc" id="sBreak" min="0" max="480" value="60" inputmode="numeric">
     </div>
+
+    <!-- 有給休暇パネル -->
+    <div class="pl-panel" id="paidLeavePanel" style="display:none">
+      <label class="pl-check-label">
+        <input type="checkbox" id="sPaidLeave" onchange="livePreview()">
+        <span>有給休暇を使用する</span>
+        <span id="plBadgeInCheck" style="margin-left:auto"></span>
+      </label>
+      <div id="paidLeaveInfo" style="font-size:11px;color:var(--muted);margin-top:4px;line-height:1.7;display:none"></div>
+    </div>
+
     <div class="fg">
       <label class="fl">勤務ロケーション <span style="font-weight:400;color:var(--muted)">（任意・メモ）</span></label>
       <textarea class="fc" id="sLocation" rows="3"
@@ -449,9 +524,9 @@ select.fc{font-size:14px}
         autocomplete="off" spellcheck="false"></textarea>
     </div>
 
-    <hr class="sec-divider">
-    <div class="sec-ttl"><span>🕐 特殊勤務（任意）</span></div>
-    <div class="special-panel">
+    <hr class="sec-divider" id="specialDivider">
+    <div class="sec-ttl" id="specialTitle"><span>🕐 特殊勤務（任意）</span></div>
+    <div class="special-panel" id="specialPanel">
       <div class="frow">
         <div class="fg" style="margin-bottom:0">
           <label class="fl">当日残業時間（分）</label>
@@ -520,15 +595,211 @@ select.fc{font-size:14px}
       <div class="colops" id="colorPicker"></div>
     </div>
 
-    <div class="sec-ttl">
-      <span>時間帯・時給設定</span>
-      <button class="btn btn-pri btn-sm" id="addZone">＋ 追加</button>
+    <div class="fg" style="margin-top:12px">
+      <label class="fl">給与タイプ</label>
+      <div class="wage-radio-group">
+        <label class="wage-radio-label">
+          <input type="radio" name="wpWageType" id="wpWageHourly" value="hourly" onchange="toggleWageType('hourly')">
+          時給制
+        </label>
+        <label class="wage-radio-label">
+          <input type="radio" name="wpWageType" id="wpWageMonthly" value="monthly" onchange="toggleWageType('monthly')">
+          月給制
+        </label>
+      </div>
     </div>
-    <div id="zoneEditor"></div>
-    <p style="font-size:11px;color:var(--muted);margin-top:6px;line-height:1.7">
-      ※ 深夜またぎ（例: 22:00〜01:00）はそのまま入力可能<br>
-      ※ 時間帯の隙間にあたる時間は計算に含まれません
-    </p>
+
+    <!-- 時給制：時間帯・時給設定 -->
+    <div id="hourlySection">
+      <div class="sec-ttl">
+        <span>時間帯・時給設定</span>
+        <button class="btn btn-pri btn-sm" id="addZone">＋ 追加</button>
+      </div>
+      <div id="zoneEditor"></div>
+      <p style="font-size:11px;color:var(--muted);margin-top:6px;line-height:1.7">
+        ※ 深夜またぎ（例: 22:00〜01:00）はそのまま入力可能<br>
+        ※ 時間帯の隙間にあたる時間は計算に含まれません
+      </p>
+    </div>
+
+    <!-- 月給制：月給設定 -->
+    <div id="monthlySection" style="display:none">
+      <div class="sec-ttl"><span>月給設定</span></div>
+      <div class="setting-area">
+        <div class="setting-row">
+          <div class="setting-label">
+            <b>月額固定給</b>
+            <small>毎月固定で支払われる基本給</small>
+          </div>
+          <div class="setting-ctrl">
+            <input class="sinp" type="number" id="wpMonthlySalary" value="300000" min="0" inputmode="numeric" style="width:90px">
+            <span class="smuted">円</span>
+          </div>
+        </div>
+        <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:8px">
+          <div class="setting-label"><b>残業単価の計算方法</b></div>
+          <div style="display:flex;flex-direction:column;gap:8px;padding:0 2px">
+            <label class="wage-radio-label">
+              <input type="radio" name="wpOTMethod" id="wpOTMethodAuto" value="auto" onchange="toggleOTMethod('auto')" checked>
+              月給 ÷ 月の所定労働時間
+            </label>
+            <label class="wage-radio-label">
+              <input type="radio" name="wpOTMethod" id="wpOTMethodManual" value="manual" onchange="toggleOTMethod('manual')">
+              単価を直接入力する
+            </label>
+          </div>
+        </div>
+        <div class="setting-row" id="monthlyStdHoursRow">
+          <div class="setting-label">
+            <b>月の所定労働時間</b>
+            <small>残業単価の自動計算に使用</small>
+          </div>
+          <div class="setting-ctrl">
+            <input class="sinp" type="number" id="wpMonthlyStdHours" value="160" min="1" max="744" inputmode="numeric">
+            <span class="smuted">時間</span>
+          </div>
+        </div>
+        <div class="setting-row" id="monthlyOTRateRow" style="display:none">
+          <div class="setting-label">
+            <b>残業単価</b>
+          </div>
+          <div class="setting-ctrl">
+            <input class="sinp" type="number" id="wpMonthlyOTRate" value="2000" min="0" inputmode="numeric" style="width:80px">
+            <span class="smuted">円/h</span>
+          </div>
+        </div>
+      </div>
+      <p style="font-size:11px;color:var(--muted);margin-top:6px;line-height:1.7">
+        ※ 基本給は月額固定。所定外時間のみ残業代として加算されます。<br>
+        ※ 残業単価 = 月給 ÷ 所定時間 の場合、月給と所定時間を設定してください。
+      </p>
+    </div>
+
+    <!-- 有給休暇管理 -->
+    <div class="sec-ttl" style="margin-top:16px"><span>有給休暇管理</span></div>
+    <div class="setting-area">
+      <div class="setting-row">
+        <div class="setting-label">
+          <b>入社日</b>
+          <small>法定付与の自動計算に使用</small>
+        </div>
+        <div class="setting-ctrl">
+          <input class="sinp" type="date" id="wpHireDate" style="width:130px;font-size:12px" oninput="updatePLAutoInfo()">
+        </div>
+      </div>
+      <div class="setting-row">
+        <div class="setting-label"><b>付与ルール</b></div>
+        <div class="setting-ctrl">
+          <div class="wage-radio-group" style="flex-direction:column;gap:5px">
+            <label class="wage-radio-label">
+              <input type="radio" name="wpPLScheduleType" id="wpPLStatutory" value="statutory" onchange="togglePLScheduleType('statutory')">法定通り（デフォルト）
+            </label>
+            <label class="wage-radio-label">
+              <input type="radio" name="wpPLScheduleType" id="wpPLCustom" value="custom" onchange="togglePLScheduleType('custom')">カスタム
+            </label>
+            <label class="wage-radio-label">
+              <input type="radio" name="wpPLScheduleType" id="wpPLManual" value="manual" onchange="togglePLScheduleType('manual')">手動
+            </label>
+          </div>
+        </div>
+      </div>
+      <!-- カスタムスケジュールエディタ -->
+      <div id="plCustomScheduleSection" style="display:none;margin:6px 0 2px">
+        <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:6px">付与スケジュール（入社からの月数 → 付与日数）</div>
+        <div id="plScheduleEditor"></div>
+        <button class="btn" onclick="addPLScheduleEntry()" style="background:var(--sur2);border:1px solid var(--bd);font-size:12px;padding:5px 10px;margin-top:2px;border-radius:var(--rs);cursor:pointer">＋ 追加</button>
+      </div>
+      <!-- 自動計算結果 -->
+      <div id="plAutoInfoBox" class="pl-info-box" style="display:none"></div>
+      <!-- wpPaidLeaveGrantDays は内部計算用（非表示） -->
+      <input type="hidden" id="wpPaidLeaveGrantDays" value="0">
+      <!-- 年休残（直接編集） -->
+      <div class="setting-row">
+        <div class="setting-label">
+          <b>現在の年休残</b>
+          <small>入力値を保存・維持します</small>
+        </div>
+        <div class="setting-ctrl">
+          <input class="sinp" type="number" id="wpPaidLeaveRemaining" placeholder="自動" min="0" max="200" step="0.5" inputmode="decimal" oninput="onPLRemainingInput()">
+          <span class="smuted">日</span>
+        </div>
+      </div>
+      <!-- 次回付与日 -->
+      <div class="setting-row" style="align-items:flex-start">
+        <div class="setting-label" style="padding-top:2px">
+          <b>次回付与日</b>
+          <small id="wpNextGrantHint">次回の有給付与予定日</small>
+        </div>
+        <div class="setting-ctrl" style="flex-direction:column;align-items:flex-end;gap:3px">
+          <input class="sinp" type="date" id="wpPaidLeaveNextGrantDate" style="width:130px;font-size:12px" oninput="validatePLNextGrantDate()">
+          <div id="wpNextGrantDateErr" style="color:var(--red);font-size:10px;display:none">⚠️ 過去の日付は設定できません</div>
+        </div>
+      </div>
+      <!-- 週の契約労働日数 -->
+      <div class="setting-row">
+        <div class="setting-label">
+          <b>週の契約労働日数</b>
+          <small>法定付与日数の目安に使用</small>
+        </div>
+        <div class="setting-ctrl">
+          <select class="sinp" id="wpWeeklyWorkDays" style="width:70px" onchange="updatePLNextGrantRef()">
+            <option value="5">5日</option>
+            <option value="4">4日</option>
+            <option value="3">3日</option>
+            <option value="2">2日</option>
+            <option value="1">1日</option>
+          </select>
+          <span class="smuted">日/週</span>
+        </div>
+      </div>
+      <!-- 次回付与日数 -->
+      <div class="setting-row" style="align-items:flex-start">
+        <div class="setting-label" style="padding-top:2px">
+          <b>次回付与日数</b>
+          <small>週の勤務日数で法定値が異なります</small>
+        </div>
+        <div class="setting-ctrl" style="flex-direction:column;align-items:flex-end;gap:4px">
+          <div style="display:flex;align-items:center;gap:5px">
+            <input class="sinp" type="number" id="wpPaidLeaveNextGrantDays" placeholder="自動" min="0" max="200" step="0.5" inputmode="decimal" style="width:70px">
+            <span class="smuted">日</span>
+          </div>
+          <div id="wpNextGrantDaysRef" style="font-size:10px;color:var(--muted);line-height:1.7"></div>
+        </div>
+      </div>
+      <div class="setting-row">
+        <div class="setting-label">
+          <b>年休換算時間</b>
+          <small>時給制：1日あたりの有給時間</small>
+        </div>
+        <div class="setting-ctrl">
+          <input class="sinp" type="number" id="wpPaidLeaveHours" value="7.5" min="0" max="24" step="0.5" inputmode="decimal">
+          <span class="smuted">時間</span>
+        </div>
+      </div>
+      <div class="setting-row">
+        <div class="setting-label">
+          <b>所定労働日数</b>
+          <small>月給制の有給・欠勤控除計算に使用</small>
+        </div>
+        <div class="setting-ctrl">
+          <input class="sinp" type="number" id="wpWorkDaysPerMonth" value="20" min="1" max="31" inputmode="numeric">
+          <span class="smuted">日/月</span>
+        </div>
+      </div>
+      <div class="setting-row">
+        <div class="setting-label">
+          <b>期限日</b>
+          <small>この日を過ぎると無効</small>
+        </div>
+        <div class="setting-ctrl">
+          <input class="sinp" type="date" id="wpPaidLeaveExpiry" style="width:130px;font-size:12px">
+        </div>
+      </div>
+      <div class="setting-row" id="wpPaidLeaveUsageRow" style="display:none">
+        <div class="setting-label"><b>使用状況</b></div>
+        <div class="setting-ctrl" id="wpPaidLeaveUsageInfo" style="font-size:12px;text-align:right"></div>
+      </div>
+    </div>
 
     <div class="sec-ttl" style="margin-top:16px"><span>残業・締め・振込設定</span></div>
     <div class="setting-area">
@@ -640,6 +911,53 @@ select.fc{font-size:14px}
   </div>
 </div>
 
+<!-- ── Bulk Delete Modal ── -->
+<div class="overlay" id="bulkDeleteOverlay" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-ttl">🗑️ シフトの一括削除</div>
+      <button class="close-btn" id="closeBulkDeleteBtn" aria-label="閉じる">✕</button>
+    </div>
+    <div class="fg" style="margin-bottom:14px">
+      <label class="fl">削除対象の月</label>
+      <input type="month" class="fc" id="bdMonth" onchange="renderBulkDeletePreview()">
+    </div>
+    <div class="sec-ttl"><span>削除対象の勤務先</span></div>
+    <div id="bdWPList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px"></div>
+    <div id="bdPreview" style="margin-bottom:10px"></div>
+    <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:var(--rs);padding:10px 12px;font-size:11px;color:#92400e;margin-bottom:12px;line-height:1.7">
+      ⚠️ 削除したシフトは<b>元に戻せません</b>。内容をよく確認してから実行してください。
+    </div>
+    <button class="btn-danger" id="bdExecBtn" onclick="executeBulkDelete()">削除する</button>
+  </div>
+</div>
+
+<!-- ── Import Choice Modal ── -->
+<div class="overlay" id="importChoiceOverlay" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-ttl">インポート</div>
+      <button class="close-btn" id="closeImportChoice" aria-label="閉じる">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;padding:4px 0">
+      <button class="choice-btn" onclick="closeImportChoice();openTextImport()">
+        <span class="choice-btn-icon">📝</span>
+        <div>
+          <div>シフトのテキストインポート</div>
+          <div class="choice-btn-desc">テキストを貼り付けてシフトを一括登録</div>
+        </div>
+      </button>
+      <button class="choice-btn" onclick="closeImportChoice();openAttend()">
+        <span class="choice-btn-icon">📋</span>
+        <div>
+          <div>日別勤怠表との突合</div>
+          <div class="choice-btn-desc">会社の勤怠記録とシフトを照合・修正</div>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- ── Attendance Reconciliation Modal ── -->
 <div class="overlay" id="attendOverlay" role="dialog" aria-modal="true">
   <div class="modal">
@@ -697,6 +1015,8 @@ select.fc{font-size:14px}
           style="flex:1;background:var(--sur2);border:1.5px solid var(--bd);color:var(--tx)">← 戻る</button>
         <button class="btn btn-pri" id="bulkApplyAttend"
           style="flex:2;background:var(--org)">チェックした日を一括修正</button>
+        <button class="btn btn-pri" id="bulkRegisterBtn"
+          style="flex:2;background:var(--grn);display:none">選択した日を新規登録</button>
       </div>
     </div>
   </div>
@@ -825,6 +1145,18 @@ select.fc{font-size:14px}
       <button class="close-btn" id="closeSettings" aria-label="閉じる">✕</button>
     </div>
 
+    <div class="sec-ttl"><span>アカウント</span></div>
+    <button class="settings-nav-btn" onclick="closeSettings();openChangePassword()">
+      🔑 パスワード変更
+    </button>
+
+    <div class="sec-ttl"><span>勤務先</span></div>
+    <button class="settings-nav-btn" onclick="closeSettings();openWPList()">
+      🏢 勤務先の登録・編集
+    </button>
+
+    <hr class="sec-divider">
+
     <div class="sec-ttl"><span>旧データのインポート</span></div>
     <p style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.7">
       旧バージョン（<code style="font-size:11px;background:var(--sur2);padding:1px 5px;border-radius:4px">yudai-hatano.github.io</code>）のデータを現在のアカウントにインポートします。<b>既存データは上書きされます。</b>
@@ -874,6 +1206,46 @@ select.fc{font-size:14px}
   </div>
 </div>
 
+<!-- ── Notices Overlay ── -->
+<div class="overlay" id="noticesOverlay" role="dialog" aria-modal="true">
+  <div class="modal" style="max-height:85vh;display:flex;flex-direction:column">
+    <div class="modal-hdr">
+      <div class="modal-ttl">🔔 お知らせ</div>
+      <button class="close-btn" id="closeNoticesBtn" aria-label="閉じる">✕</button>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;align-items:center">
+      <button id="noticesMarkAllBtn" class="btn" style="font-size:12px;padding:5px 10px">すべて既読</button>
+      <button id="noticesAddBtn" class="btn btn-pri" style="font-size:12px;padding:5px 10px;display:none">＋ 追加</button>
+      <span id="noticesUnreadCount" style="margin-left:auto;font-size:11px;color:var(--muted)"></span>
+    </div>
+    <div id="noticesList" style="overflow-y:auto;flex:1;padding-bottom:12px"></div>
+  </div>
+</div>
+
+<!-- ── Notice Edit Overlay ── -->
+<div class="overlay" id="noticeEditOverlay" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-ttl" id="noticeEditTitle">お知らせを追加</div>
+      <button class="close-btn" id="closeNoticeEditBtn" aria-label="閉じる">✕</button>
+    </div>
+    <div class="fg">
+      <label class="fl">日付</label>
+      <input type="date" class="fc" id="noticeInputDate">
+    </div>
+    <div class="fg">
+      <label class="fl">タイトル</label>
+      <input type="text" class="fc" id="noticeInputTitle" maxlength="100" placeholder="お知らせのタイトル">
+    </div>
+    <div class="fg">
+      <label class="fl">内容</label>
+      <textarea class="fc" id="noticeInputBody" rows="6" style="resize:vertical" placeholder="お知らせの内容を入力..."></textarea>
+    </div>
+    <div class="login-err" id="noticeEditErr" style="display:none"></div>
+    <button class="btn btn-pri" id="noticeEditSubmitBtn">保存する</button>
+  </div>
+</div>
+
 <div id="loadingOverlay">
   <div class="spinner"></div>
   <div style="font-size:13px;color:var(--muted)">データを読み込み中...</div>
@@ -910,8 +1282,10 @@ function getDBPath(uid) {
 // ══════════════════════════════════════
 // 認証定数
 // ══════════════════════════════════════
-const AUTH_SESSION_KEY = 'shiftMgrSession'; // セッションは localStorage に保持
-const USERS_PATH = 'users'; // Firebase のユーザーデータパス
+const AUTH_SESSION_KEY  = 'shiftMgrSession'; // セッションは localStorage に保持
+const USERS_PATH        = 'users'; // Firebase のユーザーデータパス
+const NOTICES_PATH      = DB_BASE + '/notices'; // グローバルお知らせパス
+const NOTICE_ADMIN_IDS  = new Set(['99999999', '72581646']); // お知らせ編集権限を常時付与するユーザーID
 const INIT_USERS_DATA = { // 初回起動時に Firebase に書き込む初期ユーザー
   '72581646': { password: '1', name: '幡野 雄大', isAdmin: true },
   '99999999': { password: '1', name: '管理者',   isAdmin: true },
@@ -932,11 +1306,38 @@ const DEFAULT_ZONES = [
   { id:'dz5', name:'深夜②', startTime:'01:00', endTime:'07:00', rate:1993 },
 ];
 
+/** 法定年休付与スケジュール（入社からの月数 → 付与日数） */
+const STATUTORY_PL_SCHEDULE = [
+  { months:  6, days: 10 },
+  { months: 18, days: 11 },
+  { months: 30, days: 12 },
+  { months: 42, days: 14 },
+  { months: 54, days: 16 },
+  { months: 66, days: 18 },
+  { months: 78, days: 20 },
+];
+
 const DEFAULT_WP_SETTINGS = {
   overtimeThreshold: 510,   // 8.5h
   payPeriodStartDay: 21,
   paymentDay:        10,
   paymentMonthOffset: 1,
+  wageType:              'hourly', // 'hourly' | 'monthly'
+  monthlyBaseSalary:     0,
+  monthlyOvertimeMethod: 'auto',   // 'auto' | 'manual'
+  monthlyStdHours:       160,
+  monthlyOvertimeRate:   0,
+  workDaysPerMonth:      20,
+  paidLeaveGrantDays:    0,
+  paidLeaveHours:        7.5,
+  paidLeaveExpiry:       '',
+  // New PL fields
+  hireDate:                '',
+  paidLeaveScheduleType:   'statutory', // 'statutory' | 'custom' | 'manual'
+  paidLeaveCustomSchedule: [],
+  paidLeaveNextGrantDate:  '',
+  paidLeaveNextGrantDays:  0,
+  weeklyWorkDays:          5,
 };
 
 // ══════════════════════════════════════
@@ -946,12 +1347,19 @@ let view = 'week';
 let cur  = new Date();
 let workplaces  = [];
 let shifts      = [];
-let editShiftId = null;
-let editWPId    = null;
-let tempZones   = [];
+let editShiftId    = null;
+let editWPId       = null;
+let tempZones      = [];
+let tempPLSchedule = [];   // 勤務先編集中のカスタム有給スケジュール
+let bdSelectedWPs    = new Set(); // 一括削除で選択中の勤務先ID
+let notices          = {};   // { id: { title,body,date,... } } グローバルお知らせ
+let readNotices      = {};   // { noticeId: true } 既読状態（ログインユーザー分）
+let _noticesShowAll  = false;
+let _editNoticeId    = null;
 let currentUser  = null;
 let viewingUserId = null; // 管理者が他ユーザーのデータを閲覧中の場合にセット
-let attendFilter = null; // null | 'diff'
+let attendFilter    = null; // null | 'diff' | 'noshift'
+let noShiftChecked = new Set(); // 未登録フィルターでチェックされた行のインデックス
 
 // ══════════════════════════════════════
 // ストレージ
@@ -968,7 +1376,7 @@ function fbArr(v) {
 function persist() {
   if (viewingUserId) return Promise.resolve(); // 閲覧モードでは読み取り専用
   if (!currentUser)  return Promise.resolve();
-  const payload = JSON.parse(JSON.stringify({ workplaces, shifts }));
+  const payload = JSON.parse(JSON.stringify({ workplaces, shifts, readNotices }));
   return fdb.ref(getDBPath()).set(payload);
 }
 
@@ -983,10 +1391,11 @@ async function loadData(uid) {
     const snap = await Promise.race([fdb.ref(getDBPath(targetUid)).get(), timeoutP]);
     if (snap.exists()) {
       const data = snap.val();
-      workplaces = fbArr(data.workplaces);
-      shifts     = fbArr(data.shifts);
+      workplaces  = fbArr(data.workplaces);
+      shifts      = fbArr(data.shifts);
+      readNotices = (data.readNotices && typeof data.readNotices === 'object') ? data.readNotices : {};
     } else {
-      workplaces = []; shifts = [];
+      workplaces = []; shifts = []; readNotices = {};
     }
   } catch(e) {
     workplaces = []; shifts = [];
@@ -1001,6 +1410,23 @@ async function loadData(uid) {
       w.zones = DEFAULT_ZONES.map(z => ({ ...z, id: uid() }));
     for (const [k, v] of Object.entries(DEFAULT_WP_SETTINGS))
       if (w[k] === undefined || w[k] === null) w[k] = v;
+    // 月給制・有給フィールドの補完
+    if (w.wageType === undefined) w.wageType = 'hourly';
+    if (w.monthlyBaseSalary === undefined) w.monthlyBaseSalary = 0;
+    if (w.monthlyOvertimeMethod === undefined) w.monthlyOvertimeMethod = 'auto';
+    if (w.monthlyStdHours === undefined) w.monthlyStdHours = 160;
+    if (w.monthlyOvertimeRate === undefined) w.monthlyOvertimeRate = 0;
+    if (w.workDaysPerMonth === undefined) w.workDaysPerMonth = 20;
+    if (w.paidLeaveGrantDays === undefined) w.paidLeaveGrantDays = 0;
+    if (w.paidLeaveHours === undefined) w.paidLeaveHours = 7.5;
+    if (w.paidLeaveGrantDate === undefined) w.paidLeaveGrantDate = '';
+    if (w.paidLeaveExpiry === undefined) w.paidLeaveExpiry = '';
+    if (w.hireDate === undefined) w.hireDate = '';
+    if (w.paidLeaveScheduleType === undefined) w.paidLeaveScheduleType = 'statutory';
+    if (w.paidLeaveCustomSchedule === undefined) w.paidLeaveCustomSchedule = [];
+    if (w.paidLeaveNextGrantDate === undefined) w.paidLeaveNextGrantDate = '';
+    if (w.paidLeaveNextGrantDays === undefined) w.paidLeaveNextGrantDays = 0;
+    if (w.weeklyWorkDays === undefined) w.weeklyWorkDays = 5;
   }
   // シフトのフィールド補完
   for (const s of shifts) {
@@ -1008,7 +1434,7 @@ async function loadData(uid) {
     if (s.manualOvertimeMin == null) s.manualOvertimeMin = 0;
     if (s.earlyDepartureMin == null) s.earlyDepartureMin = 0;
     if (s.location          === undefined) s.location    = '';
-    // breakMinutes は必ず数値で持つ
+    if (s.isPaidLeave       === undefined) s.isPaidLeave = false;
     s.breakMinutes = Number(s.breakMinutes);
   }
 
@@ -1199,12 +1625,16 @@ function calcWageItems(items, multiplier) {
  *         それぞれ時刻情報付きアイテムリストで返す（表示の詳細化に対応）
  */
 function calcShiftWage(shift, wp) {
+  if (shift.isPaidLeave) return calcPaidLeaveWage(shift, wp);
+  if (wp?.wageType === 'monthly') return calcMonthlyShiftWage(shift, wp);
+
   const zero = {
     totalWage:0, normalWage:0, normalBreakdown:[],
     otBreakdown:[], overtimeWage:0, overtimeWorkMin:0,
     manualOTWage:0, manualOTBreakdown:[],
     earlyDeptBonus:0, workMin:0,
     breakZoneId:null, breakZoneLabel:'',
+    isMonthly:false,
   };
   if (!wp?.zones?.length || !shift.startTime || !shift.endTime) return zero;
 
@@ -1273,7 +1703,739 @@ function calcShiftWage(shift, wp) {
     manualOTWage, manualOTBreakdown,
     earlyDeptBonus, workMin: elapsed - breakMin + manOTMin,
     breakZoneId: bzId, breakZoneLabel: bzLabel,
+    isMonthly: false,
   };
+}
+
+/**
+ * 月給制シフト給与計算
+ * 基本給は月額固定。所定外・手動残業のみ追加計算する。
+ */
+function calcMonthlyShiftWage(shift, wp) {
+  const zero = {
+    totalWage:0, normalWage:0, normalBreakdown:[],
+    otBreakdown:[], overtimeWage:0, overtimeWorkMin:0,
+    manualOTWage:0, manualOTBreakdown:[],
+    earlyDeptBonus:0, workMin:0,
+    breakZoneId:null, breakZoneLabel:'',
+    isMonthly:true,
+    monthlyBaseSalary: wp.monthlyBaseSalary || 0,
+    overtimeRate: 0,
+  };
+  if (!shift.startTime || !shift.endTime) return zero;
+
+  const threshold = wp.overtimeThreshold ?? 510;
+  let s = t2m(shift.startTime), e = t2m(shift.endTime);
+  if (e <= s) e += 1440;
+
+  const edMin   = Math.max(0, shift.earlyDepartureMin || 0);
+  const actualE = e - edMin;
+  const elapsed = actualE - s;
+  const breakMin = Math.max(0, shift.breakMinutes || 0);
+  const workMin  = Math.max(0, elapsed - breakMin);
+
+  // 残業単価の決定
+  const overtimeRate = wp.monthlyOvertimeMethod === 'manual'
+    ? (wp.monthlyOvertimeRate || 0)
+    : (wp.monthlyBaseSalary || 0) / Math.max(1, wp.monthlyStdHours || 160);
+
+  let overtimeWage = 0, overtimeWorkMin = 0;
+  const otBreakdown = [];
+
+  if (elapsed > threshold) {
+    const otMin = elapsed - threshold;
+    overtimeWorkMin = otMin;
+    overtimeWage = Math.ceil(otMin / 60 * overtimeRate * 1.25);
+    otBreakdown.push({ label: '所定外', min: otMin, rate: overtimeRate, wage: overtimeWage, from: s + threshold, to: actualE });
+  }
+
+  // 手動残業
+  const manOTMin = Math.max(0, shift.manualOvertimeMin || 0);
+  let manualOTWage = 0;
+  const manualOTBreakdown = [];
+  if (manOTMin > 0) {
+    manualOTWage = Math.ceil(manOTMin / 60 * overtimeRate * 1.25);
+    overtimeWorkMin += manOTMin;
+    manualOTBreakdown.push({ label: '当日残業', min: manOTMin, rate: overtimeRate, wage: manualOTWage, from: e, to: e + manOTMin });
+  }
+
+  return {
+    totalWage: overtimeWage + manualOTWage,
+    normalWage: 0, normalBreakdown: [],
+    otBreakdown, overtimeWage, overtimeWorkMin,
+    manualOTWage, manualOTBreakdown,
+    earlyDeptBonus: 0,
+    workMin: workMin + manOTMin,
+    breakZoneId: null, breakZoneLabel: '',
+    isMonthly: true,
+    monthlyBaseSalary: wp.monthlyBaseSalary || 0,
+    overtimeRate,
+  };
+}
+
+// ══════════════════════════════════════
+// 有給休暇ユーティリティ
+// ══════════════════════════════════════
+
+/** 通常時間帯の時給を返す（08:00〜の時間帯を優先） */
+function getNormalRate(wp) {
+  if (!wp?.zones?.length) return 0;
+  const coreMin = 9 * 60; // 09:00
+  const segs = buildSegs(wp.zones);
+  for (const seg of segs)
+    if (seg.start <= coreMin && seg.end > coreMin) return seg.rate;
+  return wp.zones[0]?.rate || 0;
+}
+
+/** 有給シフトの給与計算 */
+function calcPaidLeaveWage(shift, wp) {
+  const plHours = wp.paidLeaveHours || 7.5;
+  let wage = 0, paidLeaveRate = 0;
+
+  if (wp.wageType === 'monthly') {
+    const workDays = Math.max(1, wp.workDaysPerMonth || 20);
+    paidLeaveRate = (wp.monthlyBaseSalary || 0) / workDays;
+    wage = Math.ceil(paidLeaveRate);
+  } else {
+    paidLeaveRate = getNormalRate(wp);
+    wage = Math.ceil(paidLeaveRate * plHours);
+  }
+
+  return {
+    totalWage: wage, normalWage: wage, normalBreakdown: [],
+    otBreakdown: [], overtimeWage: 0, overtimeWorkMin: 0,
+    manualOTWage: 0, manualOTBreakdown: [],
+    earlyDeptBonus: 0, workMin: Math.round(plHours * 60),
+    breakZoneId: null, breakZoneLabel: '',
+    isMonthly: wp.wageType === 'monthly', isMonthlyPaidLeave: wp.wageType === 'monthly',
+    isPaidLeave: true, paidLeaveWage: wage,
+    paidLeaveHours: plHours, paidLeaveRate,
+  };
+}
+
+/** 期間内の有給使用日数 */
+function getPaidLeaveUsed(wpId, startStr, endStr) {
+  return shifts.filter(s =>
+    s.workplaceId === wpId && s.isPaidLeave &&
+    (!startStr || s.date >= startStr) &&
+    (!endStr   || s.date <= endStr)
+  ).length;
+}
+
+/** 有給残日数（paidLeaveGrantDays - 使用済みシフト数） */
+function getPaidLeaveRemaining(wp) {
+  if (!wp) return 0;
+  return Math.max(0, (wp.paidLeaveGrantDays || 0) - getPaidLeaveUsed(wp.id));
+}
+
+/** 日付文字列までの日数（負=過去） */
+function getDaysUntil(dateStr) {
+  if (!dateStr) return Infinity;
+  const diff = new Date(dateStr + 'T00:00:00') - today0();
+  return Math.ceil(diff / 86400000);
+}
+
+/** 有給期限の警告テキストを返す（問題なければnull） */
+function getPaidLeaveAlert(wp) {
+  if (!wp || !wp.paidLeaveGrantDays) return null;
+  // バッチ期限切れ警告（入社日あり）
+  const grants = getAutoGrants(wp);
+  if (grants.length) {
+    const batches = getPLBatchStatus(wp);
+    const soon = batches.filter(b => !b.isExpired && b.daysUntil !== Infinity && b.daysUntil <= 30);
+    if (soon.length) return { level:'warn', msg:`有給${soon[0].days}日があと${soon[0].daysUntil}日で消滅` };
+  }
+  // 期限日チェック（旧方式）
+  if (wp.paidLeaveExpiry) {
+    const d = getDaysUntil(wp.paidLeaveExpiry);
+    if (d < 0)   return { level:'err',  msg:'有給期限切れ' };
+    if (d <= 30) return { level:'warn', msg:`有給期限まで${d}日` };
+  }
+  const rem = getPaidLeaveRemaining(wp);
+  if (rem <= 0) return { level:'err', msg:'有給残0日' };
+  return null;
+}
+
+/** 入社日 + スケジュールから過去の全付与バッチを生成（各2年有効） */
+function getAutoGrants(wp) {
+  const hireDate = wp?.hireDate;
+  const schedule = getPLSchedule(wp);
+  if (!hireDate || !schedule.length) return [];
+  const hire   = new Date(hireDate + 'T00:00:00');
+  const now    = today0();
+  const months = (now.getFullYear() - hire.getFullYear()) * 12 + (now.getMonth() - hire.getMonth());
+  const grants = [];
+  for (const e of schedule) {
+    if (months >= e.months) {
+      const gDate = new Date(hire);
+      gDate.setMonth(gDate.getMonth() + e.months);
+      const eDate = new Date(gDate);
+      eDate.setFullYear(eDate.getFullYear() + 2);
+      grants.push({ date: fmtDate(gDate), days: e.days, expiry: fmtDate(eDate) });
+    }
+  }
+  return grants;
+}
+
+/** バッチごとにFIFO（期限昇順）で使用日数を消化し、残日数・状態を返す */
+function getPLBatchStatus(wp) {
+  const grants = getAutoGrants(wp);
+  if (!grants.length) return [];
+  const sorted = [...grants].sort((a, b) => a.expiry.localeCompare(b.expiry));
+  let usedLeft = getPaidLeaveUsed(wp.id);
+  return sorted.map(g => {
+    const daysUntil     = getDaysUntil(g.expiry);
+    const isExpired     = daysUntil < 0;
+    const allocatedUse  = Math.min(usedLeft, g.days);
+    usedLeft           -= allocatedUse;
+    const remaining     = isExpired ? 0 : Math.max(0, g.days - allocatedUse);
+    return { grantDate: g.date, days: g.days, expiry: g.expiry, used: allocatedUse, remaining, isExpired, daysUntil };
+  });
+}
+
+/** バッチシステムの有給残合計（期限切れ除外） */
+function getTotalPLRemaining(wp) {
+  return getPLBatchStatus(wp).filter(b => !b.isExpired).reduce((s, b) => s + b.remaining, 0);
+}
+
+/** 有給バッチ残内訳HTML。compact=trueで期限切れ行を省略 */
+function renderPLBatchHTML(wp, compact = false) {
+  const batches = getPLBatchStatus(wp);
+  if (!batches.length) return '';
+  const active  = batches.filter(b => !b.isExpired);
+  const expired = batches.filter(b => b.isExpired);
+  let html = '';
+  for (const b of active) {
+    const warn  = b.daysUntil !== Infinity && b.daysUntil <= 30;
+    const color = warn ? '#b91c1c' : '#166534';
+    html += `<div style="font-size:11px;color:${color}">・${b.remaining}日 → ${b.expiry}までに使用（残り${b.daysUntil}日）</div>`;
+  }
+  if (!compact) {
+    for (const b of expired) {
+      html += `<div style="font-size:11px;color:var(--muted);text-decoration:line-through">・${b.days}日 → ${b.expiry}まで（期限切れ）</div>`;
+    }
+  }
+  const total = active.reduce((s, b) => s + b.remaining, 0);
+  html += `<div style="font-size:11px;font-weight:700;color:#166534;margin-top:2px">合計: ${total}日</div>`;
+  return html;
+}
+
+/** 勤務先の有給スケジュール（法定 or カスタム）を返す */
+function getPLSchedule(wp) {
+  if (!wp) return STATUTORY_PL_SCHEDULE;
+  if (wp.paidLeaveScheduleType === 'custom' && wp.paidLeaveCustomSchedule?.length)
+    return [...wp.paidLeaveCustomSchedule].sort((a, b) => a.months - b.months);
+  if (wp.paidLeaveScheduleType === 'manual') return [];
+  return STATUTORY_PL_SCHEDULE;
+}
+
+/** 入社日 + スケジュールから現在の法定付与日数を計算 */
+function computePLGrantDays(hireDate, schedule) {
+  if (!hireDate || !schedule.length) return 0;
+  const hire = new Date(hireDate + 'T00:00:00');
+  const now  = today0();
+  const months = (now.getFullYear() - hire.getFullYear()) * 12 + (now.getMonth() - hire.getMonth());
+  let days = 0;
+  for (const e of schedule) if (months >= e.months) days = e.days;
+  return days;
+}
+
+/** 次回付与 {date:'YYYY-MM-DD', days:N} または null */
+function computeNextPLGrant(hireDate, schedule) {
+  if (!hireDate || !schedule.length) return null;
+  const hire = new Date(hireDate + 'T00:00:00');
+  const now  = today0();
+  const months = (now.getFullYear() - hire.getFullYear()) * 12 + (now.getMonth() - hire.getMonth());
+  for (const e of schedule) {
+    if (months < e.months) {
+      const d = new Date(hire);
+      d.setMonth(d.getMonth() + e.months);
+      return { date: fmtDate(d), days: e.days };
+    }
+  }
+  return null;
+}
+
+/** 付与ルール切り替え */
+function togglePLScheduleType(type) {
+  const sec = document.getElementById('plCustomScheduleSection');
+  if (sec) sec.style.display = type === 'custom' ? '' : 'none';
+  updatePLAutoInfo();
+}
+
+/** 自動計算結果の表示を更新 */
+function updatePLAutoInfo() {
+  const hireDate = document.getElementById('wpHireDate')?.value || '';
+  const typeEl   = document.querySelector('input[name="wpPLScheduleType"]:checked');
+  const type     = typeEl?.value || 'statutory';
+  const infoBox  = document.getElementById('plAutoInfoBox');
+  const nextHint = document.getElementById('wpNextGrantHint');
+  if (!infoBox) return;
+
+  const schedule = type === 'statutory' ? STATUTORY_PL_SCHEDULE
+    : type === 'custom' ? [...tempPLSchedule].sort((a, b) => a.months - b.months)
+    : [];
+
+  updatePLNextGrantRef();
+
+  if (type === 'manual' || !hireDate) {
+    infoBox.style.display = 'none';
+    return;
+  }
+
+  const hire  = new Date(hireDate + 'T00:00:00');
+  const now   = today0();
+  const total = (now.getFullYear() - hire.getFullYear()) * 12 + (now.getMonth() - hire.getMonth());
+  const yrs   = Math.floor(total / 12), mos = total % 12;
+  const tenureStr = yrs > 0 ? `${yrs}年${mos > 0 ? mos + 'ヶ月' : ''}` : `${mos}ヶ月`;
+  const computed  = computePLGrantDays(hireDate, schedule);
+  const next      = computeNextPLGrant(hireDate, schedule);
+
+  let html = `<div>📅 勤続: <b>${tenureStr}</b></div>`;
+  html += `<div>🌿 週5日以上の現付与段階: <b>${computed}日</b>`;
+  if (computed > 0) {
+    html += ` <button onclick="applyComputedPLDays(${computed})" style="margin-left:5px;font-size:10px;padding:2px 6px;background:#bbf7d0;border:none;border-radius:4px;cursor:pointer;color:#166534;font-weight:700">年休残に反映</button>`;
+  }
+  html += '</div>';
+  if (next) {
+    html += `<div>📆 次回付与予定: <b>${next.date}</b>（週5日以上: <b>${next.days}日</b>）</div>`;
+    if (nextHint) nextHint.textContent = `計算値: ${next.date}`;
+    const nextDateField = document.getElementById('wpPaidLeaveNextGrantDate');
+    if (nextDateField && !nextDateField.value) {
+      nextDateField.value = next.date;
+      validatePLNextGrantDate();
+    }
+  } else {
+    if (nextHint) nextHint.textContent = '最大付与済み';
+  }
+
+  // バッチ内訳（参考）
+  const mockWP = { id: editWPId || '__mock__', hireDate, paidLeaveScheduleType: type, paidLeaveCustomSchedule: [...tempPLSchedule] };
+  const batchHtml = renderPLBatchHTML(mockWP);
+  if (batchHtml) {
+    html += `<div style="margin-top:5px;padding-top:5px;border-top:1px solid #bbf7d0">
+      <div style="font-size:10px;color:#166534;font-weight:700;margin-bottom:2px">📋 有給バッチ内訳（参考）</div>
+      ${batchHtml}
+    </div>`;
+  }
+
+  infoBox.innerHTML = html;
+  infoBox.style.display = '';
+}
+
+/** 次回付与日数の参考テーブルを更新 */
+function updatePLNextGrantRef() {
+  const refEl = document.getElementById('wpNextGrantDaysRef');
+  if (!refEl) return;
+
+  const hireDate      = document.getElementById('wpHireDate')?.value || '';
+  const weeklyRaw     = parseInt(document.getElementById('wpWeeklyWorkDays')?.value) || 5;
+  const weeklyWorkDays = Math.min(5, Math.max(1, weeklyRaw));
+
+  const PART_TIME_GRANTS = [
+    { label: '週5日以上', days: [10,11,12,14,16,18,20], key: 5 },
+    { label: '週4日',     days: [7,8,9,10,12,13,15],   key: 4 },
+    { label: '週3日',     days: [5,6,6,8,9,10,11],     key: 3 },
+    { label: '週2日',     days: [3,4,4,5,6,6,7],       key: 2 },
+    { label: '週1日',     days: [1,2,2,2,3,3,3],       key: 1 },
+  ];
+  const milestones = [6,18,30,42,54,66,78];
+  const mLabels    = ['6ヶ月','1.5年','2.5年','3.5年','4.5年','5.5年','6.5年+'];
+
+  // 次回付与段階インデックスを計算
+  let nextIdx = 0;
+  if (hireDate) {
+    const hire   = new Date(hireDate + 'T00:00:00');
+    const now    = today0();
+    const months = (now.getFullYear()-hire.getFullYear())*12 + (now.getMonth()-hire.getMonth());
+    let cur = -1;
+    for (let i = 0; i < milestones.length; i++) {
+      if (months >= milestones[i]) cur = i;
+    }
+    nextIdx = cur + 1;
+  }
+
+  const hasNext        = nextIdx < 7;
+  const contractRowKey = weeklyWorkDays >= 5 ? 5 : weeklyWorkDays;
+
+  let html = '';
+  if (hireDate && hasNext) {
+    html += `<div style="color:#1d4ed8;margin-bottom:2px;font-size:10px">次回（${mLabels[nextIdx]}）の法定付与日数:</div>`;
+  } else if (hireDate) {
+    html += `<div style="color:#166534;margin-bottom:2px;font-size:10px">最大付与段階に達しています</div>`;
+  } else {
+    html += `<div style="color:var(--muted);margin-bottom:2px;font-size:10px">法定付与日数（入社からの年数別）:</div>`;
+  }
+
+  html += '<div style="font-size:10px;line-height:1.7">';
+  for (const row of PART_TIME_GRANTS) {
+    const isContractRow = row.key === contractRowKey;
+    const rowStyle = isContractRow ? 'background:#f0fdf4;border-radius:3px;padding:1px 2px;font-weight:700;color:#166534' : '';
+    const parts = row.days.map((d, i) => {
+      const isMilestone = hasNext && i === nextIdx;
+      if (isContractRow && isMilestone)
+        return `<b style="color:#1d4ed8;background:#dbeafe;padding:0 3px;border-radius:3px">${d}</b>`;
+      if (isMilestone)
+        return `<b style="color:#1d4ed8;opacity:0.7;padding:0 2px">${d}</b>`;
+      if (i < nextIdx)
+        return `<span style="opacity:0.35">${d}</span>`;
+      return String(d);
+    }).join('<span style="opacity:0.3">→</span>');
+    html += `<div style="${rowStyle}">${row.label}: ${parts}日</div>`;
+  }
+  html += '</div>';
+
+  // 次回付与日数の目安を自動設定（フィールドが空の場合）
+  if (hireDate && hasNext) {
+    const contractRow = PART_TIME_GRANTS.find(r => r.key === contractRowKey);
+    if (contractRow) {
+      const suggestDays = contractRow.days[nextIdx];
+      const nextDaysField = document.getElementById('wpPaidLeaveNextGrantDays');
+      if (nextDaysField && !nextDaysField.value) nextDaysField.value = suggestDays;
+    }
+  }
+
+  refEl.innerHTML = html;
+}
+
+/** 計算済み付与日数から年休残をフォームに反映 */
+function applyComputedPLDays(days) {
+  const used = editWPId ? getPaidLeaveUsed(editWPId) : 0;
+  document.getElementById('wpPaidLeaveRemaining').value = Math.max(0, days - used);
+  onPLRemainingInput();
+}
+
+/** 次回付与日をフォームに反映 */
+function applyNextGrantDate(dateStr) {
+  document.getElementById('wpPaidLeaveNextGrantDate').value = dateStr;
+  validatePLNextGrantDate();
+}
+
+/** 年休残入力 → 付与日数を逆算 */
+function onPLRemainingInput() {
+  const remEl   = document.getElementById('wpPaidLeaveRemaining');
+  const grantEl = document.getElementById('wpPaidLeaveGrantDays');
+  const rem = parseFloat(remEl.value);
+  if (!isNaN(rem) && rem >= 0) {
+    const used = editWPId ? getPaidLeaveUsed(editWPId) : 0;
+    grantEl.value = rem + used;
+  }
+}
+
+/** 次回付与日の過去日バリデーション */
+function validatePLNextGrantDate() {
+  const val   = document.getElementById('wpPaidLeaveNextGrantDate')?.value || '';
+  const errEl = document.getElementById('wpNextGrantDateErr');
+  if (!errEl) return true;
+  if (!val) { errEl.style.display = 'none'; return true; }
+  const isPast = new Date(val + 'T00:00:00') < today0();
+  errEl.style.display = isPast ? '' : 'none';
+  return !isPast;
+}
+
+/** カスタムスケジュールエディタを描画 */
+function renderPLScheduleEditor() {
+  const el = document.getElementById('plScheduleEditor');
+  if (!el) return;
+  if (!tempPLSchedule.length) {
+    el.innerHTML = '<div style="font-size:12px;color:var(--muted);padding:6px 0">スケジュールがありません</div>';
+    return;
+  }
+  el.innerHTML = tempPLSchedule.map((e, i) => `
+    <div class="pl-schedule-row">
+      <span style="font-size:11px;color:var(--muted);white-space:nowrap">入社から</span>
+      <input class="pl-schedule-inp" type="number" value="${e.months}" min="1" max="600" inputmode="numeric"
+             oninput="syncPLSchedule(${i},'months',parseInt(this.value)||1)">
+      <span style="font-size:11px;color:var(--muted);white-space:nowrap">ヶ月後</span>
+      <input class="pl-schedule-inp" type="number" value="${e.days}" min="0.5" max="200" step="0.5" inputmode="decimal"
+             oninput="syncPLSchedule(${i},'days',parseFloat(this.value)||1)">
+      <span style="font-size:11px;color:var(--muted);white-space:nowrap">日付与</span>
+      <button onclick="deletePLScheduleEntry(${i})" style="margin-left:auto;background:none;border:none;cursor:pointer;color:var(--red);font-size:15px;padding:2px 4px;line-height:1">✕</button>
+    </div>
+  `).join('');
+}
+
+function syncPLSchedule(i, field, val) {
+  if (i >= 0 && i < tempPLSchedule.length) {
+    tempPLSchedule[i][field] = val;
+    updatePLAutoInfo();
+  }
+}
+
+function addPLScheduleEntry() {
+  const last = tempPLSchedule.length ? tempPLSchedule[tempPLSchedule.length - 1].months : 0;
+  tempPLSchedule.push({ id: uid(), months: last + 12, days: 10 });
+  renderPLScheduleEditor();
+  updatePLAutoInfo();
+}
+
+function deletePLScheduleEntry(i) {
+  const entry = tempPLSchedule[i];
+  if (!confirm(`入社から${entry?.months}ヶ月後のルールを削除しますか？`)) return;
+  tempPLSchedule.splice(i, 1);
+  renderPLScheduleEditor();
+  updatePLAutoInfo();
+}
+
+// ══════════════════════════════════════
+// お知らせ
+// ══════════════════════════════════════
+function isNoticeAdmin() {
+  if (!currentUser) return false;
+  return NOTICE_ADMIN_IDS.has(currentUser.id) || !!currentUser.isNoticeAdmin;
+}
+
+async function loadNotices() {
+  try {
+    const snap = await fdb.ref(NOTICES_PATH).get();
+    notices = (snap.exists() && snap.val()) ? snap.val() : {};
+    updateNoticeBell();
+  } catch(e) { notices = {}; }
+}
+
+function getUnreadCount() {
+  return Object.keys(notices).filter(id => !readNotices[id]).length;
+}
+
+function updateNoticeBell() {
+  const badge = document.getElementById('noticeBadge');
+  if (!badge) return;
+  const count = getUnreadCount();
+  if (count > 0) {
+    badge.textContent = count > 9 ? '9+' : String(count);
+    badge.style.display = 'flex';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+function openNotices() {
+  renderNoticeList();
+  document.getElementById('noticesOverlay').classList.add('on');
+}
+
+function closeNotices() {
+  document.getElementById('noticesOverlay').classList.remove('on');
+}
+
+function renderNoticeList() {
+  const list   = document.getElementById('noticesList');
+  const addBtn = document.getElementById('noticesAddBtn');
+  const countEl = document.getElementById('noticesUnreadCount');
+  if (addBtn) addBtn.style.display = isNoticeAdmin() ? '' : 'none';
+
+  const sorted = Object.values(notices).sort((a, b) =>
+    (b.date || '').localeCompare(a.date || '') || (b.createdAt || 0) - (a.createdAt || 0));
+
+  const unreadCount = sorted.filter(n => !readNotices[n.id]).length;
+  if (countEl) {
+    countEl.textContent = unreadCount > 0 ? `未読 ${unreadCount}件` : '未読なし';
+  }
+
+  if (!sorted.length) {
+    list.innerHTML = '<div class="empty"><div class="empty-icon">🔔</div>お知らせはありません</div>';
+    return;
+  }
+
+  let h = '';
+  for (const n of sorted) {
+    const isUnread  = !readNotices[n.id];
+    const readBtn   = isUnread
+      ? `<button class="btn btn-sm" style="font-size:10px;padding:2px 8px;border:1.5px solid var(--bd)" onclick="markNoticeRead('${escHtml(n.id)}')">既読にする</button>`
+      : `<span style="font-size:10px;color:#9ca3af">✓ 既読</span>`;
+    const adminBtns = isNoticeAdmin()
+      ? `<button class="btn btn-sm" style="font-size:10px;padding:2px 7px;border:1.5px solid var(--bd);margin-left:4px" onclick="openNoticeEdit('${escHtml(n.id)}')">✏️ 編集</button>
+         <button class="btn btn-sm" style="font-size:10px;padding:2px 7px;background:#fee2e2;color:#b91c1c;border:1.5px solid #fca5a5;border-radius:var(--rs);cursor:pointer;margin-left:2px" onclick="deleteNotice('${escHtml(n.id)}')">削除</button>`
+      : '';
+    h += `<div class="notice-item ${isUnread ? 'unread' : 'read'}">
+      <div class="notice-date">${escHtml(n.date || '')}</div>
+      <div class="notice-title">${escHtml(n.title || '(無題)')}</div>
+      <div class="notice-body">${escHtml(n.body || '')}</div>
+      <div class="notice-actions">${readBtn}${adminBtns}</div>
+    </div>`;
+  }
+  list.innerHTML = h;
+}
+
+async function markNoticeRead(noticeId) {
+  readNotices[noticeId] = true;
+  await saveReadNotices();
+  updateNoticeBell();
+  renderNoticeList();
+}
+
+async function markAllNoticesRead() {
+  for (const id of Object.keys(notices)) readNotices[id] = true;
+  await saveReadNotices();
+  updateNoticeBell();
+  renderNoticeList();
+}
+
+async function saveReadNotices() {
+  if (!currentUser || viewingUserId) return;
+  try { await fdb.ref(getDBPath() + '/readNotices').set(readNotices); } catch(e) {}
+}
+
+function toggleNoticesShowAll() {
+  _noticesShowAll = !_noticesShowAll;
+  renderNoticeList();
+}
+
+function openNoticeEdit(noticeId) {
+  if (!isNoticeAdmin()) return;
+  _editNoticeId = noticeId || null;
+  const n = noticeId ? notices[noticeId] : null;
+  document.getElementById('noticeEditTitle').textContent = n ? 'お知らせを編集' : 'お知らせを追加';
+  document.getElementById('noticeInputDate').value  = n?.date  || fmtDate(today0());
+  document.getElementById('noticeInputTitle').value = n?.title || '';
+  document.getElementById('noticeInputBody').value  = n?.body  || '';
+  document.getElementById('noticeEditErr').style.display = 'none';
+  document.getElementById('noticeEditOverlay').classList.add('on');
+}
+
+function closeNoticeEdit() {
+  document.getElementById('noticeEditOverlay').classList.remove('on');
+}
+
+async function submitNoticeEdit() {
+  if (!isNoticeAdmin()) return;
+  const date  = document.getElementById('noticeInputDate').value;
+  const title = document.getElementById('noticeInputTitle').value.trim();
+  const body  = document.getElementById('noticeInputBody').value.trim();
+  const errEl = document.getElementById('noticeEditErr');
+  if (!title) { errEl.textContent = 'タイトルを入力してください'; errEl.style.display = ''; return; }
+  const nId  = _editNoticeId || uid();
+  const data = { id: nId, date: date || fmtDate(today0()), title, body,
+    createdBy: currentUser.id, createdAt: Date.now() };
+  try {
+    await fdb.ref(`${NOTICES_PATH}/${nId}`).set(data);
+    notices[nId] = data;
+    closeNoticeEdit();
+    updateNoticeBell();
+    renderNoticeList();
+    toast(_editNoticeId ? 'お知らせを更新しました' : 'お知らせを追加しました');
+  } catch(e) {
+    errEl.textContent = '保存に失敗しました'; errEl.style.display = '';
+  }
+}
+
+async function deleteNotice(noticeId) {
+  if (!isNoticeAdmin()) return;
+  if (!confirm('このお知らせを削除しますか？')) return;
+  try {
+    await fdb.ref(`${NOTICES_PATH}/${noticeId}`).remove();
+    delete notices[noticeId];
+    delete readNotices[noticeId];
+    updateNoticeBell();
+    renderNoticeList();
+    toast('削除しました');
+  } catch(e) { toast('削除に失敗しました'); }
+}
+
+async function toggleNoticeAdmin(uid, current) {
+  if (!currentUser?.isAdmin) return;
+  try {
+    await fdb.ref(`${USERS_PATH}/${uid}/isNoticeAdmin`).set(!current);
+    await renderAdminContent();
+    toast(!current ? 'お知らせ編集権限を付与しました' : 'お知らせ編集権限を削除しました');
+  } catch(e) { toast('更新に失敗しました'); }
+}
+
+// ══════════════════════════════════════
+// シフト一括削除
+// ══════════════════════════════════════
+function openBulkDelete() {
+  const y = cur.getFullYear(), m = cur.getMonth() + 1;
+  document.getElementById('bdMonth').value = `${y}-${String(m).padStart(2, '0')}`;
+  bdSelectedWPs = new Set(workplaces.map(w => w.id));
+  renderBDWPList();
+  renderBulkDeletePreview();
+  document.getElementById('bulkDeleteOverlay').classList.add('on');
+}
+
+function closeBulkDelete() {
+  document.getElementById('bulkDeleteOverlay').classList.remove('on');
+}
+
+function renderBDWPList() {
+  const el = document.getElementById('bdWPList');
+  el.innerHTML = workplaces.map(w => {
+    const on = bdSelectedWPs.has(w.id);
+    return `<div class="bd-wp-check${on ? ' on' : ''}" onclick="toggleBDWP('${escHtml(w.id)}')">
+      <span style="width:16px;height:16px;border-radius:3px;flex-shrink:0;
+        background:${on ? '#b91c1c' : '#fff'};border:2px solid ${on ? '#b91c1c' : 'var(--bd)'};
+        display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;font-weight:800">${on ? '✓' : ''}</span>
+      <span style="width:10px;height:10px;border-radius:50%;flex-shrink:0;background:${w.color}"></span>
+      <span>${escHtml(w.name)}</span>
+    </div>`;
+  }).join('');
+}
+
+function toggleBDWP(wpId) {
+  if (bdSelectedWPs.has(wpId)) bdSelectedWPs.delete(wpId);
+  else bdSelectedWPs.add(wpId);
+  renderBDWPList();
+  renderBulkDeletePreview();
+}
+
+function renderBulkDeletePreview() {
+  const monthVal = document.getElementById('bdMonth').value;
+  const el       = document.getElementById('bdPreview');
+  const execBtn  = document.getElementById('bdExecBtn');
+  if (!monthVal || !bdSelectedWPs.size) {
+    el.innerHTML = '<div style="font-size:12px;color:var(--muted);padding:4px 0">対象月または勤務先を選択してください</div>';
+    execBtn.disabled = true;
+    execBtn.textContent = '削除する';
+    return;
+  }
+  const [y, m] = monthVal.split('-').map(Number);
+  const startStr = `${y}-${String(m).padStart(2,'0')}-01`;
+  const endStr   = `${y}-${String(m).padStart(2,'0')}-${String(lastDom(y, m - 1)).padStart(2,'0')}`;
+  const targets  = shifts.filter(s => bdSelectedWPs.has(s.workplaceId) && s.date >= startStr && s.date <= endStr);
+  const byWP = {};
+  for (const s of targets) byWP[s.workplaceId] = (byWP[s.workplaceId] || 0) + 1;
+
+  let h = `<div class="sumbox" style="margin:0;${targets.length ? 'border-color:#fca5a5' : ''}">`;
+  if (!targets.length) {
+    h += '<div style="font-size:12px;color:var(--muted);text-align:center;padding:6px">削除対象のシフトがありません</div>';
+  } else {
+    h += `<div class="sumbox-ttl" style="color:#b91c1c">削除対象: ${targets.length}件</div>`;
+    for (const [id, cnt] of Object.entries(byWP)) {
+      const w = getWP(id);
+      h += `<div class="sum-row">
+        <div class="sum-left"><span class="dot" style="background:${w?.color||'#94a3b8'}"></span>${escHtml(w?.name||'(削除済)')}</div>
+        <div class="sum-right" style="color:#b91c1c;font-weight:700">${cnt}件</div>
+      </div>`;
+    }
+  }
+  h += '</div>';
+  el.innerHTML = h;
+  execBtn.disabled = !targets.length;
+  execBtn.textContent = targets.length ? `${targets.length}件のシフトを削除する` : '削除対象なし';
+}
+
+async function executeBulkDelete() {
+  const monthVal = document.getElementById('bdMonth').value;
+  if (!monthVal) return;
+  const [y, m]   = monthVal.split('-').map(Number);
+  const startStr = `${y}-${String(m).padStart(2,'0')}-01`;
+  const endStr   = `${y}-${String(m).padStart(2,'0')}-${String(lastDom(y, m - 1)).padStart(2,'0')}`;
+  const targets  = shifts.filter(s => bdSelectedWPs.has(s.workplaceId) && s.date >= startStr && s.date <= endStr);
+  if (!targets.length) return;
+
+  const wpNames = [...bdSelectedWPs].map(id => getWP(id)?.name).filter(Boolean).join('・');
+  if (!confirm(`${y}年${m}月「${wpNames}」のシフト${targets.length}件を削除します。\nこの操作は元に戻せません。本当に削除しますか？`)) return;
+
+  const delIds = new Set(targets.map(s => s.id));
+  shifts = shifts.filter(s => !delIds.has(s.id));
+  try {
+    await persist();
+    toast(`${targets.length}件のシフトを削除しました`);
+    closeBulkDelete();
+    render();
+  } catch(e) {
+    toast('削除に失敗しました（通信エラー）');
+  }
 }
 
 // ══════════════════════════════════════
@@ -1411,8 +2573,13 @@ function renderWeek() {
               `<span style="opacity:.8;font-size:9px;display:block;line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(l)}</span>`
             ).join('') + (locLines.length > 3 ? '<span style="opacity:.5;font-size:8px">…</span>' : '')
           : '';
-        h += `<div class="chip wk" style="background:${w?.color||'#94a3b8'}" data-sid="${sh.id}" onclick="event.stopPropagation()">
-          ${sh.startTime}〜${sh.endTime}${otIcon}${edIcon}<br>¥${res.totalWage.toLocaleString()}${locLabel}
+        const wageLabel = res.isPaidLeave ? `有給 ¥${res.totalWage.toLocaleString()}`
+          : res.isMonthly
+            ? (res.totalWage > 0 ? `+¥${res.totalWage.toLocaleString()}残業` : '月給制')
+            : `¥${res.totalWage.toLocaleString()}`;
+        const plDot = sh.isPaidLeave ? '<span class="pl-dot"></span>' : '';
+        h += `<div class="chip wk" style="background:${w?.color||'#94a3b8'};${sh.isPaidLeave?'opacity:.82':''}" data-sid="${sh.id}" onclick="event.stopPropagation()">
+          ${sh.isPaidLeave ? '有休 ' : ''}${sh.startTime}〜${sh.endTime}${otIcon}${edIcon}${plDot}<br>${wageLabel}${locLabel}
         </div>`;
       }
     }
@@ -1421,6 +2588,7 @@ function renderWeek() {
   h += '</div>';
   h += buildSummaryHTML(collectStats(ws, 7), '今週のサマリー');
   h += renderPayPeriodSummary();
+  h += renderBulkDeleteButton();
   return h;
 }
 
@@ -1457,9 +2625,11 @@ function renderMonth() {
       const w       = getWP(sh.workplaceId);
       const res     = calcShiftWage(sh, w);
       const otIcon  = (res.overtimeWage > 0 || res.manualOTWage > 0) ? '<span class="ot-dot" style="width:4px;height:4px"></span>' : '';
+      const plDotMo = sh.isPaidLeave ? '<span class="pl-dot" style="width:4px;height:4px;margin-left:2px;vertical-align:middle"></span>' : '';
       const locLine = sh.location ? `<br><span style="font-size:8px;opacity:.88">${escHtml(sh.location.split('\n')[0])}</span>` : '';
-      h += `<div class="chip mo" style="background:${w?.color||'#94a3b8'}" data-sid="${sh.id}" onclick="event.stopPropagation()">
-        ${sh.startTime}〜${sh.endTime}${otIcon}${locLine}
+      const moLabel = sh.isPaidLeave ? '有休' : `${sh.startTime}〜${sh.endTime}`;
+      h += `<div class="chip mo" style="background:${w?.color||'#94a3b8'};${sh.isPaidLeave?'opacity:.82':''}" data-sid="${sh.id}" onclick="event.stopPropagation()">
+        ${moLabel}${otIcon}${plDotMo}${locLine}
       </div>`;
     }
     if (ss.length > 2) h += `<div style="font-size:9px;color:var(--muted);text-align:center;padding:1px">+${ss.length-2}</div>`;
@@ -1474,7 +2644,18 @@ function renderMonth() {
   h += '</div>';
   h += buildSummaryHTML(collectMonthStats(y, m), `${m+1}月のサマリー`);
   h += renderPayPeriodSummary();
+  h += renderBulkDeleteButton();
   return h;
+}
+
+function renderBulkDeleteButton() {
+  return `<div style="padding:4px 0 12px;text-align:right">
+    <button onclick="openBulkDelete()" style="background:#fee2e2;border:1px solid #fca5a5;color:#b91c1c;
+      border-radius:var(--rs);padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;
+      transition:background .15s" onmouseover="this.style.background='#fecaca'" onmouseout="this.style.background='#fee2e2'">
+      🗑️ シフトを一括削除
+    </button>
+  </div>`;
 }
 
 // ─ 集計 ─
@@ -1485,10 +2666,11 @@ function collectStats(startDate, days) {
     for (const sh of shiftsOn(fmtDate(d))) {
       const w = getWP(sh.workplaceId);
       const res = calcShiftWage(sh, w);
-      if (!byWP[sh.workplaceId]) byWP[sh.workplaceId] = { wage:0, min:0, otMin:0 };
+      if (!byWP[sh.workplaceId]) byWP[sh.workplaceId] = { wage:0, min:0, otMin:0, paidLeaveCount:0 };
       byWP[sh.workplaceId].wage  += res.totalWage;
       byWP[sh.workplaceId].min   += res.workMin;
       byWP[sh.workplaceId].otMin += res.overtimeWorkMin;
+      if (sh.isPaidLeave) byWP[sh.workplaceId].paidLeaveCount++;
       totalW += res.totalWage; totalH += res.workMin; totalOT += res.overtimeWorkMin;
     }
   }
@@ -1508,9 +2690,14 @@ function buildSummaryHTML({ byWP, totalW, totalH, totalOT }, title) {
   for (const [id, data] of Object.entries(byWP)) {
     const w   = getWP(id);
     const otS = data.otMin ? `<span class="ot-badge" style="margin-left:5px">残業${fmtHM(data.otMin)}</span>` : '';
+    const plS = data.paidLeaveCount ? `<span class="pl-badge" style="margin-left:5px;font-size:10px;padding:1px 6px;border-radius:4px">有給${data.paidLeaveCount}日</span>` : '';
+    const isM = w?.wageType === 'monthly';
+    const wageStr = isM
+      ? `<span class="monthly-badge">月給制</span>${data.wage > 0 ? `<span style="margin-left:4px">+¥${data.wage.toLocaleString()}残業</span>` : ''}`
+      : `<strong>¥${data.wage.toLocaleString()}</strong>`;
     h += `<div class="sum-row">
       <div class="sum-left"><span class="dot" style="background:${w?.color||'#94a3b8'}"></span>${escHtml(w?.name||'(削除済)')}</div>
-      <div class="sum-right">${fmtHM(data.min)}${otS}<br><strong>¥${data.wage.toLocaleString()}</strong></div>
+      <div class="sum-right">${fmtHM(data.min)}${otS}${plS}<br>${wageStr}</div>
     </div>`;
   }
   if (totalOT > 0)
@@ -1530,12 +2717,13 @@ function renderPayPeriodSummary() {
     const pShifts = shifts.filter(s => s.workplaceId === wp.id && s.date >= ps && s.date <= pe);
     if (!pShifts.length) continue;
 
-    let totalW = 0, totalOTMin = 0, totalWorkMin = 0;
+    let totalW = 0, totalOTMin = 0, totalWorkMin = 0, plCount = 0;
     for (const sh of pShifts) {
       const r = calcShiftWage(sh, wp);
       totalW += r.totalWage; totalOTMin += r.overtimeWorkMin; totalWorkMin += r.workMin;
+      if (sh.isPaidLeave) plCount++;
     }
-    sections.push({ wp, period, totalW, totalOTMin, totalWorkMin });
+    sections.push({ wp, period, totalW, totalOTMin, totalWorkMin, plCount });
   }
   if (!sections.length) return '';
 
@@ -1548,24 +2736,41 @@ function renderPayPeriodSummary() {
     const pd  = getPaymentDate(s.period, s.wp);
     const pdS = `${pd.getMonth()+1}月${pd.getDate()}日`;
     const otS = s.totalOTMin ? `<span class="ot-badge" style="margin-left:4px">残業${fmtHM(s.totalOTMin)}</span>` : '';
+    const plS = s.plCount ? `<span class="pl-badge" style="margin-left:4px;font-size:10px;padding:1px 6px;border-radius:4px">有給${s.plCount}日</span>` : '';
+    const isM = s.wp.wageType === 'monthly';
+
+    let wageDisplay = '';
+    if (isM) {
+      const base = s.wp.monthlyBaseSalary || 0;
+      const otPay = s.totalW; // calcShiftWageで返るのは残業代のみ
+      const grandTotal = base + otPay;
+      wageDisplay = `<div style="font-size:11px;color:var(--muted);margin-top:2px">基本給 ¥${base.toLocaleString()}</div>`;
+      if (otPay > 0) wageDisplay += `<div style="font-size:11px;color:var(--muted)">残業代 +¥${otPay.toLocaleString()}</div>`;
+      wageDisplay += `<div style="font-size:16px;font-weight:800;color:var(--pri);margin-top:3px">¥${grandTotal.toLocaleString()}</div>`;
+    } else {
+      wageDisplay = `<div style="font-size:16px;font-weight:800;color:var(--pri);margin-top:3px">¥${s.totalW.toLocaleString()}</div>`;
+    }
 
     h += `<div class="sum-row" style="align-items:flex-start">
       <div class="sum-left">
-        <div><span class="dot" style="background:${s.wp.color}"></span>${escHtml(s.wp.name)}</div>
+        <div><span class="dot" style="background:${s.wp.color}"></span>${escHtml(s.wp.name)}${isM ? '<span class="monthly-badge" style="margin-left:5px">月給制</span>' : ''}</div>
         <div style="margin-top:4px;display:flex;gap:4px;flex-wrap:wrap">
           <span class="close-badge">締 ${sm}〜${em}</span>
           <span class="pay-badge">振 ${pdS}</span>
         </div>
       </div>
       <div class="sum-right">
-        <div>${fmtHM(s.totalWorkMin)}${otS}</div>
-        <div style="font-size:16px;font-weight:800;color:var(--pri);margin-top:3px">¥${s.totalW.toLocaleString()}</div>
+        <div>${fmtHM(s.totalWorkMin)}${otS}${plS}</div>
+        ${wageDisplay}
       </div>
     </div>`;
   }
 
   if (sections.length > 1) {
-    const gW  = sections.reduce((a, s) => a + s.totalW, 0);
+    const gW  = sections.reduce((a, s) => {
+      if (s.wp.wageType === 'monthly') return a + (s.wp.monthlyBaseSalary || 0) + s.totalW;
+      return a + s.totalW;
+    }, 0);
     const gOT = sections.reduce((a, s) => a + s.totalOTMin, 0);
     h += `<div class="sum-row">
       <div class="sum-left">合計${gOT?`<span class="ot-badge" style="margin-left:5px">残業${fmtHM(gOT)}</span>`:''}</div>
@@ -1657,6 +2862,8 @@ function openShift(id, date) {
     document.getElementById('sBreakZone').value = '';
     document.getElementById('delShift').style.display = 'none';
   }
+  // 有給チェックボックスの状態復元
+  document.getElementById('sPaidLeave').checked = id ? (shifts.find(s => s.id === id)?.isPaidLeave || false) : false;
   livePreview();
   document.getElementById('shiftOverlay').classList.add('on');
 }
@@ -1674,20 +2881,105 @@ function livePreview() {
   const manOT  = parseInt(document.getElementById('sManualOT').value) || 0;
   const earlyD = parseInt(document.getElementById('sEarlyDep').value) || 0;
   const prev   = document.getElementById('wPreview');
+  const isPL   = document.getElementById('sPaidLeave').checked;
+
+  // 有給パネルの表示制御
+  const w = getWP(wpId);
+  const plPanel = document.getElementById('paidLeavePanel');
+  const plInfo  = document.getElementById('paidLeaveInfo');
+  const plBadge = document.getElementById('plBadgeInCheck');
+  const showPL  = !!(w && (w.paidLeaveGrantDays > 0 || getAutoGrants(w).length > 0));
+  plPanel.style.display = showPL ? '' : 'none';
+  if (!showPL) document.getElementById('sPaidLeave').checked = false;
+
+  if (showPL) {
+    const rem   = getPaidLeaveRemaining(w);
+    const alert = getPaidLeaveAlert(w);
+    const used  = getPaidLeaveUsed(w.id);
+    const granted = w.paidLeaveGrantDays || 0;
+    plBadge.innerHTML = alert
+      ? `<span class="pl-${alert.level === 'err' ? 'err' : 'warn'}" style="font-size:10px;padding:1px 6px;border-radius:4px">${escHtml(alert.msg)}</span>`
+      : `<span class="pl-badge" style="font-size:10px;padding:1px 6px;border-radius:4px">残${rem}日</span>`;
+    const batchHtml = renderPLBatchHTML(w, true);
+    if (batchHtml) {
+      plInfo.innerHTML = `<div style="font-size:11px;color:var(--muted)">付与: ${granted}日 ／ 使用済: ${used}日</div>${batchHtml}`;
+    } else {
+      const expStr  = w.paidLeaveExpiry ? `期限: ${w.paidLeaveExpiry}` : '';
+      const schedule = getPLSchedule(w);
+      const autoNext = w.hireDate ? computeNextPLGrant(w.hireDate, schedule) : null;
+      const nextDate = w.paidLeaveNextGrantDate || autoNext?.date || '';
+      const nextStr  = nextDate ? `次回付与: ${nextDate}` : '';
+      const details  = [expStr, nextStr].filter(Boolean).join('　');
+      plInfo.innerHTML = `付与: ${granted}日 ／ 使用済: ${used}日 ／ 残: ${rem}日${details ? '　' + details : ''}`;
+    }
+    plInfo.style.display = isPL ? '' : 'none';
+  } else {
+    plBadge.innerHTML = '';
+    plInfo.style.display = 'none';
+  }
+
+  // 有給チェック時は特殊勤務パネルを非表示
+  const specDiv   = document.getElementById('specialDivider');
+  const specTitle = document.getElementById('specialTitle');
+  const specPanel = document.getElementById('specialPanel');
+  if (specDiv)   specDiv.style.display   = isPL ? 'none' : '';
+  if (specTitle) specTitle.style.display = isPL ? 'none' : '';
+  if (specPanel) specPanel.style.display = isPL ? 'none' : '';
 
   // 休憩ゾーンセレクトを更新（時間・勤務先変更時に再描画）
   updateBreakZoneSelect(wpId, st, en);
 
   if (!wpId || !st || !en) { prev.style.display = 'none'; return; }
 
-  const w           = getWP(wpId);
   const breakZoneId = document.getElementById('sBreakZone').value || undefined;
-  const mock        = { startTime:st, endTime:en, breakMinutes:brk, manualOvertimeMin:manOT, earlyDepartureMin:earlyD, breakZoneId };
-  const res         = calcShiftWage(mock, w);
+
+  // 有給の場合は専用プレビュー
+  if (isPL && w) {
+    const res = calcPaidLeaveWage({ isPaidLeave: true, startTime: st, endTime: en }, w);
+    prev.style.display = 'block';
+    const plHours = w.paidLeaveHours || 7.5;
+    const plRate  = res.paidLeaveRate;
+    let bh = '';
+    if (w.wageType === 'monthly') {
+      const days = Math.max(1, w.workDaysPerMonth || 20);
+      bh += `<div class="wr"><span>🌿 有給休暇（月給制）</span><span>¥${(w.monthlyBaseSalary||0).toLocaleString()} ÷ ${days}日</span></div>`;
+    } else {
+      bh += `<div class="wr"><span>🌿 有給休暇 ${plHours}h</span><span>${plHours}h × ¥${Math.round(plRate).toLocaleString()} = ¥${res.totalWage.toLocaleString()}</span></div>`;
+    }
+    bh += `<div class="wr wr-sep"><span>有給換算時間</span><span>${minStr(res.workMin)}</span></div>`;
+    document.getElementById('wBreakdown').innerHTML = bh;
+    document.getElementById('wTotal').textContent = `¥${res.totalWage.toLocaleString()}`;
+    return;
+  }
+
+  const mock = { startTime:st, endTime:en, breakMinutes:brk, manualOvertimeMin:manOT, earlyDepartureMin:earlyD, breakZoneId };
+  const res  = calcShiftWage(mock, w);
   if (!res.totalWage) { prev.style.display = 'none'; return; }
 
   prev.style.display = 'block';
   let bh = '';
+
+  // ── 月給制の場合は専用プレビューを表示 ──
+  if (res.isMonthly) {
+    const base = res.monthlyBaseSalary;
+    const rate = res.overtimeRate;
+    bh += `<div class="wr"><span>月額基本給</span><span>¥${base.toLocaleString()}（月額固定）</span></div>`;
+    if (res.overtimeWorkMin > 0) {
+      const otH = (res.overtimeWorkMin / 60).toFixed(2);
+      bh += `<div class="wr ot" style="margin-top:5px;border-top:1px dashed var(--bd);padding-top:4px">
+        <span>⏰ 所定外（${fmtHM(res.overtimeWorkMin)}）</span><span>× 1.25</span>
+      </div>`;
+      for (const b of res.otBreakdown)
+        bh += `<div class="wr ot"><span>　残業 ${minToHoursStr(b.min)}</span><span>${minToHoursStr(b.min)} × ¥${Math.round(rate).toLocaleString()} × 1.25 = ¥${b.wage.toLocaleString()}</span></div>`;
+      for (const b of res.manualOTBreakdown)
+        bh += `<div class="wr ot"><span>　当日残業 ${minToHoursStr(b.min)}</span><span>${minToHoursStr(b.min)} × ¥${Math.round(rate).toLocaleString()} × 1.25 = ¥${b.wage.toLocaleString()}</span></div>`;
+    }
+    bh += `<div class="wr wr-sep"><span>実働時間</span><span>${minStr(res.workMin)}</span></div>`;
+    bh += `<div class="wr" style="color:var(--muted)"><span>この日の残業代</span><span>¥${res.totalWage.toLocaleString()}</span></div>`;
+    document.getElementById('wBreakdown').innerHTML = bh;
+    document.getElementById('wTotal').textContent = `¥${(base + res.totalWage).toLocaleString()} (月額合計目安)`;
+    return;
+  }
 
   // ── 休憩メモ（複数ゾーンにまたがる場合のみ表示） ──
   if (brk > 0 && res.breakZoneLabel) {
@@ -1760,12 +3052,29 @@ async function saveShift() {
   const earlyDepartureMin = Math.max(0, parseInt(document.getElementById('sEarlyDep').value, 10) || 0);
   const breakZoneId       = document.getElementById('sBreakZone').value || null;
   const location          = document.getElementById('sLocation').value.trim();
+  const isPaidLeave       = document.getElementById('sPaidLeave').checked;
 
   if (!date || !workplaceId || !startTime || !endTime) {
     toast('日付・勤務先・開始/終了時間は必須です'); return;
   }
 
-  const data = { date, workplaceId, startTime, endTime, breakMinutes, manualOvertimeMin, earlyDepartureMin, breakZoneId, location };
+  // 有給残日数チェック
+  if (isPaidLeave) {
+    const wp = getWP(workplaceId);
+    const rem = getPaidLeaveRemaining(wp);
+    // 編集時：元のシフトが有給なら1枚分は既にカウント済みなので実際の残りを考慮
+    const prevWasLeave = editShiftId ? (shifts.find(s => s.id === editShiftId)?.isPaidLeave || false) : false;
+    const effectiveRem = prevWasLeave ? rem : rem; // 既存シフトの変更なので特別処理不要
+    if (!prevWasLeave && rem <= 0) {
+      if (!confirm('有給の残日数が0です。使用しますか？')) return;
+    }
+    const alert = getPaidLeaveAlert(wp);
+    if (alert && alert.level === 'err' && alert.msg === '有給期限切れ') {
+      if (!confirm('有給の期限が切れています。使用しますか？')) return;
+    }
+  }
+
+  const data = { date, workplaceId, startTime, endTime, breakMinutes, manualOvertimeMin, earlyDepartureMin, breakZoneId, location, isPaidLeave };
   const isEdit = !!editShiftId;
   if (isEdit) {
     const i = shifts.findIndex(s => s.id === editShiftId);
@@ -1811,12 +3120,28 @@ function renderWPList() {
     const closeDay = startDay <= 1 ? '末日' : `${startDay-1}日`;
     const payOff   = w.paymentMonthOffset != null ? w.paymentMonthOffset : 1;
     const payDay   = w.paymentDay || 10;
-    const metaText = `締め: ${startDay}日〜${closeDay} ／ 振込: 翌${payOff}ヶ月${payDay}日`;
+    const isM      = w.wageType === 'monthly';
+    const wageMeta = isM
+      ? `月給制 ¥${(w.monthlyBaseSalary||0).toLocaleString()}`
+      : `時給制`;
+    const metaText = `${wageMeta} ／ 締め: ${startDay}日〜${closeDay} ／ 振込: 翌${payOff}ヶ月${payDay}日`;
+    const plAlert = getPaidLeaveAlert(w);
+    const plRem   = w.paidLeaveGrantDays > 0 ? getPaidLeaveRemaining(w) : -1;
+    const plBadge = plAlert
+      ? `<span class="pl-${plAlert.level === 'err' ? 'err' : 'warn'}" style="font-size:10px;padding:1px 6px;border-radius:4px;margin-left:6px">${escHtml(plAlert.msg)}</span>`
+      : plRem >= 0
+        ? `<span class="pl-badge" style="font-size:10px;padding:1px 6px;border-radius:4px;margin-left:6px">有給残${plRem}日</span>`
+        : '';
+    // 次回付与日（手動 or 自動計算）
+    const schedule = getPLSchedule(w);
+    const autoNext = w.hireDate ? computeNextPLGrant(w.hireDate, schedule) : null;
+    const nextGrant = w.paidLeaveNextGrantDate || autoNext?.date || '';
+    const nextGrantMeta = nextGrant && w.paidLeaveGrantDays > 0 ? `　次回付与: ${nextGrant}` : '';
     return `<div class="wp-item" onclick="openWPEdit('${escHtml(w.id)}')">
       <div class="wp-dot" style="background:${w.color}"></div>
       <div>
-        <div class="wp-name">${escHtml(w.name)}</div>
-        <div class="wp-meta">${metaText}</div>
+        <div class="wp-name">${escHtml(w.name)}${isM ? '<span class="monthly-badge" style="margin-left:6px">月給制</span>' : ''}${plBadge}</div>
+        <div class="wp-meta">${metaText}${nextGrantMeta}</div>
       </div>
       <span style="color:var(--muted);font-size:20px;margin-left:auto">›</span>
     </div>`;
@@ -1826,6 +3151,19 @@ function renderWPList() {
 // ══════════════════════════════════════
 // 勤務先編集 ＋ ゾーンエディタ
 // ══════════════════════════════════════
+
+// 給与タイプ切り替え
+function toggleWageType(type) {
+  document.getElementById('hourlySection').style.display  = type === 'hourly'  ? '' : 'none';
+  document.getElementById('monthlySection').style.display = type === 'monthly' ? '' : 'none';
+}
+
+// 残業単価計算方法切り替え
+function toggleOTMethod(method) {
+  document.getElementById('monthlyStdHoursRow').style.display = method === 'auto'   ? '' : 'none';
+  document.getElementById('monthlyOTRateRow').style.display   = method === 'manual' ? '' : 'none';
+}
+
 function openWPEdit(id) {
   editWPId = id || null;
   const w = id ? workplaces.find(x => x.id === id) : null;
@@ -1842,6 +3180,63 @@ function openWPEdit(id) {
   document.getElementById('colorPicker').innerHTML = COLORS.map(c =>
     `<div class="colop${c===curC?' on':''}" style="background:${c}" data-c="${c}" onclick="pickColor('${c}')"></div>`
   ).join('');
+
+  // 給与タイプの初期化
+  const wageType = w?.wageType || 'hourly';
+  document.getElementById('wpWageHourly').checked  = wageType === 'hourly';
+  document.getElementById('wpWageMonthly').checked = wageType === 'monthly';
+  toggleWageType(wageType);
+
+  // 月給制フィールドの初期化
+  document.getElementById('wpMonthlySalary').value   = w?.monthlyBaseSalary ?? 300000;
+  document.getElementById('wpMonthlyStdHours').value = w?.monthlyStdHours  ?? 160;
+  document.getElementById('wpMonthlyOTRate').value   = w?.monthlyOvertimeRate ?? 2000;
+  const otMethod = w?.monthlyOvertimeMethod || 'auto';
+  document.getElementById('wpOTMethodAuto').checked   = otMethod === 'auto';
+  document.getElementById('wpOTMethodManual').checked = otMethod === 'manual';
+  toggleOTMethod(otMethod);
+
+  // 有給フィールドの初期化
+  document.getElementById('wpHireDate').value             = w?.hireDate             ?? '';
+  document.getElementById('wpPaidLeaveGrantDays').value   = w?.paidLeaveGrantDays   ?? 0;
+  document.getElementById('wpPaidLeaveHours').value       = w?.paidLeaveHours       ?? 7.5;
+  document.getElementById('wpWorkDaysPerMonth').value     = w?.workDaysPerMonth     ?? 20;
+  document.getElementById('wpPaidLeaveExpiry').value      = w?.paidLeaveExpiry      ?? '';
+  document.getElementById('wpPaidLeaveNextGrantDate').value  = w?.paidLeaveNextGrantDate ?? '';
+  document.getElementById('wpPaidLeaveNextGrantDays').value  = w?.paidLeaveNextGrantDays > 0 ? w.paidLeaveNextGrantDays : '';
+  document.getElementById('wpWeeklyWorkDays').value          = w?.weeklyWorkDays ?? 5;
+  document.getElementById('wpNextGrantDateErr').style.display = 'none';
+
+  // 付与ルール
+  const plType = w?.paidLeaveScheduleType || 'statutory';
+  document.getElementById('wpPLStatutory').checked = plType === 'statutory';
+  document.getElementById('wpPLCustom').checked    = plType === 'custom';
+  document.getElementById('wpPLManual').checked    = plType === 'manual';
+
+  // カスタムスケジュール temp 状態
+  tempPLSchedule = (w?.paidLeaveCustomSchedule?.length)
+    ? w.paidLeaveCustomSchedule.map(e => ({ ...e }))
+    : STATUTORY_PL_SCHEDULE.map(e => ({ ...e, id: uid() }));
+
+  // 年休残表示
+  const hasAutoGrants = w && getAutoGrants(w).length > 0;
+  if (w && (w.paidLeaveGrantDays > 0 || hasAutoGrants)) {
+    const used = getPaidLeaveUsed(w.id);
+    const rem  = getPaidLeaveRemaining(w);
+    document.getElementById('wpPaidLeaveRemaining').value = rem;
+    const usageEl = document.getElementById('wpPaidLeaveUsageInfo');
+    if (usageEl) usageEl.textContent = `使用済: ${used}日 ／ 残: ${rem}日`;
+    const usageRow = document.getElementById('wpPaidLeaveUsageRow');
+    if (usageRow) usageRow.style.display = '';
+  } else {
+    document.getElementById('wpPaidLeaveRemaining').value = '';
+    const usageRow = document.getElementById('wpPaidLeaveUsageRow');
+    if (usageRow) usageRow.style.display = 'none';
+  }
+
+  togglePLScheduleType(plType);
+  renderPLScheduleEditor();
+  updatePLAutoInfo();
 
   const src   = (w && w.zones && w.zones.length) ? w.zones : DEFAULT_ZONES;
   tempZones   = src.map(z => ({ ...z }));
@@ -1911,9 +3306,10 @@ function pickColor(c) {
 }
 
 async function saveWP() {
-  const name = document.getElementById('wpName').value.trim();
-  if (!name)          { toast('勤務先名を入力してください'); return; }
-  if (!tempZones.length) { toast('時間帯を1つ以上設定してください'); return; }
+  const name     = document.getElementById('wpName').value.trim();
+  const wageTypeCheck = document.querySelector('input[name="wpWageType"]:checked')?.value || 'hourly';
+  if (!name) { toast('勤務先名を入力してください'); return; }
+  if (wageTypeCheck === 'hourly' && !tempZones.length) { toast('時間帯を1つ以上設定してください'); return; }
 
   // DOM から最新値を確実に取得（oninput が未発火のケースへの保険）
   document.querySelectorAll('.zone-card').forEach((card, i) => {
@@ -1936,7 +3332,43 @@ async function saveWP() {
   const poRaw               = parseInt(document.getElementById('wpPaymentOffset').value);
   const paymentMonthOffset  = isNaN(poRaw) ? 1 : Math.max(0, poRaw);
 
-  const wpData = { name, color, zones, overtimeThreshold, payPeriodStartDay, paymentDay, paymentMonthOffset };
+  // 給与タイプ
+  const wageType = document.querySelector('input[name="wpWageType"]:checked')?.value || 'hourly';
+  const monthlyBaseSalary    = Math.max(0, parseInt(document.getElementById('wpMonthlySalary').value) || 0);
+  const monthlyOvertimeMethod = document.querySelector('input[name="wpOTMethod"]:checked')?.value || 'auto';
+  const monthlyStdHours      = Math.max(1, parseInt(document.getElementById('wpMonthlyStdHours').value) || 160);
+  const monthlyOvertimeRate  = Math.max(0, parseInt(document.getElementById('wpMonthlyOTRate').value) || 0);
+
+  // 次回付与日バリデーション
+  if (!validatePLNextGrantDate()) { toast('次回付与日に過去の日付は設定できません'); return; }
+
+  // 有給フィールド
+  const hireDate              = document.getElementById('wpHireDate').value || '';
+  const paidLeaveScheduleType = document.querySelector('input[name="wpPLScheduleType"]:checked')?.value || 'statutory';
+  const paidLeaveCustomSchedule = tempPLSchedule.map(e => ({ ...e }));
+  const paidLeaveNextGrantDate  = document.getElementById('wpPaidLeaveNextGrantDate').value || '';
+  const paidLeaveHours          = Math.max(0, parseFloat(document.getElementById('wpPaidLeaveHours').value) || 7.5);
+  const workDaysPerMonth        = Math.max(1, parseInt(document.getElementById('wpWorkDaysPerMonth').value) || 20);
+  const paidLeaveExpiry         = document.getElementById('wpPaidLeaveExpiry').value || '';
+  const paidLeaveNextGrantDays  = Math.max(0, parseFloat(document.getElementById('wpPaidLeaveNextGrantDays').value) || 0);
+  const weeklyWorkDays          = Math.min(5, Math.max(1, parseInt(document.getElementById('wpWeeklyWorkDays').value) || 5));
+
+  // 年休残が入力されていればそこから付与日数を逆算、なければ直接入力値を使用
+  const remInput = document.getElementById('wpPaidLeaveRemaining').value;
+  let paidLeaveGrantDays;
+  if (remInput !== '' && !isNaN(parseFloat(remInput))) {
+    const remVal = Math.max(0, parseFloat(remInput));
+    const usedNow = editWPId ? getPaidLeaveUsed(editWPId) : 0;
+    paidLeaveGrantDays = remVal + usedNow;
+  } else {
+    paidLeaveGrantDays = Math.max(0, parseFloat(document.getElementById('wpPaidLeaveGrantDays').value) || 0);
+  }
+
+  const wpData = { name, color, zones, overtimeThreshold, payPeriodStartDay, paymentDay, paymentMonthOffset,
+    wageType, monthlyBaseSalary, monthlyOvertimeMethod, monthlyStdHours, monthlyOvertimeRate,
+    paidLeaveGrantDays, paidLeaveHours, workDaysPerMonth, paidLeaveExpiry,
+    hireDate, paidLeaveScheduleType, paidLeaveCustomSchedule, paidLeaveNextGrantDate,
+    paidLeaveNextGrantDays, weeklyWorkDays };
 
   const isEdit = !!editWPId;
   if (isEdit) {
@@ -1990,6 +3422,14 @@ function toast(msg) {
 let parsedImports = [];
 
 function openImport() {
+  document.getElementById('importChoiceOverlay').classList.add('on');
+}
+
+function closeImportChoice() {
+  document.getElementById('importChoiceOverlay').classList.remove('on');
+}
+
+function openTextImport() {
   const sel = document.getElementById('importWP');
   sel.innerHTML = workplaces.map(w => `<option value="${escHtml(w.id)}">${escHtml(w.name)}</option>`).join('');
   document.getElementById('importText').value = '';
@@ -2249,12 +3689,16 @@ function openAttend() {
   document.getElementById('attendStep1').style.display = 'block';
   document.getElementById('attendStep2').style.display = 'none';
   attendResults = [];
+  attendFilter  = null;
+  noShiftChecked.clear();
   document.getElementById('attendOverlay').classList.add('on');
 }
 
 function closeAttend() {
   document.getElementById('attendOverlay').classList.remove('on');
   attendResults = [];
+  attendFilter  = null;
+  noShiftChecked.clear();
 }
 
 function parseAttendanceLine(line, yearMonth) {
@@ -2265,6 +3709,9 @@ function parseAttendanceLine(line, yearMonth) {
   const day = parseInt(dayMatch[1]);
   if (day < 1 || day > 31) return null;
   const date = `${yearMonth}-${padZ(day)}`;
+
+  // 年休・有休キーワード検出（時刻が無くてもOK）
+  const isYearlyLeave = /年休|有休|年次有給|有給休暇/.test(line);
 
   // 時刻範囲をすべて抽出: H:MM - H:MM
   const timeRe = /(\d{1,2}):(\d{2})\s*[-－]\s*(\d{1,2}):(\d{2})/g;
@@ -2280,6 +3727,15 @@ function parseAttendanceLine(line, yearMonth) {
       lastEnd = tm.index + tm[0].length;
     }
   }
+
+  // 年休行は時刻なしでもパース成功
+  if (isYearlyLeave && ranges.length < 2) {
+    const dummy = { start: '09:00', end: '17:00' };
+    const scheduled = ranges[0] || dummy;
+    const actual    = ranges[1] || dummy;
+    return { date, day, scheduled, actual, breakMinutes: 0, remarks: ['年休'], isYearlyLeave: true };
+  }
+
   if (ranges.length < 2) return null;
 
   const scheduled = ranges[0]; // 勤務予定時間
@@ -2292,12 +3748,13 @@ function parseAttendanceLine(line, yearMonth) {
 
   // 備考キーワード
   const remarks = [];
+  if (isYearlyLeave)           remarks.push('年休');
   if (/残業/.test(line))      remarks.push('残業');
   if (/早出/.test(line))      remarks.push('早出');
   if (/部解|一部解消/.test(line)) remarks.push('部解');
   if (/休日出勤/.test(line))  remarks.push('休出');
 
-  return { date, day, scheduled, actual, breakMinutes, remarks };
+  return { date, day, scheduled, actual, breakMinutes, remarks, isYearlyLeave };
 }
 
 function calcAttendDiffs(shift, att) {
@@ -2365,10 +3822,18 @@ function runParseAttend() {
 
   attendResults = parsed.map(att => {
     const shift   = shifts.find(s => s.date === att.date && s.workplaceId === wpId);
-    const diffs   = calcAttendDiffs(shift, att);
-    return { att, shift, diffs, hasShift: !!shift, hasDiffs: diffs.length > 0, selected: diffs.length > 0 };
+    const diffs   = att.isYearlyLeave ? [] : calcAttendDiffs(shift, att);
+    return {
+      att, shift, diffs,
+      hasShift: !!shift,
+      hasDiffs: diffs.length > 0,
+      selected: diffs.length > 0,
+      isYearlyLeave: !!att.isYearlyLeave,
+    };
   });
 
+  attendFilter = null;
+  noShiftChecked.clear();
   renderAttendList(wpId);
   document.getElementById('attendStep1').style.display = 'none';
   document.getElementById('attendStep2').style.display = 'block';
@@ -2380,9 +3845,11 @@ function renderAttendList(wpId) {
   const noShift  = attendResults.filter(r => !r.hasShift).length;
   const matched  = total - withDiff - noShift;
   const selCnt   = attendResults.filter(r => r.selected).length;
+  const isDiffFilter    = attendFilter === 'diff';
+  const isNoshiftFilter = attendFilter === 'noshift';
+  const selNoShift = [...noShiftChecked].filter(i => i < attendResults.length && !attendResults[i]?.hasShift).length;
 
-  // サマリー（差異ありセルはクリックでフィルター）
-  const isDiffFilter = attendFilter === 'diff';
+  // サマリー
   let sumH = `<div class="att-stat-box">
     <div class="att-stat-cell" style="background:var(--sur2);border-color:var(--bd)">
       <div style="font-size:18px;font-weight:800">${total}</div>
@@ -2398,13 +3865,17 @@ function renderAttendList(wpId) {
       <div style="font-size:18px;font-weight:800;color:var(--grn)">${matched}</div>
       <div style="font-size:10px;color:#166534">一致</div>
     </div>
-    <div class="att-stat-cell" style="background:var(--sur2);border-color:var(--bd)">
-      <div style="font-size:18px;font-weight:800;color:var(--muted)">${noShift}</div>
-      <div style="font-size:10px;color:var(--muted)">未登録</div>
+    <div class="att-stat-cell${isNoshiftFilter?' active-filter':''}"
+      style="background:${isNoshiftFilter?'#f0fdf4':'var(--sur2)'};
+             border-color:${isNoshiftFilter?'var(--grn)':'var(--bd)'};
+             cursor:${noShift>0?'pointer':'default'}"
+      ${noShift>0?`onclick="toggleAttendFilter('noshift')" title="未登録の日だけ表示"`:''}">
+      <div style="font-size:18px;font-weight:800;color:${isNoshiftFilter?'var(--grn)':'var(--muted)'}">${noShift}</div>
+      <div style="font-size:10px;color:${isNoshiftFilter?'#166534':'var(--muted)'}">未登録${isNoshiftFilter?' ✓':noShift>0?' 📋':''}</div>
     </div>
   </div>`;
 
-  if (withDiff > 0) {
+  if (isDiffFilter && withDiff > 0) {
     sumH += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
       <span style="font-size:12px;color:var(--muted)"><b>${selCnt}</b>件選択中</span>
       <div style="display:flex;gap:5px">
@@ -2413,20 +3884,40 @@ function renderAttendList(wpId) {
       </div>
     </div>`;
   }
+  if (isNoshiftFilter && noShift > 0) {
+    sumH += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <span style="font-size:12px;color:var(--muted)"><b>${selNoShift}</b>件選択中</span>
+      <div style="display:flex;gap:5px">
+        <button onclick="toggleAllNoShift(true)"  class="btn btn-sm" style="background:var(--sur2);border:1px solid var(--bd);color:var(--tx)">全てにチェック</button>
+        <button onclick="toggleAllNoShift(false)" class="btn btn-sm" style="background:var(--sur2);border:1px solid var(--bd);color:var(--tx)">全て外す</button>
+      </div>
+    </div>`;
+  }
   document.getElementById('attendSummary').innerHTML = sumH;
 
   // リスト（フィルター適用）
   const displayIdxs = isDiffFilter
     ? attendResults.map((_, i) => i).filter(i => attendResults[i].hasDiffs)
-    : attendResults.map((_, i) => i);
+    : isNoshiftFilter
+      ? attendResults.map((_, i) => i).filter(i => !attendResults[i].hasShift)
+      : attendResults.map((_, i) => i);
 
   let h = '';
   if (isDiffFilter) {
     h += `<div style="display:flex;align-items:center;justify-content:space-between;
       background:#fff7ed;border:1px solid #fed7aa;border-radius:var(--rs);
       padding:8px 11px;margin-bottom:8px">
-      <span style="font-size:12px;font-weight:700;color:#92400e">差異がある日のみ表示（${withDiff}件）</span>
+      <span style="font-size:12px;font-weight:700;color:#92400e">差異がある日のみ（${withDiff}件）</span>
       <button onclick="toggleAttendFilter('diff')" class="btn btn-sm"
+        style="background:var(--sur2);border:1px solid var(--bd);color:var(--tx)">全件表示</button>
+    </div>`;
+  }
+  if (isNoshiftFilter) {
+    h += `<div style="display:flex;align-items:center;justify-content:space-between;
+      background:#f0fdf4;border:1px solid #86efac;border-radius:var(--rs);
+      padding:8px 11px;margin-bottom:8px">
+      <span style="font-size:12px;font-weight:700;color:#166534">未登録の日のみ（${noShift}件）— チェックして新規登録</span>
+      <button onclick="toggleAttendFilter('noshift')" class="btn btn-sm"
         style="background:var(--sur2);border:1px solid var(--bd);color:var(--tx)">全件表示</button>
     </div>`;
   }
@@ -2435,6 +3926,72 @@ function renderAttendList(wpId) {
     const r  = attendResults[i];
     const d  = new Date(r.att.date + 'T00:00:00');
     const ds = `${d.getMonth()+1}/${padZ(d.getDate())}（${DOW[d.getDay()]}）`;
+    const remBadges = r.att.remarks.map(rk =>
+      `<span class="att-badge ${rk === '年休' ? 'att-badge-pl' : 'att-badge-rem'}">${escHtml(rk)}</span>`).join('');
+    // ── 未登録フィルターモードの行 ──
+    if (isNoshiftFilter && !r.hasShift) {
+      const checked  = noShiftChecked.has(i);
+      const chkColor = checked ? 'var(--grn)' : '#fff';
+      const chkBd    = checked ? 'var(--grn)' : 'var(--bd)';
+      const chkMark  = checked ? '✓' : '';
+      const schedEndMin  = t2m(r.att.scheduled.end);
+      const actualEndMin = t2m(r.att.actual.end);
+      const isED   = actualEndMin < schedEndMin;
+      const regEnd = isED ? r.att.scheduled.end : r.att.actual.end;
+      const regEd  = isED ? (schedEndMin - actualEndMin) : 0;
+      const regBrk = r.att.breakMinutes ?? 60;
+      if (r.isYearlyLeave) {
+        h += `<div class="att-row clickable${checked?' no-diff':''}" onclick="toggleNoShift(${i})">
+          <span style="width:17px;height:17px;border-radius:4px;flex-shrink:0;margin-top:2px;
+            background:${chkColor};border:2px solid ${chkBd};
+            display:flex;align-items:center;justify-content:center;
+            font-size:10px;font-weight:800;color:#fff">${chkMark}</span>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:5px">
+              <span style="font-size:13px;font-weight:700">${ds}</span>
+              <span class="att-badge att-badge-none">未登録</span>
+              <span class="att-badge att-badge-pl">年休</span>
+            </div>
+            <div style="margin-top:4px;padding:5px 8px;border-radius:5px;font-size:11px;
+              background:${checked?'#dcfce7':'#f0fdf4'};color:${checked?'#166534':'#166534'}">
+              🌿 登録内容: 有給休暇（1日）
+            </div>
+          </div>
+        </div>`;
+        continue;
+      }
+      h += `<div class="att-row clickable${checked?' no-diff':''}" onclick="toggleNoShift(${i})">
+        <span style="width:17px;height:17px;border-radius:4px;flex-shrink:0;margin-top:2px;
+          background:${chkColor};border:2px solid ${chkBd};
+          display:flex;align-items:center;justify-content:center;
+          font-size:10px;font-weight:800;color:#fff">${chkMark}</span>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:5px">
+            <span style="font-size:13px;font-weight:700">${ds}</span>
+            <span class="att-badge att-badge-none">未登録</span>${remBadges}
+          </div>
+          <div class="att-cmp">
+            <div></div>
+            <div class="att-cmp-hd">勤怠予定</div><div class="att-cmp-hd">勤怠実績</div>
+            <div class="att-cmp-lbl">開始</div>
+            <div class="att-val-same">${r.att.scheduled.start}</div>
+            <div class="att-val-same">${r.att.actual.start}</div>
+            <div class="att-cmp-lbl">終了</div>
+            <div class="att-val-same">${r.att.scheduled.end}</div>
+            <div class="att-val-same">${r.att.actual.end}</div>
+            ${r.att.breakMinutes !== null
+              ? `<div class="att-cmp-lbl">休憩</div><div>—</div><div class="att-val-same">${r.att.breakMinutes}分</div>`
+              : ''}
+          </div>
+          <div style="margin-top:6px;padding:5px 8px;border-radius:5px;font-size:11px;
+            background:${checked?'#dcfce7':'var(--sur2)'};color:${checked?'#166534':'var(--muted)'}">
+            📝 登録内容: ${r.att.actual.start}〜${regEnd}（休憩${regBrk}分${regEd>0?`・一部解消${regEd}分`:''}）
+          </div>
+        </div>
+      </div>`;
+      continue; // 通常の行レンダリングをスキップ
+    }
+
     const canSelect = r.hasShift && r.hasDiffs;
 
     let cls   = 'att-row';
@@ -2449,10 +4006,6 @@ function renderAttendList(wpId) {
       cls   += ' no-diff';
       badge  = '<span class="att-badge att-badge-match">一致</span>';
     }
-
-    const remBadges = r.att.remarks.map(rk =>
-      `<span class="att-badge att-badge-rem">${escHtml(rk)}</span>`
-    ).join('');
 
     // チェックボックス
     const chkColor = (r.selected && canSelect) ? 'var(--org)' : '#fff';
@@ -2528,7 +4081,13 @@ function renderAttendList(wpId) {
   }
   h += '</div>';
   document.getElementById('attendList').innerHTML = h;
-  document.getElementById('bulkApplyAttend').style.display = withDiff > 0 ? '' : 'none';
+  // 差異修正ボタン: noshift フィルター中は非表示
+  document.getElementById('bulkApplyAttend').style.display =
+    (!isNoshiftFilter && withDiff > 0) ? '' : 'none';
+  // 新規登録ボタン: noshift フィルター中のみ表示、選択件数を反映
+  const regBtn = document.getElementById('bulkRegisterBtn');
+  regBtn.style.display = (isNoshiftFilter && noShift > 0) ? '' : 'none';
+  if (isNoshiftFilter) regBtn.textContent = `選択した${selNoShift}件を新規登録`;
 }
 
 function toggleAttend(i) {
@@ -2647,7 +4206,7 @@ async function initAuth() {
     const tp = new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 5000));
     const user = await Promise.race([fbGetUser(sess.id), tp]);
     if (!user) { localStorage.removeItem(AUTH_SESSION_KEY); return false; }
-    currentUser = { id: user.id, name: user.name || '', isAdmin: !!user.isAdmin };
+    currentUser = { id: user.id, name: user.name || '', isAdmin: !!user.isAdmin, isNoticeAdmin: !!user.isNoticeAdmin };
     return true;
   } catch(e) { return false; }
 }
@@ -2665,13 +4224,14 @@ async function doLogin() {
     if (!user || user.password !== pass) {
       showAuthErr(err, '社員番号またはパスワードが正しくありません'); return;
     }
-    currentUser   = { id: user.id, name: user.name || '', isAdmin: !!user.isAdmin };
+    currentUser   = { id: user.id, name: user.name || '', isAdmin: !!user.isAdmin, isNoticeAdmin: !!user.isNoticeAdmin };
     viewingUserId = null;
     localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify({ id: currentUser.id }));
     loadAppSettings();
     hideLoginScreen();
     document.getElementById('loadingOverlay').style.display = 'flex';
     await loadData();
+    await loadNotices().catch(() => {});
     document.getElementById('loadingOverlay').style.display = 'none';
     updateUserBar(); render();
   } catch(e) {
@@ -2712,7 +4272,7 @@ async function doRegister() {
 function doLogout() {
   localStorage.removeItem(AUTH_SESSION_KEY);
   currentUser = null; viewingUserId = null;
-  workplaces = []; shifts = []; appSettings = { bonusThreshold: 900 };
+  workplaces = []; shifts = []; appSettings = { bonusThreshold: 900, periodThresholds: {} };
   document.getElementById('viewingBanner').classList.remove('on');
   showLoginScreen();
 }
@@ -2813,6 +4373,13 @@ async function renderAdminContent() {
       const delBtn = !u.isAdmin && !isMe
         ? `<button class="btn btn-del btn-sm" style="min-height:28px;padding:2px 8px;font-size:11px"
              onclick="adminDeleteUser('${escHtml(u.id)}')">削除</button>` : '';
+      const naFixed  = NOTICE_ADMIN_IDS.has(u.id);
+      const naActive = naFixed || !!u.isNoticeAdmin;
+      const naBadge  = naFixed ? `<span class="notice-admin-badge">通知管理者（固定）</span>` : '';
+      const naBtn    = !naFixed && !isMe
+        ? `<button class="btn btn-sm" style="min-height:28px;padding:2px 8px;font-size:11px;background:${naActive?'#dbeafe':'var(--sur2)'};border:1.5px solid ${naActive?'#93c5fd':'var(--bd)'};color:${naActive?'#1d4ed8':'var(--muted)'}"
+             onclick="toggleNoticeAdmin('${escHtml(u.id)}', ${naActive})">📢 ${naActive?'通知権限あり':'通知権限なし'}</button>`
+        : '';
       h += `<div style="background:${bg};border-radius:var(--rs);padding:10px 11px;margin-bottom:5px">
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:5px">
           <div style="flex:1;min-width:80px">
@@ -2828,8 +4395,9 @@ async function renderAdminContent() {
             <div style="font-family:monospace;font-weight:600">${escHtml(u.password)}</div>
           </div>
           <div style="font-weight:700;font-size:11px;color:${kindC}">${kind}</div>
+          ${naBadge}
         </div>
-        <div style="display:flex;gap:5px;flex-wrap:wrap">${viewBtn}${cpBtn}${delBtn}</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap">${viewBtn}${cpBtn}${naBtn}${delBtn}</div>
       </div>`;
     }
     el.innerHTML = h;
@@ -2998,33 +4566,145 @@ async function executeSettingsImport() {
   }
 }
 
-// 突合フィルター切り替え
+// 突合フィルター切り替え（フィルター変更時に選択をリセット）
 function toggleAttendFilter(f) {
+  if (attendFilter !== f) noShiftChecked.clear();
   attendFilter = attendFilter === f ? null : f;
   renderAttendList(document.getElementById('attendWP').value);
+}
+
+// 未登録行のチェック切り替え
+function toggleNoShift(i) {
+  if (!attendResults[i] || attendResults[i].hasShift) return;
+  if (noShiftChecked.has(i)) noShiftChecked.delete(i);
+  else noShiftChecked.add(i);
+  renderAttendList(document.getElementById('attendWP').value);
+}
+
+// 未登録行を全選択/全解除
+function toggleAllNoShift(val) {
+  attendResults.forEach((r, i) => {
+    if (!r.hasShift) { if (val) noShiftChecked.add(i); else noShiftChecked.delete(i); }
+  });
+  renderAttendList(document.getElementById('attendWP').value);
+}
+
+// 選択した未登録日を新規シフトとして登録
+async function registerSelectedNoShifts() {
+  const wpId = document.getElementById('attendWP').value;
+  const idxs = [...noShiftChecked].filter(i => attendResults[i] && !attendResults[i].hasShift);
+  if (!idxs.length) { toast('登録する日を選択してください'); return; }
+
+  const previews = idxs.map(i => {
+    const r  = attendResults[i];
+    const { att } = r;
+    const d  = new Date(att.date + 'T00:00:00');
+    if (r.isYearlyLeave) return `・${d.getMonth()+1}/${padZ(d.getDate())}（${DOW[d.getDay()]}）: 年休`;
+    const ed = t2m(att.actual.end) < t2m(att.scheduled.end);
+    const endDisp = ed ? att.scheduled.end : att.actual.end;
+    return `・${d.getMonth()+1}/${padZ(d.getDate())}（${DOW[d.getDay()]}）: ${att.actual.start}〜${endDisp}`;
+  });
+  if (!confirm(`以下の${idxs.length}件を新規シフトとして登録します。\n\n${previews.join('\n')}\n\nよろしいですか？`)) return;
+
+  let added = 0;
+  for (const i of idxs) {
+    const r   = attendResults[i];
+    const { att } = r;
+    if (r.isYearlyLeave) {
+      shifts.push({
+        id: uid(), date: att.date, workplaceId: wpId,
+        startTime: '09:00', endTime: '17:00',
+        breakMinutes: 0, earlyDepartureMin: 0, manualOvertimeMin: 0,
+        breakZoneId: null, location: '', isPaidLeave: true,
+      });
+      added++;
+      continue;
+    }
+    const schedEndMin  = t2m(att.scheduled.end);
+    const actualEndMin = t2m(att.actual.end);
+    const isEarlyDep   = actualEndMin < schedEndMin;
+    shifts.push({
+      id: uid(), date: att.date, workplaceId: wpId,
+      startTime:        att.actual.start,
+      endTime:          isEarlyDep ? att.scheduled.end : att.actual.end,
+      breakMinutes:     att.breakMinutes ?? 60,
+      earlyDepartureMin: isEarlyDep ? (schedEndMin - actualEndMin) : 0,
+      manualOvertimeMin: 0,
+      breakZoneId: null,
+      location: '',
+      isPaidLeave: false,
+    });
+    added++;
+  }
+
+  try {
+    await persist();
+    // attendResults を登録済みに更新
+    for (const i of idxs) {
+      const att = attendResults[i].att;
+      const sh  = shifts.find(s => s.date === att.date && s.workplaceId === wpId);
+      if (sh) {
+        attendResults[i].shift    = sh;
+        attendResults[i].hasShift = true;
+        attendResults[i].diffs    = calcAttendDiffs(sh, att);
+        attendResults[i].hasDiffs = attendResults[i].diffs.length > 0;
+        attendResults[i].selected = attendResults[i].hasDiffs;
+      }
+    }
+    noShiftChecked.clear();
+    attendFilter = null;
+    toast(`${added}件のシフトを新規登録しました`);
+    renderAttendList(wpId);
+    render();
+  } catch(e) {
+    toast('登録に失敗しました（通信エラー）');
+  }
 }
 
 // ══════════════════════════════════════
 // アプリ設定（localStorage）
 // ══════════════════════════════════════
-let appSettings = { bonusThreshold: 900 };
+let appSettings = { bonusThreshold: 900, periodThresholds: {} };
 
 function getSettingsKey() {
-  // 社員番号ごとに設定キーを分ける（例: shiftMgrSettings_72581646）
   return 'shiftMgrSettings_' + (currentUser ? currentUser.id : '_anon');
 }
 
 function loadAppSettings() {
   try {
-    appSettings = { bonusThreshold: 900 }; // デフォルトにリセットしてからロード
+    appSettings = { bonusThreshold: 900, periodThresholds: {} };
     const s = localStorage.getItem(getSettingsKey());
     if (s) appSettings = { ...appSettings, ...JSON.parse(s) };
-  } catch(e) { appSettings = { bonusThreshold: 900 }; }
+    if (!appSettings.periodThresholds) appSettings.periodThresholds = {};
+  } catch(e) { appSettings = { bonusThreshold: 900, periodThresholds: {} }; }
 }
 
 function saveAppSetting(key, value) {
   appSettings[key] = value;
   try { localStorage.setItem(getSettingsKey(), JSON.stringify(appSettings)); } catch(e) {}
+}
+
+// 期別目標時間のキー生成
+function getPeriodKey(year, period) {
+  return `${year}-${period}`;
+}
+
+// 期別目標時間を取得（個別設定がなければ共通値を返す）
+function getBonusThreshold(year, period) {
+  const key = getPeriodKey(year, period);
+  if (appSettings.periodThresholds && appSettings.periodThresholds[key] != null)
+    return appSettings.periodThresholds[key];
+  return appSettings.bonusThreshold || 900;
+}
+
+// 期別目標時間を保存
+function updatePeriodThreshold(year, period, val) {
+  const v = parseInt(val);
+  if (isNaN(v) || v <= 0) return;
+  if (!appSettings.periodThresholds) appSettings.periodThresholds = {};
+  appSettings.periodThresholds[getPeriodKey(year, period)] = v;
+  saveAppSetting('periodThresholds', appSettings.periodThresholds);
+  renderHY();
 }
 
 function updateBonusThreshold(val) {
@@ -3091,14 +4771,15 @@ function renderHY() {
   for (const wp of workplaces) {
     const wpShifts = shifts.filter(s => s.workplaceId === wp.id && s.date >= startStr && s.date <= endStr);
     if (!wpShifts.length) continue;
-    let totalWorkMin = 0, totalOTMin = 0, totalWage = 0;
+    let totalWorkMin = 0, totalOTMin = 0, totalWage = 0, plCount = 0;
     for (const sh of wpShifts) {
       const r = calcShiftWage(sh, wp);
       totalWorkMin += r.workMin;
       totalOTMin   += r.overtimeWorkMin;
       totalWage    += r.totalWage;
+      if (sh.isPaidLeave) plCount++;
     }
-    wpStats.push({ wp, totalWorkMin, totalOTMin, totalWage, count: wpShifts.length });
+    wpStats.push({ wp, totalWorkMin, totalOTMin, totalWage, count: wpShifts.length, plCount });
   }
 
   let h = `<div style="font-size:12px;font-weight:700;color:var(--pri);text-align:center;margin-bottom:12px">${periodLabel}</div>`;
@@ -3110,13 +4791,15 @@ function renderHY() {
     for (const st of wpStats) {
       const otBadge = st.totalOTMin
         ? `<span class="ot-badge" style="margin-left:4px">残業${fmtHM(st.totalOTMin)}</span>` : '';
+      const plBadgeHY = st.plCount
+        ? `<span class="pl-badge" style="margin-left:4px;font-size:10px;padding:1px 6px;border-radius:4px">有給${st.plCount}日</span>` : '';
       h += `<div class="sum-row" style="align-items:flex-start">
         <div class="sum-left">
           <div><span class="dot" style="background:${st.wp.color}"></span>${escHtml(st.wp.name)}</div>
           <div style="font-size:11px;color:var(--muted);margin-top:2px">${st.count}勤務</div>
         </div>
         <div class="sum-right">
-          <div>${fmtHM(st.totalWorkMin)} ${otBadge}</div>
+          <div>${fmtHM(st.totalWorkMin)} ${otBadge}${plBadgeHY}</div>
           <strong style="font-size:15px;color:var(--pri)">¥${st.totalWage.toLocaleString()}</strong>
         </div>
       </div>`;
@@ -3137,9 +4820,39 @@ function renderHY() {
     h += '</div>';
   }
 
+  // ── 有給集計セクション ──
+  const plWPs = workplaces.filter(w => w.paidLeaveGrantDays > 0 || getAutoGrants(w).length > 0);
+  if (plWPs.length > 0) {
+    h += `<div class="sumbox" style="margin-top:10px;border-color:#bbf7d0">
+      <div class="sumbox-ttl" style="color:#166534">🌿 有給休暇</div>`;
+    for (const wp of plWPs) {
+      const used      = getPaidLeaveUsed(wp.id, startStr, endStr);
+      const usedAll   = getPaidLeaveUsed(wp.id);
+      const rem       = getPaidLeaveRemaining(wp);
+      const alert     = getPaidLeaveAlert(wp);
+      const alertHtml = alert
+        ? `<span class="pl-${alert.level === 'err' ? 'err' : 'warn'}" style="font-size:10px;padding:1px 6px;border-radius:4px;margin-left:5px">${escHtml(alert.msg)}</span>` : '';
+      const batchHtml = renderPLBatchHTML(wp);
+      const detailHtml = batchHtml
+        ? `<div style="margin-top:4px">${batchHtml}</div>`
+        : `<div style="font-size:11px;color:var(--muted)">付与: ${wp.paidLeaveGrantDays || 0}日${wp.paidLeaveExpiry ? '　期限: ' + wp.paidLeaveExpiry : ''}</div>`;
+      h += `<div class="sum-row" style="align-items:flex-start">
+        <div class="sum-left">
+          <div><span class="dot" style="background:${wp.color}"></span>${escHtml(wp.name)}${alertHtml}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">期間使用: ${used}日 ／ 累計: ${usedAll}日</div>
+          ${detailHtml}
+        </div>
+        <div class="sum-right" style="text-align:right">
+          <div style="font-size:14px;font-weight:700;color:#166534;margin-top:2px">残 ${rem}日</div>
+        </div>
+      </div>`;
+    }
+    h += '</div>';
+  }
+
   // ── 賞与算定セクション ──
   const bs        = collectBonusStats(startStr, endStr);
-  const thrH      = appSettings.bonusThreshold || 900;
+  const thrH      = getBonusThreshold(hyYear, hyPeriod);
   const thrMin    = thrH * 60;
   const bonusBase = bs.totalWorkMin + bs.totalEdMin; // 実働 + 一部解消時間
   const remaining = Math.max(0, thrMin - bonusBase);
@@ -3165,13 +4878,16 @@ function renderHY() {
       <div class="sum-right"><span class="ot-badge">${fmtHM(bs.totalOTMin)}</span></div>
     </div>
     <div class="sum-row" style="align-items:center">
-      <div class="sum-left">目標勤務時間</div>
+      <div class="sum-left">
+        <div>目標勤務時間</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px">この期間の個別設定</div>
+      </div>
       <div class="sum-right" style="display:flex;align-items:center;gap:4px">
         <input type="number" id="bonusThrInp" value="${thrH}" min="1" max="5000"
           inputmode="numeric"
-          style="width:58px;padding:4px 6px;border:1.5px solid var(--bd);border-radius:6px;
+          style="width:64px;padding:4px 6px;border:1.5px solid var(--bd);border-radius:6px;
                  font-size:13px;font-weight:700;text-align:right;background:#fff;outline:none"
-          onchange="updateBonusThreshold(this.value)">
+          onchange="updatePeriodThreshold(${hyYear},'${hyPeriod}',this.value)">
         <span style="font-size:11px;color:var(--muted)">時間</span>
       </div>
     </div>
@@ -3222,9 +4938,10 @@ document.getElementById('btnMonth').onclick = () => {
 };
 
 document.getElementById('fab').onclick   = () => openShift(null);
-document.getElementById('btnWP').onclick = openWPList;
 document.getElementById('btnHY').onclick = openHY;
 document.getElementById('btnImport').onclick   = openImport;
+document.getElementById('closeBulkDeleteBtn').onclick = closeBulkDelete;
+document.getElementById('closeImportChoice').onclick = closeImportChoice;
 document.getElementById('closeImport').onclick = closeImport;
 document.getElementById('parseShiftsBtn').onclick = runParseShifts;
 document.getElementById('backToStep1').onclick = () => {
@@ -3241,7 +4958,6 @@ document.getElementById('backLoginBtn').onclick  = switchToLogin;
 document.getElementById('btnLogout').onclick     = doLogout;
 document.getElementById('btnAdminPanel').onclick = openAdmin;
 document.getElementById('closeAdmin').onclick    = closeAdmin;
-document.getElementById('btnChangePw').onclick   = () => openChangePassword();
 document.getElementById('closeChangePassword').onclick = closeChangePassword;
 document.getElementById('cpSubmitBtn').onclick   = doChangePassword;
 document.getElementById('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
@@ -3259,14 +4975,14 @@ document.getElementById('btnSettingsImportBack').onclick = () => {
 };
 document.getElementById('btnSettingsImportExec').onclick = executeSettingsImport;
 
-document.getElementById('btnAttend').onclick        = openAttend;
 document.getElementById('closeAttend').onclick      = closeAttend;
 document.getElementById('parseAttendBtn').onclick   = runParseAttend;
 document.getElementById('backToAttendStep1').onclick = () => {
   document.getElementById('attendStep1').style.display = 'block';
   document.getElementById('attendStep2').style.display = 'none';
 };
-document.getElementById('bulkApplyAttend').onclick  = bulkApplyAttend;
+document.getElementById('bulkApplyAttend').onclick   = bulkApplyAttend;
+document.getElementById('bulkRegisterBtn').onclick   = registerSelectedNoShifts;
 
 document.getElementById('closeHY').onclick    = closeHY;
 document.getElementById('hyPrevYear').onclick = () => { hyYear--; renderHY(); };
@@ -3293,11 +5009,18 @@ document.getElementById('delWP').onclick       = deleteWP;
   el.addEventListener('change', livePreview);
 });
 
-['shiftOverlay','wpOverlay','wpEditOverlay','hyOverlay','importOverlay','attendOverlay','adminOverlay','changePasswordOverlay','settingsOverlay'].forEach(id => {
+['shiftOverlay','wpOverlay','wpEditOverlay','hyOverlay','bulkDeleteOverlay','importChoiceOverlay','importOverlay','attendOverlay','adminOverlay','changePasswordOverlay','settingsOverlay','noticesOverlay','noticeEditOverlay'].forEach(id => {
   document.getElementById(id).addEventListener('click', function(e) {
     if (e.target === this) this.classList.remove('on');
   });
 });
+
+document.getElementById('btnNotices').onclick       = openNotices;
+document.getElementById('closeNoticesBtn').onclick  = closeNotices;
+document.getElementById('noticesMarkAllBtn').onclick = markAllNoticesRead;
+document.getElementById('noticesAddBtn').onclick    = () => openNoticeEdit(null);
+document.getElementById('closeNoticeEditBtn').onclick = closeNoticeEdit;
+document.getElementById('noticeEditSubmitBtn').onclick = submitNoticeEdit;
 
 // ══════════════════════════════════════
 // 初期化
@@ -3324,6 +5047,7 @@ async function _startup() {
 
   if (authed) {
     await loadData().catch(() => {});
+    await loadNotices().catch(() => {});
     updateUserBar();
     render();
   } else {
