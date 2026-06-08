@@ -498,6 +498,17 @@ select.fc{font-size:14px}
 .ai-guide-body a{color:var(--pri);font-weight:700;text-decoration:underline}
 .ai-guide-illus{background:var(--sur2);border:1px solid var(--bd);border-radius:var(--rs);padding:7px 10px;margin-top:8px;font-size:11px;color:var(--muted);text-align:center;line-height:1.6}
 .ai-howto-link{background:none;border:none;color:var(--pri);font-size:11px;cursor:pointer;text-decoration:underline;padding:0;font-weight:600}
+
+/* ── Friend badge ── */
+#friendBadge{position:absolute;top:0;right:0;min-width:17px;height:17px;background:#ef4444;border-radius:9px;font-size:10px;font-weight:700;color:#fff;display:none;align-items:center;justify-content:center;padding:0 4px;pointer-events:none;line-height:1;border:2px solid var(--bg,#f8fafc);box-sizing:border-box}
+/* ── Friend chip ── */
+.chip.fc{opacity:.88;border:1.5px solid rgba(255,255,255,.28)!important}
+/* ── Friend modal ── */
+.friend-section-ttl{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 7px;padding-top:10px;border-top:1px solid var(--bd)}
+.friend-section-ttl:first-child{margin-top:0;padding-top:0;border-top:none}
+.friend-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--sur2);border:1.5px solid var(--bd);border-radius:var(--rs);margin-bottom:6px}
+.friend-item-name{flex:1;font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.friend-item-meta{font-size:11px;color:var(--muted);margin-top:2px}
 </style>
 </head>
 <body>
@@ -516,6 +527,7 @@ select.fc{font-size:14px}
     <div class="app-title">📋 シフト管理</div>
     <div style="display:flex;gap:4px">
       <button class="icon-btn notice-bell" id="btnNotices" title="お知らせ" style="font-size:18px">🔔<span id="noticeBadge"></span></button>
+      <button class="icon-btn notice-bell" id="btnFriends" title="フレンド" style="font-size:18px;position:relative">👥<span id="friendBadge"></span></button>
       <button class="icon-btn" id="btnTutorial" title="使い方" style="font-size:18px">🔰</button>
       <button class="icon-btn" id="btnImport" title="インポート" style="font-size:18px">📥</button>
       <button class="icon-btn" id="btnHY" title="半期集計" style="font-size:18px">📊</button>
@@ -1174,6 +1186,17 @@ DD(曜日) 予定開始:予定終了 実績開始-実績終了 休憩分 備考
         style="background:transparent;color:var(--pri);margin-top:8px;border:1.5px solid var(--pri)">
         はじめての方はこちら（新規登録）
       </button>
+      <div style="text-align:center;margin-top:10px">
+        <button style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;text-decoration:underline"
+          onclick="var el=document.getElementById('forgotPwInfo');el.style.display=el.style.display==='none'?'block':'none'">
+          パスワードをお忘れの方はこちら
+        </button>
+        <div id="forgotPwInfo" style="display:none;background:#eff6ff;border:1px solid #bfdbfe;border-radius:var(--rs);padding:12px;margin-top:8px;font-size:12px;color:#1e40af;line-height:1.8;text-align:left">
+          パスワードをお忘れの場合は管理者までご連絡ください。<br>
+          📧 yudai.hatano@icloud.com<br>
+          社員番号・お名前をお知らせください。
+        </div>
+      </div>
     </div>
 
     <!-- 新規登録フォーム -->
@@ -1471,6 +1494,24 @@ DD(曜日) 予定開始:予定終了 実績開始-実績終了 休憩分 備考
   </div>
 </div>
 
+<!-- ── Friends Overlay ── -->
+<div class="overlay" id="friendsOverlay" role="dialog" aria-modal="true">
+  <div class="modal" style="max-height:88vh;display:flex;flex-direction:column">
+    <div class="modal-hdr">
+      <div class="modal-ttl">👥 フレンド</div>
+      <button class="close-btn" id="closeFriendsBtn" aria-label="閉じる">✕</button>
+    </div>
+    <!-- 申請入力 -->
+    <div style="display:flex;gap:8px;margin-bottom:14px;flex-shrink:0">
+      <input type="text" class="fc" id="friendReqId" inputmode="numeric"
+        placeholder="社員番号を入力して申請" style="flex:1;font-size:13px;padding:8px 10px">
+      <button class="btn btn-pri" id="friendReqBtn" style="width:auto;padding:0 16px;font-size:13px;white-space:nowrap">申請する</button>
+    </div>
+    <!-- リスト -->
+    <div id="friendsList" style="overflow-y:auto;flex:1;padding-bottom:12px"></div>
+  </div>
+</div>
+
 <!-- ── Notices Overlay ── -->
 <div class="overlay" id="noticesOverlay" role="dialog" aria-modal="true">
   <div class="modal" style="max-height:85vh;display:flex;flex-direction:column">
@@ -1571,6 +1612,7 @@ function getDBPath(uid) {
 const AUTH_SESSION_KEY  = 'shiftMgrSession'; // セッションは localStorage に保持
 const USERS_PATH        = 'users'; // Firebase のユーザーデータパス
 const NOTICES_PATH      = DB_BASE + '/notices'; // グローバルお知らせパス
+const FRIENDS_PATH      = 'friends'; // フレンドデータパス
 const NOTICE_ADMIN_IDS  = new Set(['99999999', '72581646']); // お知らせ編集権限を常時付与するユーザーID
 const INIT_USERS_DATA = { // 初回起動時に Firebase に書き込む初期ユーザー
   '72581646': { password: '1', name: '幡野 雄大', isAdmin: true },
@@ -1642,6 +1684,9 @@ let notices          = {};   // { id: { title,body,date,... } } グローバル�
 let readNotices      = {};   // { noticeId: true } 既読状態（ログインユーザー分）
 let _noticesShowAll  = false;
 let _editNoticeId    = null;
+let friendsOutgoing  = {};   // { uid: { name, status, sentAt } } 自分が送った申請
+let friendsIncoming  = {};   // { uid: { name, status, sentAt } } 受け取った申請
+let friendShifts     = {};   // { uid: [shift objects] } 承認済みフレンドのシフト
 let currentUser  = null;
 let viewingUserId = null; // 管理者が他ユーザーのデータを閲覧中の場合にセット
 let attendFilter    = null; // null | 'diff' | 'noshift'
@@ -2702,6 +2747,226 @@ function closeAiGuide() {
   document.getElementById('aiGuideOverlay').classList.remove('on');
 }
 
+// ══════════════════════════════════════
+// フレンド機能
+// ══════════════════════════════════════
+
+async function loadFriends() {
+  if (!currentUser) return;
+  try {
+    const snap = await fdb.ref(`${FRIENDS_PATH}/${currentUser.id}`).get();
+    if (snap.exists()) {
+      const d = snap.val();
+      friendsOutgoing = d.outgoing || {};
+      friendsIncoming = d.incoming || {};
+    } else {
+      friendsOutgoing = {}; friendsIncoming = {};
+    }
+    updateFriendBadge();
+    await loadFriendShifts();
+  } catch(e) { console.error('loadFriends:', e); }
+}
+
+function updateFriendBadge() {
+  const badge = document.getElementById('friendBadge');
+  if (!badge) return;
+  const count = Object.values(friendsIncoming).filter(f => f.status === 'pending').length;
+  if (count > 0) {
+    badge.textContent = count > 9 ? '9+' : String(count);
+    badge.style.display = 'flex';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+async function loadFriendShifts() {
+  friendShifts = {};
+  const accepted = Object.keys(friendsOutgoing).filter(id => friendsOutgoing[id].status === 'accepted');
+  for (const fid of accepted) {
+    try {
+      const snap = await fdb.ref(getDBPath(fid) + '/shifts').get();
+      if (snap.exists()) friendShifts[fid] = fbArr(snap.val());
+    } catch(e) {}
+  }
+}
+
+function getFriendName(uid) {
+  return friendsOutgoing[uid]?.name || friendsIncoming[uid]?.name || uid;
+}
+
+function openFriends() {
+  renderFriendsList();
+  document.getElementById('friendsOverlay').classList.add('on');
+}
+
+function closeFriends() {
+  document.getElementById('friendsOverlay').classList.remove('on');
+}
+
+function renderFriendsList() {
+  const list = document.getElementById('friendsList');
+  if (!list) return;
+  let h = '';
+
+  const pendingIn = Object.entries(friendsIncoming).filter(([, f]) => f.status === 'pending');
+  if (pendingIn.length) {
+    h += `<div class="friend-section-ttl">📨 受信中の申請 (${pendingIn.length}件)</div>`;
+    for (const [uid, f] of pendingIn) {
+      h += `<div class="friend-item">
+        <div style="font-size:22px;flex-shrink:0">👤</div>
+        <div style="flex:1;min-width:0">
+          <div class="friend-item-name">${escHtml(f.name || uid)}</div>
+          <div class="friend-item-meta">社員番号: ${escHtml(uid)}</div>
+        </div>
+        <button class="btn btn-sm" style="background:var(--grn);color:#fff;margin-right:6px;white-space:nowrap" onclick="acceptFriendRequest('${uid}')">承認</button>
+        <button class="btn btn-sm" style="background:#fee2e2;color:#b91c1c;border:1.5px solid #fca5a5;white-space:nowrap" onclick="rejectFriendRequest('${uid}')">拒否</button>
+      </div>`;
+    }
+  }
+
+  const accepted = Object.entries(friendsOutgoing).filter(([, f]) => f.status === 'accepted');
+  if (accepted.length) {
+    h += `<div class="friend-section-ttl">✅ フレンド (${accepted.length}人)</div>`;
+    for (const [uid, f] of accepted) {
+      const sc = (friendShifts[uid] || []).length;
+      h += `<div class="friend-item">
+        <div style="font-size:22px;flex-shrink:0">👤</div>
+        <div style="flex:1;min-width:0">
+          <div class="friend-item-name">${escHtml(f.name || uid)}</div>
+          <div class="friend-item-meta">シフト ${sc}件表示中</div>
+        </div>
+        <button class="btn btn-sm" style="background:#fee2e2;color:#b91c1c;border:1.5px solid #fca5a5;white-space:nowrap" onclick="deleteFriend('${uid}')">削除</button>
+      </div>`;
+    }
+  }
+
+  const pendingOut = Object.entries(friendsOutgoing).filter(([, f]) => f.status === 'pending');
+  if (pendingOut.length) {
+    h += `<div class="friend-section-ttl">📤 送信中の申請 (${pendingOut.length}件)</div>`;
+    for (const [uid, f] of pendingOut) {
+      h += `<div class="friend-item">
+        <div style="font-size:22px;flex-shrink:0">👤</div>
+        <div style="flex:1;min-width:0">
+          <div class="friend-item-name">${escHtml(f.name || uid)}</div>
+          <div class="friend-item-meta">承認待ち</div>
+        </div>
+        <button class="btn btn-sm" style="background:var(--sur2);border:1.5px solid var(--bd);color:var(--muted);white-space:nowrap" onclick="cancelFriendRequest('${uid}')">キャンセル</button>
+      </div>`;
+    }
+  }
+
+  if (!h) {
+    h = `<div class="empty"><div class="empty-icon">👥</div>フレンドがいません<br><span style="font-size:11px;color:var(--muted)">上の欄に社員番号を入力して申請できます</span></div>`;
+  }
+
+  list.innerHTML = h;
+}
+
+async function sendFriendRequest() {
+  const inp = document.getElementById('friendReqId');
+  const targetId = (inp.value || '').trim();
+  if (!targetId) { toast('社員番号を入力してください'); return; }
+  if (targetId === currentUser.id) { toast('自分自身には申請できません'); return; }
+  if (friendsOutgoing[targetId]) { toast('すでに申請済みまたはフレンドです'); return; }
+
+  const btn = document.getElementById('friendReqBtn');
+  btn.disabled = true; btn.textContent = '申請中...';
+  try {
+    const targetUser = await fbGetUser(targetId);
+    if (!targetUser) { toast('その社員番号は見つかりません'); return; }
+
+    const now = Date.now();
+    const myName = currentUser.name || currentUser.id;
+    const targetName = targetUser.name || targetId;
+
+    await fdb.ref(`${FRIENDS_PATH}/${currentUser.id}/outgoing/${targetId}`).set({
+      name: targetName, status: 'pending', sentAt: now
+    });
+    await fdb.ref(`${FRIENDS_PATH}/${targetId}/incoming/${currentUser.id}`).set({
+      name: myName, status: 'pending', sentAt: now
+    });
+
+    friendsOutgoing[targetId] = { name: targetName, status: 'pending', sentAt: now };
+    inp.value = '';
+    toast(`${targetName} さんにフレンド申請を送りました`);
+    renderFriendsList();
+  } catch(e) {
+    console.error(e);
+    toast('申請に失敗しました');
+  } finally {
+    btn.disabled = false; btn.textContent = '申請する';
+  }
+}
+
+async function acceptFriendRequest(fromId) {
+  try {
+    const updates = {};
+    updates[`${FRIENDS_PATH}/${currentUser.id}/incoming/${fromId}/status`] = 'accepted';
+    updates[`${FRIENDS_PATH}/${fromId}/outgoing/${currentUser.id}/status`] = 'accepted';
+    await fdb.ref().update(updates);
+
+    if (friendsIncoming[fromId]) friendsIncoming[fromId].status = 'accepted';
+    const fromName = friendsIncoming[fromId]?.name || fromId;
+    if (!friendsOutgoing[fromId]) {
+      friendsOutgoing[fromId] = { name: fromName, status: 'accepted', sentAt: Date.now() };
+    } else {
+      friendsOutgoing[fromId].status = 'accepted';
+    }
+
+    updateFriendBadge();
+    toast(`${fromName} さんを承認しました`);
+    await loadFriendShifts();
+    renderFriendsList();
+    render();
+  } catch(e) { toast('承認に失敗しました'); }
+}
+
+async function rejectFriendRequest(fromId) {
+  try {
+    const updates = {};
+    updates[`${FRIENDS_PATH}/${currentUser.id}/incoming/${fromId}/status`] = 'rejected';
+    updates[`${FRIENDS_PATH}/${fromId}/outgoing/${currentUser.id}/status`] = 'rejected';
+    await fdb.ref().update(updates);
+
+    if (friendsIncoming[fromId]) friendsIncoming[fromId].status = 'rejected';
+    updateFriendBadge();
+    toast('申請を拒否しました');
+    renderFriendsList();
+  } catch(e) { toast('操作に失敗しました'); }
+}
+
+async function cancelFriendRequest(targetId) {
+  try {
+    const updates = {};
+    updates[`${FRIENDS_PATH}/${currentUser.id}/outgoing/${targetId}`] = null;
+    updates[`${FRIENDS_PATH}/${targetId}/incoming/${currentUser.id}`] = null;
+    await fdb.ref().update(updates);
+    delete friendsOutgoing[targetId];
+    toast('申請をキャンセルしました');
+    renderFriendsList();
+  } catch(e) { toast('キャンセルに失敗しました'); }
+}
+
+async function deleteFriend(friendId) {
+  const name = getFriendName(friendId);
+  if (!confirm(`${name} さんをフレンドから削除しますか？`)) return;
+  try {
+    const updates = {};
+    updates[`${FRIENDS_PATH}/${currentUser.id}/outgoing/${friendId}`] = null;
+    updates[`${FRIENDS_PATH}/${currentUser.id}/incoming/${friendId}`] = null;
+    updates[`${FRIENDS_PATH}/${friendId}/outgoing/${currentUser.id}`] = null;
+    updates[`${FRIENDS_PATH}/${friendId}/incoming/${currentUser.id}`] = null;
+    await fdb.ref().update(updates);
+    delete friendsOutgoing[friendId];
+    delete friendsIncoming[friendId];
+    delete friendShifts[friendId];
+    updateFriendBadge();
+    toast('フレンドを削除しました');
+    renderFriendsList();
+    render();
+  } catch(e) { toast('削除に失敗しました'); }
+}
+
 function openNoticeEdit(noticeId) {
   if (!isNoticeAdmin()) return;
   _editNoticeId = noticeId || null;
@@ -3004,6 +3269,17 @@ function renderWeek() {
         </div>`;
       }
     }
+    // フレンドのシフト（日付・時間・場所のみ、給与情報なし）
+    for (const [fid, fshifts] of Object.entries(friendShifts)) {
+      const fname = getFriendName(fid);
+      const short = fname.split(/[\s　]/)[0];
+      for (const fs of fshifts.filter(s => s.date === ds)) {
+        const floc = fs.location ? `<br><span style="opacity:.75;font-size:9px">${escHtml(fs.location.split('\n')[0])}</span>` : '';
+        h += `<div class="chip wk fc" style="background:#64748b" title="${escHtml(fname)}" onclick="event.stopPropagation()">
+          👤${escHtml(short)}: ${fs.startTime}〜${fs.endTime}${floc}
+        </div>`;
+      }
+    }
     h += '</div>';
   }
   h += '</div>';
@@ -3054,6 +3330,16 @@ function renderMonth() {
       </div>`;
     }
     if (ss.length > 2) h += `<div style="font-size:9px;color:var(--muted);text-align:center;padding:1px">+${ss.length-2}</div>`;
+    // フレンドのシフト（月ビュー：時間帯のみ）
+    for (const [fid, fshifts] of Object.entries(friendShifts)) {
+      const fname = getFriendName(fid);
+      const short = fname.split(/[\s　]/)[0];
+      for (const fs of fshifts.filter(s => s.date === ds)) {
+        h += `<div class="chip mo fc" style="background:#64748b" title="${escHtml(fname)}" onclick="event.stopPropagation()">
+          👤${escHtml(short)}: ${fs.startTime}〜${fs.endTime}
+        </div>`;
+      }
+    }
     h += '</div>';
   }
 
@@ -4653,6 +4939,7 @@ async function doLogin() {
     document.getElementById('loadingOverlay').style.display = 'flex';
     await loadData();
     await loadNotices().catch(() => {});
+    await loadFriends().catch(() => {});
     document.getElementById('loadingOverlay').style.display = 'none';
     updateUserBar(); render();
     if (!appSettings.tutorialDone) openTutorial(0);
@@ -4685,6 +4972,7 @@ async function doRegister() {
     document.getElementById('loadingOverlay').style.display = 'flex';
     await loadData();
     await loadNotices().catch(() => {});
+    await loadFriends().catch(() => {});
     document.getElementById('loadingOverlay').style.display = 'none';
     updateUserBar(); render();
     openTutorial(0);
@@ -5659,13 +5947,17 @@ document.getElementById('delWP').onclick       = deleteWP;
   el.addEventListener('change', livePreview);
 });
 
-['shiftOverlay','wpOverlay','wpEditOverlay','hyOverlay','bulkDeleteOverlay','importChoiceOverlay','importOverlay','attendOverlay','adminOverlay','changePasswordOverlay','settingsOverlay','restoreOverlay','aiGuideOverlay','noticesOverlay','noticeEditOverlay'].forEach(id => {
+['shiftOverlay','wpOverlay','wpEditOverlay','hyOverlay','bulkDeleteOverlay','importChoiceOverlay','importOverlay','attendOverlay','adminOverlay','changePasswordOverlay','settingsOverlay','restoreOverlay','aiGuideOverlay','friendsOverlay','noticesOverlay','noticeEditOverlay'].forEach(id => {
   document.getElementById(id).addEventListener('click', function(e) {
     if (e.target === this) this.classList.remove('on');
   });
 });
 
 document.getElementById('btnTutorial').onclick      = () => openTutorial(0);
+document.getElementById('btnFriends').onclick       = openFriends;
+document.getElementById('closeFriendsBtn').onclick  = closeFriends;
+document.getElementById('friendReqBtn').onclick     = sendFriendRequest;
+document.getElementById('friendReqId').addEventListener('keydown', e => { if (e.key === 'Enter') sendFriendRequest(); });
 document.getElementById('btnNotices').onclick       = openNotices;
 document.getElementById('closeNoticesBtn').onclick  = closeNotices;
 document.getElementById('noticesMarkAllBtn').onclick = markAllNoticesRead;
@@ -5733,6 +6025,7 @@ async function _startup() {
   if (authed) {
     await loadData().catch(() => {});
     await loadNotices().catch(() => {});
+    await loadFriends().catch(() => {});
     updateUserBar();
     render();
     if (!appSettings.tutorialDone) openTutorial(0);
