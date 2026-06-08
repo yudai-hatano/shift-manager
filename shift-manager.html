@@ -1236,6 +1236,13 @@ DD(曜日) 予定開始:予定終了 実績開始-実績終了 休憩分 備考
 
     <hr class="sec-divider">
 
+    <div class="sec-ttl"><span>バックアップから復元</span></div>
+    <button class="settings-nav-btn" onclick="closeSettings();openRestore()">
+      🔄 バックアップJSONから復元
+    </button>
+
+    <hr class="sec-divider">
+
     <div class="sec-ttl"><span>旧データのインポート</span></div>
     <p style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.7">
       旧バージョン（<code style="font-size:11px;background:var(--sur2);padding:1px 5px;border-radius:4px">yudai-hatano.github.io</code>）のデータを現在のアカウントにインポートします。<b>既存データは上書きされます。</b>
@@ -1280,6 +1287,90 @@ DD(曜日) 予定開始:予定終了 実績開始-実績終了 休憩分 備考
         <button class="btn" id="btnSettingsImportBack"
           style="flex:1;background:var(--sur2);border:1.5px solid var(--bd);color:var(--tx)">← 戻る</button>
         <button class="btn btn-pri" id="btnSettingsImportExec" style="flex:2">インポートする</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Backup Restore Overlay ── -->
+<div class="overlay" id="restoreOverlay" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-ttl">🔄 バックアップから復元</div>
+      <button class="close-btn" id="closeRestoreBtn" aria-label="閉じる">✕</button>
+    </div>
+
+    <!-- Step 1: 入力 -->
+    <div id="restoreStep1">
+      <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:var(--rs);padding:10px 12px;margin-bottom:14px;font-size:12px;color:#92400e;line-height:1.7">
+        GASが出力した全体バックアップJSON、または単一ユーザー形式のJSONに対応しています。
+      </div>
+
+      <div class="fg">
+        <label class="fl">ファイルから読み込む（.json / .txt）</label>
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;background:var(--sur2);border:1.5px dashed var(--bd);border-radius:var(--rs);padding:12px 13px;font-size:13px;color:var(--muted);transition:border-color .15s">
+          📁 ファイルを選択
+          <input type="file" id="restoreFileInput" accept=".json,.txt" style="display:none">
+          <span id="restoreFileName" style="font-size:11px;color:var(--pri);font-weight:700;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+        </label>
+      </div>
+
+      <div style="text-align:center;font-size:11px;color:var(--muted);margin:-2px 0 10px">または</div>
+
+      <div class="fg">
+        <label class="fl">JSONを貼り付け</label>
+        <textarea class="fc" id="restoreJsonText"
+          style="height:110px;resize:vertical;font-size:11px;font-family:monospace;line-height:1.5"
+          placeholder='{"shift-manager":{"ユーザーID":{...}},"users":{...}}'></textarea>
+      </div>
+
+      <div class="login-err" id="restoreErr" style="display:none;margin-bottom:10px"></div>
+      <button class="btn btn-pri" id="restoreParseBtn">解析して確認する</button>
+    </div>
+
+    <!-- Step 2: プレビュー + 実行 -->
+    <div id="restoreStep2" style="display:none">
+      <div id="restorePreview" style="margin-bottom:12px"></div>
+
+      <!-- 管理者専用オプション -->
+      <div id="restoreAdminOpts" style="display:none;margin-bottom:14px">
+        <div class="sec-ttl" style="margin-top:0"><span>復元対象（管理者オプション）</span></div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <label style="display:flex;align-items:center;gap:9px;font-size:13px;cursor:pointer;padding:8px 10px;background:var(--sur2);border:1.5px solid var(--bd);border-radius:var(--rs)">
+            <input type="radio" name="restoreMode" value="self" checked>
+            自分（<b id="restoreSelfId"></b>）のみ
+          </label>
+          <label style="display:flex;align-items:center;gap:9px;font-size:13px;cursor:pointer;padding:8px 10px;background:var(--sur2);border:1.5px solid var(--bd);border-radius:var(--rs)" id="restoreSpecificLabel">
+            <input type="radio" name="restoreMode" value="specific">
+            特定のユーザーを選んで復元
+          </label>
+          <div id="restoreUserSelectWrap" style="display:none;padding:0 0 4px 28px">
+            <select class="fc" id="restoreUserSelect" style="font-size:13px"></select>
+            <div id="restoreSpecificPreview" style="margin-top:8px"></div>
+          </div>
+          <label style="display:flex;align-items:center;gap:9px;font-size:13px;cursor:pointer;padding:8px 10px;background:#fee2e2;border:1.5px solid #fca5a5;border-radius:var(--rs)" id="restoreBulkLabel">
+            <input type="radio" name="restoreMode" value="bulk">
+            全ユーザー一括復元
+          </label>
+        </div>
+      </div>
+
+      <div id="restoreWarnBox" style="background:#fee2e2;border:1px solid #fca5a5;border-radius:var(--rs);padding:10px 12px;font-size:12px;color:#b91c1c;line-height:1.7;margin-bottom:10px">
+        ⚠️ <b>復元するとあなたの現在のデータは上書きされます。</b><br>この操作は元に戻せません。
+      </div>
+
+      <div id="restoreBulkConfirmWrap" style="display:none;margin-bottom:10px">
+        <label style="display:flex;align-items:flex-start;gap:9px;font-size:12px;cursor:pointer;background:#fee2e2;border:1.5px solid #fca5a5;border-radius:var(--rs);padding:10px 12px;color:#b91c1c">
+          <input type="checkbox" id="restoreBulkConfirm" style="margin-top:2px;flex-shrink:0">
+          <span>全ユーザーのデータを上書きすることを理解しました。この操作は取り消せません。</span>
+        </label>
+      </div>
+
+      <div style="display:flex;gap:8px">
+        <button class="btn" id="restoreBackBtn"
+          style="flex:1;background:var(--sur2);border:1.5px solid var(--bd);color:var(--tx)">← 戻る</button>
+        <button class="btn" id="restoreExecBtn"
+          style="flex:2;background:#ef4444;color:#fff;font-weight:700">🔄 復元する</button>
       </div>
     </div>
   </div>
@@ -2388,7 +2479,7 @@ async function copyPrompt(type, btn) {
     btn.classList.add('copied');
     setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 2000);
   } catch(e) {
-    showToast('コピーに失敗しました');
+    toast('コピーに失敗しました');
   }
 }
 
@@ -2476,7 +2567,7 @@ function _tutorialHighlight(targetId) {
 function _tutorialNext() {
   if (_tutorialStep >= TUTORIAL_STEPS.length - 1) {
     closeTutorial();
-    showToast('チュートリアル完了！🎉');
+    toast('チュートリアル完了！🎉');
     return;
   }
   _tutorialStep++;
@@ -4776,6 +4867,232 @@ async function executeSettingsImport() {
   }
 }
 
+// ══════════════════════════════════════
+// バックアップ復元
+// ══════════════════════════════════════
+let _restoreParsed = null;
+
+function openRestore() {
+  _restoreParsed = null;
+  document.getElementById('restoreStep1').style.display = '';
+  document.getElementById('restoreStep2').style.display = 'none';
+  document.getElementById('restoreErr').style.display = 'none';
+  document.getElementById('restoreJsonText').value = '';
+  document.getElementById('restoreFileName').textContent = '';
+  document.getElementById('restoreFileInput').value = '';
+  document.getElementById('restoreOverlay').classList.add('on');
+}
+
+function closeRestore() {
+  document.getElementById('restoreOverlay').classList.remove('on');
+  _restoreParsed = null;
+}
+
+function _parseBackupJson(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  // 全体バックアップ形式: { "shift-manager": { uid: {...} }, "users": {...} }
+  if (raw['shift-manager'] && typeof raw['shift-manager'] === 'object') {
+    return { type: 'full', smData: raw['shift-manager'] };
+  }
+  // 単一ユーザー形式: { workplaces, shifts, readNotices }
+  if (raw.workplaces || raw.shifts) {
+    return { type: 'single', data: raw };
+  }
+  // UID キー形式: { "uid": { workplaces, shifts }, ... }
+  const keys = Object.keys(raw).filter(k => k !== 'notices');
+  if (keys.length && keys.some(k => raw[k] && typeof raw[k] === 'object' && (raw[k].workplaces || raw[k].shifts))) {
+    return { type: 'full', smData: raw };
+  }
+  return null;
+}
+
+function _getUserDataFromParsed(parsed, uid) {
+  if (parsed.type === 'single') return parsed.data;
+  if (parsed.type === 'full') return parsed.smData[uid] || null;
+  return null;
+}
+
+function _buildRestorePreviewHtml(userData) {
+  const wps = fbArr(userData.workplaces);
+  const shs = fbArr(userData.shifts);
+  const dates = shs.map(s => s.date).filter(Boolean).sort();
+  const dateRange = dates.length ? `${escHtml(dates[0])} 〜 ${escHtml(dates[dates.length - 1])}` : '—';
+  const wpNames = wps.map(w => escHtml(w.name || '(名称なし)')).slice(0, 5).join('、')
+    + (wps.length > 5 ? `…他${wps.length - 5}件` : '');
+  return `<div style="background:var(--sur2);border:1px solid var(--bd);border-radius:var(--rs);padding:11px 13px;font-size:13px;display:flex;flex-direction:column;gap:5px">
+    <div>🏢 勤務先: <b>${wps.length}件</b>${wps.length ? `<span style="font-size:11px;color:var(--muted);margin-left:6px">${wpNames}</span>` : ''}</div>
+    <div>📅 シフト: <b>${shs.length}件</b></div>
+    ${dates.length ? `<div style="font-size:11px;color:var(--muted)">期間: ${dateRange}</div>` : ''}
+  </div>`;
+}
+
+function parseRestoreInput() {
+  const text = (document.getElementById('restoreJsonText').value || '').trim();
+  const errEl = document.getElementById('restoreErr');
+  errEl.style.display = 'none';
+  if (!text) {
+    errEl.textContent = 'JSONを貼り付けるか、ファイルを選択してください';
+    errEl.style.display = '';
+    return;
+  }
+  let raw;
+  try { raw = JSON.parse(text); } catch(e) {
+    errEl.textContent = 'ファイル形式が正しくありません（JSONとして読めませんでした）';
+    errEl.style.display = '';
+    return;
+  }
+  const parsed = _parseBackupJson(raw);
+  if (!parsed) {
+    errEl.textContent = 'JSONの構造を認識できませんでした。バックアップファイルか確認してください';
+    errEl.style.display = '';
+    return;
+  }
+  _restoreParsed = parsed;
+  _showRestorePreview();
+}
+
+function _showRestorePreview() {
+  const uid = currentUser?.id;
+  const parsed = _restoreParsed;
+  const isAdmin = !!currentUser?.isAdmin;
+
+  // 自分のデータを探す
+  const selfData = _getUserDataFromParsed(parsed, uid);
+
+  // プレビューHTML生成
+  let previewHtml = '';
+  if (selfData) {
+    previewHtml = `<div style="font-size:10.5px;font-weight:700;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px">復元されるデータ（社員番号 ${escHtml(uid)}）</div>`;
+    previewHtml += _buildRestorePreviewHtml(selfData);
+  } else if (parsed.type === 'full' && !isAdmin) {
+    previewHtml = `<div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:var(--rs);padding:10px 12px;font-size:12px;color:#b91c1c;line-height:1.7">
+      バックアップ内に社員番号 <b>${escHtml(uid)}</b> のデータが見つかりませんでした。</div>`;
+    document.getElementById('restorePreview').innerHTML = previewHtml;
+    document.getElementById('restoreStep1').style.display = 'none';
+    document.getElementById('restoreStep2').style.display = '';
+    document.getElementById('restoreAdminOpts').style.display = 'none';
+    document.getElementById('restoreExecBtn').disabled = true;
+    return;
+  } else if (parsed.type === 'full' && isAdmin) {
+    previewHtml = `<div style="background:#ede9fe;border:1px solid #c4b5fd;border-radius:var(--rs);padding:10px 12px;font-size:12px;color:#4c1d95;line-height:1.7">
+      バックアップ内に社員番号 <b>${escHtml(uid)}</b> のデータは見つかりませんでしたが、管理者として他のユーザーを選択して復元できます。</div>`;
+  }
+
+  document.getElementById('restorePreview').innerHTML = previewHtml;
+  document.getElementById('restoreExecBtn').disabled = false;
+
+  // 管理者オプション: full形式のときのみ表示
+  const adminOpts = document.getElementById('restoreAdminOpts');
+  if (isAdmin && parsed.type === 'full') {
+    adminOpts.style.display = '';
+    document.getElementById('restoreSelfId').textContent = uid;
+    const uids = Object.keys(parsed.smData).filter(k => k !== 'notices').sort();
+    const sel = document.getElementById('restoreUserSelect');
+    sel.innerHTML = uids.map(u => `<option value="${escHtml(u)}">${escHtml(u)}</option>`).join('');
+    _updateSpecificPreview();
+  } else {
+    adminOpts.style.display = 'none';
+  }
+
+  // ラジオリセット
+  const selfRadio = document.querySelector('input[name="restoreMode"][value="self"]');
+  if (selfRadio) { selfRadio.checked = true; _onRestoreModeChange('self'); }
+
+  document.getElementById('restoreStep1').style.display = 'none';
+  document.getElementById('restoreStep2').style.display = '';
+}
+
+function _updateSpecificPreview() {
+  const sel = document.getElementById('restoreUserSelect');
+  const uid = sel?.value;
+  const el = document.getElementById('restoreSpecificPreview');
+  if (!el || !uid || !_restoreParsed) return;
+  const d = _getUserDataFromParsed(_restoreParsed, uid);
+  el.innerHTML = d ? _buildRestorePreviewHtml(d)
+    : `<div style="font-size:12px;color:#b91c1c">このユーザーのデータはバックアップ内にありません</div>`;
+}
+
+function _onRestoreModeChange(mode) {
+  document.getElementById('restoreUserSelectWrap').style.display  = mode === 'specific' ? '' : 'none';
+  document.getElementById('restoreBulkConfirmWrap').style.display = mode === 'bulk'     ? '' : 'none';
+  document.getElementById('restoreBulkConfirm').checked = false;
+  const warnBox = document.getElementById('restoreWarnBox');
+  if (mode === 'bulk') {
+    warnBox.innerHTML = '⚠️ <b>全ユーザーのデータを上書きします。</b><br>バックアップ内に存在する全員を上書きします。この操作は取り消せません。';
+  } else {
+    warnBox.innerHTML = '⚠️ <b>復元するとあなたの現在のデータは上書きされます。</b><br>この操作は元に戻せません。';
+  }
+}
+
+async function executeRestore() {
+  if (!currentUser || !_restoreParsed) return;
+  const parsed = _restoreParsed;
+  let mode = 'self';
+  document.querySelectorAll('input[name="restoreMode"]').forEach(r => { if (r.checked) mode = r.value; });
+
+  const btn = document.getElementById('restoreExecBtn');
+  btn.disabled = true; btn.textContent = '復元中...';
+
+  try {
+    if (mode === 'bulk') {
+      if (!document.getElementById('restoreBulkConfirm').checked) {
+        toast('チェックボックスにチェックを入れてください'); return;
+      }
+      if (!currentUser.isAdmin) { toast('権限がありません'); return; }
+      if (parsed.type !== 'full') { toast('全体バックアップ形式でのみ一括復元が可能です'); return; }
+      const uids = Object.keys(parsed.smData).filter(k => k !== 'notices');
+      for (const u of uids) {
+        const d = parsed.smData[u];
+        if (!d || typeof d !== 'object') continue;
+        const payload = JSON.parse(JSON.stringify({
+          workplaces: fbArr(d.workplaces),
+          shifts: fbArr(d.shifts),
+          ...(d.readNotices && typeof d.readNotices === 'object' ? { readNotices: d.readNotices } : {}),
+        }));
+        await fdb.ref(getDBPath(u)).set(payload);
+      }
+      closeRestore();
+      toast(`${uids.length}人分のデータを復元しました`);
+      await loadData(); render();
+
+    } else if (mode === 'specific') {
+      if (!currentUser.isAdmin) { toast('権限がありません'); return; }
+      const targetUid = document.getElementById('restoreUserSelect').value;
+      const d = _getUserDataFromParsed(parsed, targetUid);
+      if (!d) { toast(`社員番号 ${targetUid} のデータがバックアップにありません`); return; }
+      const payload = JSON.parse(JSON.stringify({
+        workplaces: fbArr(d.workplaces),
+        shifts: fbArr(d.shifts),
+        ...(d.readNotices && typeof d.readNotices === 'object' ? { readNotices: d.readNotices } : {}),
+      }));
+      await fdb.ref(getDBPath(targetUid)).set(payload);
+      closeRestore();
+      toast(`社員番号 ${targetUid} のデータを復元しました`);
+      if (!viewingUserId || viewingUserId === targetUid) { await loadData(); render(); }
+
+    } else {
+      // self
+      const uid = currentUser.id;
+      const d = parsed.type === 'single' ? parsed.data : _getUserDataFromParsed(parsed, uid);
+      if (!d) { toast('バックアップ内に自分のデータが見つかりません'); return; }
+      const payload = JSON.parse(JSON.stringify({
+        workplaces: fbArr(d.workplaces),
+        shifts: fbArr(d.shifts),
+        ...(d.readNotices && typeof d.readNotices === 'object' ? { readNotices: d.readNotices } : {}),
+      }));
+      await fdb.ref(getDBPath(uid)).set(payload);
+      closeRestore();
+      toast('復元しました。リロードします...');
+      setTimeout(() => location.reload(), 1500);
+    }
+  } catch(e) {
+    toast('復元に失敗しました: ' + (e?.message || '不明なエラー'));
+    console.error('Restore error:', e);
+  } finally {
+    btn.disabled = false; btn.textContent = '🔄 復元する';
+  }
+}
+
 // 突合フィルター切り替え（フィルター変更時に選択をリセット）
 function toggleAttendFilter(f) {
   if (attendFilter !== f) noShiftChecked.clear();
@@ -5219,7 +5536,7 @@ document.getElementById('delWP').onclick       = deleteWP;
   el.addEventListener('change', livePreview);
 });
 
-['shiftOverlay','wpOverlay','wpEditOverlay','hyOverlay','bulkDeleteOverlay','importChoiceOverlay','importOverlay','attendOverlay','adminOverlay','changePasswordOverlay','settingsOverlay','noticesOverlay','noticeEditOverlay'].forEach(id => {
+['shiftOverlay','wpOverlay','wpEditOverlay','hyOverlay','bulkDeleteOverlay','importChoiceOverlay','importOverlay','attendOverlay','adminOverlay','changePasswordOverlay','settingsOverlay','restoreOverlay','noticesOverlay','noticeEditOverlay'].forEach(id => {
   document.getElementById(id).addEventListener('click', function(e) {
     if (e.target === this) this.classList.remove('on');
   });
@@ -5235,6 +5552,28 @@ document.getElementById('noticeEditSubmitBtn').onclick = submitNoticeEdit;
 document.getElementById('tutSkipBtn').onclick = closeTutorial;
 document.getElementById('tutPrevBtn').onclick = _tutorialPrev;
 document.getElementById('tutNextBtn').onclick = _tutorialNext;
+
+// バックアップ復元イベント
+document.getElementById('closeRestoreBtn').onclick = closeRestore;
+document.getElementById('restoreParseBtn').onclick  = parseRestoreInput;
+document.getElementById('restoreBackBtn').onclick   = () => {
+  document.getElementById('restoreStep1').style.display = '';
+  document.getElementById('restoreStep2').style.display = 'none';
+  document.getElementById('restoreErr').style.display = 'none';
+};
+document.getElementById('restoreExecBtn').onclick   = executeRestore;
+document.getElementById('restoreFileInput').onchange = function() {
+  const file = this.files[0];
+  if (!file) return;
+  document.getElementById('restoreFileName').textContent = file.name;
+  const reader = new FileReader();
+  reader.onload = e => { document.getElementById('restoreJsonText').value = e.target.result; };
+  reader.readAsText(file, 'utf-8');
+};
+document.getElementById('restoreUserSelect').onchange = _updateSpecificPreview;
+document.querySelectorAll('input[name="restoreMode"]').forEach(r => {
+  r.onchange = () => _onRestoreModeChange(r.value);
+});
 
 // ══════════════════════════════════════
 // 初期化
