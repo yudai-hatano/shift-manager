@@ -501,8 +501,8 @@ select.fc{font-size:14px}
 
 /* ── Friend badge ── */
 #friendBadge{position:absolute;top:0;right:0;min-width:17px;height:17px;background:#ef4444;border-radius:9px;font-size:10px;font-weight:700;color:#fff;display:none;align-items:center;justify-content:center;padding:0 4px;pointer-events:none;line-height:1;border:2px solid var(--bg,#f8fafc);box-sizing:border-box}
-/* ── Friend chip ── */
-.chip.fc{opacity:.88;border:1.5px solid rgba(255,255,255,.28)!important}
+/* ── Friend chip (サブ表示: 小さめ・破線枠) ── */
+.chip.fc{font-size:9.5px!important;padding:2px 5px!important;line-height:1.3!important;opacity:.82;border:1.5px dashed rgba(255,255,255,.5)!important;margin-top:1px!important}
 /* ── Friend modal ── */
 .friend-section-ttl{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 7px;padding-top:10px;border-top:1px solid var(--bd)}
 .friend-section-ttl:first-child{margin-top:0;padding-top:0;border-top:none}
@@ -1284,6 +1284,24 @@ DD(曜日) 予定開始:予定終了 実績開始-実績終了 休憩分 備考
 
     <hr class="sec-divider">
 
+    <div class="sec-ttl"><span>カレンダー設定</span></div>
+    <div class="setting-area" style="margin-bottom:4px">
+      <div class="setting-row">
+        <div class="setting-label">
+          <b>週の開始曜日</b>
+          <small>週ビューと週間所定外集計の起算曜日</small>
+        </div>
+        <div class="setting-ctrl">
+          <select id="weekStartDaySel" class="fc" style="font-size:13px;padding:5px 8px;border-radius:6px;height:36px" onchange="saveWeekStartDay(this.value)">
+            <option value="0">日曜始まり</option>
+            <option value="1">月曜始まり</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <hr class="sec-divider">
+
     <div class="sec-ttl"><span>バックアップから復元</span></div>
     <button class="settings-nav-btn" onclick="closeSettings();openRestore()">
       🔄 バックアップJSONから復元
@@ -1806,8 +1824,10 @@ function today0() { const d = new Date(); d.setHours(0,0,0,0); return d; }
 function sameDay(a, b) { return fmtDate(a) === fmtDate(b); }
 
 function weekStart(d) {
+  const startDay = (appSettings && appSettings.weekStartDay) || 0; // 0=日, 1=月
   const r = new Date(d);
-  r.setDate(r.getDate() - r.getDay());
+  const diff = (r.getDay() - startDay + 7) % 7;
+  r.setDate(r.getDate() - diff);
   r.setHours(0, 0, 0, 0);
   return r;
 }
@@ -2751,6 +2771,13 @@ function closeAiGuide() {
 // フレンド機能
 // ══════════════════════════════════════
 
+const FRIEND_COLORS = ['#7c3aed','#0891b2','#059669','#d97706','#db2777','#4338ca'];
+function friendColor(uid) {
+  let h = 0;
+  for (const c of String(uid)) h = (h * 31 + c.charCodeAt(0)) & 0xffff;
+  return FRIEND_COLORS[h % FRIEND_COLORS.length];
+}
+
 async function loadFriends() {
   if (!currentUser) return;
   try {
@@ -2867,7 +2894,10 @@ async function sendFriendRequest() {
   const targetId = (inp.value || '').trim();
   if (!targetId) { toast('社員番号を入力してください'); return; }
   if (targetId === currentUser.id) { toast('自分自身には申請できません'); return; }
-  if (friendsOutgoing[targetId]) { toast('すでに申請済みまたはフレンドです'); return; }
+  const existOut = friendsOutgoing[targetId];
+  if (existOut && (existOut.status === 'pending' || existOut.status === 'accepted')) {
+    toast('すでに申請済みまたはフレンドです'); return;
+  }
 
   const btn = document.getElementById('friendReqBtn');
   btn.disabled = true; btn.textContent = '申請中...';
@@ -3273,10 +3303,10 @@ function renderWeek() {
     for (const [fid, fshifts] of Object.entries(friendShifts)) {
       const fname = getFriendName(fid);
       const short = fname.split(/[\s　]/)[0];
+      const fc    = friendColor(fid);
       for (const fs of fshifts.filter(s => s.date === ds)) {
-        const floc = fs.location ? `<br><span style="opacity:.75;font-size:9px">${escHtml(fs.location.split('\n')[0])}</span>` : '';
-        h += `<div class="chip wk fc" style="background:#64748b" title="${escHtml(fname)}" onclick="event.stopPropagation()">
-          👤${escHtml(short)}: ${fs.startTime}〜${fs.endTime}${floc}
+        h += `<div class="chip wk fc" style="background:${fc}" title="${escHtml(fname)}" onclick="event.stopPropagation()">
+          ${escHtml(short)}: ${fs.startTime}〜${fs.endTime}
         </div>`;
       }
     }
@@ -3293,12 +3323,14 @@ function renderWeek() {
 function renderMonth() {
   const y = cur.getFullYear(), m = cur.getMonth(), td = today0();
   const first = new Date(y, m, 1), last = new Date(y, m + 1, 0);
-  const startDow = first.getDay();
+  const wsd = (appSettings && appSettings.weekStartDay) || 0; // 0=日, 1=月
+  const startDow = (first.getDay() - wsd + 7) % 7; // 1列目からの日数オフセット
   let h = '<div class="mo-grid">';
 
   for (let i = 0; i < 7; i++) {
-    const col = i===0 ? 'color:var(--red)' : i===6 ? 'color:var(--blu)' : '';
-    h += `<div class="mo-dh" style="${col}">${DOW[i]}</div>`;
+    const actualDow = (i + wsd) % 7;
+    const col = actualDow === 0 ? 'color:var(--red)' : actualDow === 6 ? 'color:var(--blu)' : '';
+    h += `<div class="mo-dh" style="${col}">${DOW[actualDow]}</div>`;
   }
 
   for (let i = 0; i < startDow; i++) {
@@ -3330,13 +3362,14 @@ function renderMonth() {
       </div>`;
     }
     if (ss.length > 2) h += `<div style="font-size:9px;color:var(--muted);text-align:center;padding:1px">+${ss.length-2}</div>`;
-    // フレンドのシフト（月ビュー：時間帯のみ）
+    // フレンドのシフト（月ビュー：時間帯のみ・色分け）
     for (const [fid, fshifts] of Object.entries(friendShifts)) {
       const fname = getFriendName(fid);
       const short = fname.split(/[\s　]/)[0];
+      const fc    = friendColor(fid);
       for (const fs of fshifts.filter(s => s.date === ds)) {
-        h += `<div class="chip mo fc" style="background:#64748b" title="${escHtml(fname)}" onclick="event.stopPropagation()">
-          👤${escHtml(short)}: ${fs.startTime}〜${fs.endTime}
+        h += `<div class="chip mo fc" style="background:${fc}" title="${escHtml(fname)}" onclick="event.stopPropagation()">
+          ${escHtml(short)}: ${fs.startTime}〜
         </div>`;
       }
     }
@@ -4984,7 +5017,8 @@ async function doRegister() {
 function doLogout() {
   localStorage.removeItem(AUTH_SESSION_KEY);
   currentUser = null; viewingUserId = null;
-  workplaces = []; shifts = []; appSettings = { bonusThreshold: 900, periodThresholds: {} };
+  workplaces = []; shifts = []; friendsOutgoing = {}; friendsIncoming = {}; friendShifts = {};
+  appSettings = { ..._APP_SETTINGS_DEFAULTS };
   document.getElementById('viewingBanner').classList.remove('on');
   showLoginScreen();
 }
@@ -5160,12 +5194,18 @@ async function stopViewingUserData() {
 let _pendingImportData = null;
 
 function openSettings() {
-  // Step1 に戻してから開く
   document.getElementById('settingsImportStep1').style.display = 'block';
   document.getElementById('settingsImportStep2').style.display = 'none';
   document.getElementById('settingsImportJson').value = '';
   _pendingImportData = null;
+  const wsdSel = document.getElementById('weekStartDaySel');
+  if (wsdSel) wsdSel.value = String(appSettings.weekStartDay || 0);
   document.getElementById('settingsOverlay').classList.add('on');
+}
+
+function saveWeekStartDay(val) {
+  saveAppSetting('weekStartDay', parseInt(val) || 0);
+  render();
 }
 function closeSettings() {
   document.getElementById('settingsOverlay').classList.remove('on');
@@ -5602,7 +5642,9 @@ async function registerSelectedNoShifts() {
 // ══════════════════════════════════════
 // アプリ設定（localStorage）
 // ══════════════════════════════════════
-let appSettings = { bonusThreshold: 900, periodThresholds: {} };
+const _APP_SETTINGS_DEFAULTS = { bonusThreshold: 900, periodThresholds: {}, weekStartDay: 0 };
+
+let appSettings = { ..._APP_SETTINGS_DEFAULTS };
 
 function getSettingsKey() {
   return 'shiftMgrSettings_' + (currentUser ? currentUser.id : '_anon');
@@ -5610,11 +5652,11 @@ function getSettingsKey() {
 
 function loadAppSettings() {
   try {
-    appSettings = { bonusThreshold: 900, periodThresholds: {} };
+    appSettings = { ..._APP_SETTINGS_DEFAULTS };
     const s = localStorage.getItem(getSettingsKey());
     if (s) appSettings = { ...appSettings, ...JSON.parse(s) };
     if (!appSettings.periodThresholds) appSettings.periodThresholds = {};
-  } catch(e) { appSettings = { bonusThreshold: 900, periodThresholds: {} }; }
+  } catch(e) { appSettings = { ..._APP_SETTINGS_DEFAULTS }; }
 }
 
 function saveAppSetting(key, value) {
