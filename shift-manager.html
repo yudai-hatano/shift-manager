@@ -487,6 +487,17 @@ select.fc{font-size:14px}
 .tut-btn-next{padding:8px 20px;border-radius:var(--rs);border:none;background:var(--pri);color:#fff;font-size:13px;font-weight:700;cursor:pointer;min-height:38px}
 .tut-btn-prev:hover{background:var(--bd)}
 .tut-btn-next:hover{background:var(--pri-d)}
+
+/* ── AI Guide Modal ── */
+.ai-guide-step{display:flex;gap:12px;padding:13px 0;border-bottom:1px solid var(--bd)}
+.ai-guide-step:last-child{border-bottom:none;padding-bottom:4px}
+.ai-guide-num{width:28px;height:28px;border-radius:50%;background:var(--pri);color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.ai-guide-content{flex:1;min-width:0}
+.ai-guide-title{font-size:13px;font-weight:700;margin-bottom:4px;color:var(--tx)}
+.ai-guide-body{font-size:12px;color:#374151;line-height:1.65}
+.ai-guide-body a{color:var(--pri);font-weight:700;text-decoration:underline}
+.ai-guide-illus{background:var(--sur2);border:1px solid var(--bd);border-radius:var(--rs);padding:7px 10px;margin-top:8px;font-size:11px;color:var(--muted);text-align:center;line-height:1.6}
+.ai-howto-link{background:none;border:none;color:var(--pri);font-size:11px;cursor:pointer;text-decoration:underline;padding:0;font-weight:600}
 </style>
 </head>
 <body>
@@ -505,6 +516,7 @@ select.fc{font-size:14px}
     <div class="app-title">📋 シフト管理</div>
     <div style="display:flex;gap:4px">
       <button class="icon-btn notice-bell" id="btnNotices" title="お知らせ" style="font-size:18px">🔔<span id="noticeBadge"></span></button>
+      <button class="icon-btn" id="btnTutorial" title="使い方" style="font-size:18px">🔰</button>
       <button class="icon-btn" id="btnImport" title="インポート" style="font-size:18px">📥</button>
       <button class="icon-btn" id="btnHY" title="半期集計" style="font-size:18px">📊</button>
       <button class="icon-btn" id="btnSettings" title="設定" style="font-size:18px">⚙️</button>
@@ -931,6 +943,15 @@ select.fc{font-size:14px}
         </div>
       </div>
 
+      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:var(--rs);padding:11px 13px;margin-bottom:10px;font-size:12px;color:#1e40af;line-height:1.75">
+        下のAIへの指示（プロンプト）をコピーして、ChatGPT・Gemini・Claudeなどの AIチャットに貼り付けてから、シフト表の画像も一緒に送ってください。<br>
+        AIが自動で必要な情報だけを整理してくれます。<br>
+        その結果をコピーして下のテキストエリアに貼り付けてインポートしてください。
+      </div>
+      <div style="text-align:right;margin-bottom:8px">
+        <button class="ai-howto-link" onclick="openAiGuide()">AIの使い方がわからない方はこちら →</button>
+      </div>
+
       <div class="ai-prompt-box">
         <div class="ai-prompt-header">
           <span class="ai-prompt-label">🤖 AI文字起こしプロンプト</span>
@@ -1055,6 +1076,15 @@ HH:MM〜HH:MM
           </p>
         </div>
       </details>
+
+      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:var(--rs);padding:11px 13px;margin-bottom:10px;font-size:12px;color:#1e40af;line-height:1.75">
+        下のAIへの指示（プロンプト）をコピーして、ChatGPT・Gemini・Claudeなどの AIチャットに貼り付けてから、日別勤怠表のPDFも一緒に送ってください。<br>
+        AIが自動で必要な情報だけを整理してくれます。<br>
+        その結果をコピーして下のテキストエリアに貼り付けてインポートしてください。
+      </div>
+      <div style="text-align:right;margin-bottom:8px">
+        <button class="ai-howto-link" onclick="openAiGuide()">AIの使い方がわからない方はこちら →</button>
+      </div>
 
       <div class="ai-prompt-box">
         <div class="ai-prompt-header">
@@ -1229,11 +1259,6 @@ DD(曜日) 予定開始:予定終了 実績開始-実績終了 休憩分 備考
       🏢 勤務先の登録・編集
     </button>
 
-    <div class="sec-ttl"><span>ヘルプ</span></div>
-    <button class="settings-nav-btn" onclick="closeSettings();setTimeout(()=>openTutorial(0),300)">
-      📖 チュートリアルを見る
-    </button>
-
     <hr class="sec-divider">
 
     <div class="sec-ttl"><span>バックアップから復元</span></div>
@@ -1371,6 +1396,76 @@ DD(曜日) 予定開始:予定終了 実績開始-実績終了 休憩分 備考
           style="flex:1;background:var(--sur2);border:1.5px solid var(--bd);color:var(--tx)">← 戻る</button>
         <button class="btn" id="restoreExecBtn"
           style="flex:2;background:#ef4444;color:#fff;font-weight:700">🔄 復元する</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── AI Guide Modal ── -->
+<div class="overlay" id="aiGuideOverlay" role="dialog" aria-modal="true">
+  <div class="modal" style="max-height:88vh;display:flex;flex-direction:column">
+    <div class="modal-hdr">
+      <div class="modal-ttl">🤖 AIチャットの使い方</div>
+      <button class="close-btn" id="closeAiGuideBtn" aria-label="閉じる">✕</button>
+    </div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.65">
+      シフト表や勤怠表の画像・PDFをAIに文字起こしさせる方法を説明します。
+    </p>
+    <div style="overflow-y:auto;flex:1">
+      <div class="ai-guide-step">
+        <div class="ai-guide-num">1</div>
+        <div class="ai-guide-content">
+          <div class="ai-guide-title">AIチャットを開く</div>
+          <div class="ai-guide-body">
+            以下のAIサービスはいずれも無料で使えます（要アカウント登録）。<br>
+            <a href="https://chat.openai.com" target="_blank" rel="noopener">ChatGPT（chat.openai.com）</a> や
+            <a href="https://claude.ai" target="_blank" rel="noopener">Claude（claude.ai）</a>
+            などをブラウザで開いてください。
+          </div>
+          <div class="ai-guide-illus">💻 ブラウザで上記URLを開いてアカウントにサインイン</div>
+        </div>
+      </div>
+      <div class="ai-guide-step">
+        <div class="ai-guide-num">2</div>
+        <div class="ai-guide-content">
+          <div class="ai-guide-title">プロンプトをコピーしてAIに貼り付ける</div>
+          <div class="ai-guide-body">
+            インポート画面に戻って「📋 コピー」ボタンを押し、AIのチャット入力欄に貼り付けてください。<br>
+            <b>まだ送信しないでください。</b>
+          </div>
+          <div class="ai-guide-illus">📋 コピーボタンを押す → AIのチャット欄に貼り付ける</div>
+        </div>
+      </div>
+      <div class="ai-guide-step">
+        <div class="ai-guide-num">3</div>
+        <div class="ai-guide-content">
+          <div class="ai-guide-title">シフト表の画像を添付して送信する</div>
+          <div class="ai-guide-body">
+            チャット入力欄にある <b>📎 クリップアイコン（画像添付ボタン）</b> を押して、シフト表または日別勤怠表のPDFや画像を添付してから送信してください。
+          </div>
+          <div class="ai-guide-illus">📎 添付ボタン → ファイルを選択 → 送信ボタンを押す</div>
+        </div>
+      </div>
+      <div class="ai-guide-step">
+        <div class="ai-guide-num">4</div>
+        <div class="ai-guide-content">
+          <div class="ai-guide-title">AIの回答をコピーする</div>
+          <div class="ai-guide-body">
+            AIが整理して出力した文字をすべてコピーしてください。<br>
+            ChatGPTなら回答下部の「コピー」ボタンが便利です。
+          </div>
+          <div class="ai-guide-illus">📄 AIの出力テキストをコピーボタンまたは全選択でコピー</div>
+        </div>
+      </div>
+      <div class="ai-guide-step">
+        <div class="ai-guide-num" style="background:var(--grn)">5</div>
+        <div class="ai-guide-content">
+          <div class="ai-guide-title">インポート画面に貼り付けて完了！</div>
+          <div class="ai-guide-body">
+            このアプリのインポート画面に戻り、テキストエリアにコピーした内容を貼り付けてから「解析する」ボタンを押してください。
+          </div>
+          <div class="ai-guide-illus">✅ テキストエリアに貼り付け → 「解析する」を押して完了！</div>
+        </div>
       </div>
     </div>
   </div>
@@ -2544,9 +2639,8 @@ let _tutorialStep = 0;
 
 function openTutorial(step = 0) {
   _tutorialStep = step;
+  document.getElementById('tutorialOverlay').style.display = 'block';
   _renderTutorialStep();
-  document.getElementById('tutorialOverlay').style.display = '';
-  document.getElementById('tutorialRing').style.display = '';
 }
 
 function closeTutorial() {
@@ -2582,7 +2676,7 @@ function _tutorialHighlight(targetId) {
   ring.style.left   = (rect.left - pad) + 'px';
   ring.style.width  = (rect.width  + pad * 2) + 'px';
   ring.style.height = (rect.height + pad * 2) + 'px';
-  ring.style.display = '';
+  ring.style.display = 'block';
 }
 
 function _tutorialNext() {
@@ -2599,6 +2693,13 @@ function _tutorialPrev() {
   if (_tutorialStep <= 0) return;
   _tutorialStep--;
   _renderTutorialStep();
+}
+
+function openAiGuide() {
+  document.getElementById('aiGuideOverlay').classList.add('on');
+}
+function closeAiGuide() {
+  document.getElementById('aiGuideOverlay').classList.remove('on');
 }
 
 function openNoticeEdit(noticeId) {
@@ -4554,6 +4655,7 @@ async function doLogin() {
     await loadNotices().catch(() => {});
     document.getElementById('loadingOverlay').style.display = 'none';
     updateUserBar(); render();
+    if (!appSettings.tutorialDone) openTutorial(0);
   } catch(e) {
     showAuthErr(err, '接続エラーが発生しました。再試行してください。');
   } finally { btn.disabled = false; btn.textContent = 'ログイン'; }
@@ -5557,18 +5659,20 @@ document.getElementById('delWP').onclick       = deleteWP;
   el.addEventListener('change', livePreview);
 });
 
-['shiftOverlay','wpOverlay','wpEditOverlay','hyOverlay','bulkDeleteOverlay','importChoiceOverlay','importOverlay','attendOverlay','adminOverlay','changePasswordOverlay','settingsOverlay','restoreOverlay','noticesOverlay','noticeEditOverlay'].forEach(id => {
+['shiftOverlay','wpOverlay','wpEditOverlay','hyOverlay','bulkDeleteOverlay','importChoiceOverlay','importOverlay','attendOverlay','adminOverlay','changePasswordOverlay','settingsOverlay','restoreOverlay','aiGuideOverlay','noticesOverlay','noticeEditOverlay'].forEach(id => {
   document.getElementById(id).addEventListener('click', function(e) {
     if (e.target === this) this.classList.remove('on');
   });
 });
 
+document.getElementById('btnTutorial').onclick      = () => openTutorial(0);
 document.getElementById('btnNotices').onclick       = openNotices;
 document.getElementById('closeNoticesBtn').onclick  = closeNotices;
 document.getElementById('noticesMarkAllBtn').onclick = markAllNoticesRead;
 document.getElementById('noticesAddBtn').onclick    = () => openNoticeEdit(null);
 document.getElementById('closeNoticeEditBtn').onclick = closeNoticeEdit;
 document.getElementById('noticeEditSubmitBtn').onclick = submitNoticeEdit;
+document.getElementById('closeAiGuideBtn').onclick    = closeAiGuide;
 
 // null チェック付きイベント登録ヘルパー（要素が存在しない場合は初期化を止めない）
 function _on(id, event, handler) {
@@ -5631,6 +5735,7 @@ async function _startup() {
     await loadNotices().catch(() => {});
     updateUserBar();
     render();
+    if (!appSettings.tutorialDone) openTutorial(0);
   } else {
     showLoginScreen();
   }
