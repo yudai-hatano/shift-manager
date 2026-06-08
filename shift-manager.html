@@ -1421,6 +1421,27 @@ DD(曜日) 予定開始:予定終了 実績開始-実績終了 休憩分 備考
   <div style="font-size:13px;color:var(--muted)">データを読み込み中...</div>
 </div>
 
+<!-- ── Tutorial ── -->
+<div id="tutorialRing"></div>
+<div id="tutorialOverlay">
+  <div class="tutorial-card">
+    <div class="tut-steps" id="tutSteps"></div>
+    <div class="tut-progress"><div class="tut-progress-fill" id="tutProgressFill"></div></div>
+    <div class="tut-icon-title">
+      <div class="tut-icon" id="tutIcon"></div>
+      <div class="tut-title" id="tutTitle"></div>
+    </div>
+    <div class="tut-body" id="tutBody"></div>
+    <div class="tut-nav">
+      <button class="tut-skip" id="tutSkipBtn">スキップ</button>
+      <div class="tut-btns">
+        <button class="tut-btn-prev" id="tutPrevBtn">← 戻る</button>
+        <button class="tut-btn-next" id="tutNextBtn">次へ →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 <script>
@@ -5549,28 +5570,35 @@ document.getElementById('noticesAddBtn').onclick    = () => openNoticeEdit(null)
 document.getElementById('closeNoticeEditBtn').onclick = closeNoticeEdit;
 document.getElementById('noticeEditSubmitBtn').onclick = submitNoticeEdit;
 
-document.getElementById('tutSkipBtn').onclick = closeTutorial;
-document.getElementById('tutPrevBtn').onclick = _tutorialPrev;
-document.getElementById('tutNextBtn').onclick = _tutorialNext;
+// null チェック付きイベント登録ヘルパー（要素が存在しない場合は初期化を止めない）
+function _on(id, event, handler) {
+  const el = document.getElementById(id);
+  if (el) el[event] = handler;
+  else console.warn(`[init] 要素が見つかりません: #${id}`);
+}
+
+_on('tutSkipBtn', 'onclick', closeTutorial);
+_on('tutPrevBtn', 'onclick', _tutorialPrev);
+_on('tutNextBtn', 'onclick', _tutorialNext);
 
 // バックアップ復元イベント
-document.getElementById('closeRestoreBtn').onclick = closeRestore;
-document.getElementById('restoreParseBtn').onclick  = parseRestoreInput;
-document.getElementById('restoreBackBtn').onclick   = () => {
+_on('closeRestoreBtn', 'onclick', closeRestore);
+_on('restoreParseBtn',  'onclick', parseRestoreInput);
+_on('restoreBackBtn', 'onclick', () => {
   document.getElementById('restoreStep1').style.display = '';
   document.getElementById('restoreStep2').style.display = 'none';
   document.getElementById('restoreErr').style.display = 'none';
-};
-document.getElementById('restoreExecBtn').onclick   = executeRestore;
-document.getElementById('restoreFileInput').onchange = function() {
+});
+_on('restoreExecBtn', 'onclick', executeRestore);
+_on('restoreFileInput', 'onchange', function() {
   const file = this.files[0];
   if (!file) return;
   document.getElementById('restoreFileName').textContent = file.name;
   const reader = new FileReader();
   reader.onload = e => { document.getElementById('restoreJsonText').value = e.target.result; };
   reader.readAsText(file, 'utf-8');
-};
-document.getElementById('restoreUserSelect').onchange = _updateSpecificPreview;
+});
+_on('restoreUserSelect', 'onchange', _updateSpecificPreview);
 document.querySelectorAll('input[name="restoreMode"]').forEach(r => {
   r.onchange = () => _onRestoreModeChange(r.value);
 });
@@ -5627,26 +5655,5 @@ _startup().catch(e => {
   }
 });
 </script>
-
-<!-- ── Tutorial ── -->
-<div id="tutorialRing"></div>
-<div id="tutorialOverlay">
-  <div class="tutorial-card">
-    <div class="tut-steps" id="tutSteps"></div>
-    <div class="tut-progress"><div class="tut-progress-fill" id="tutProgressFill"></div></div>
-    <div class="tut-icon-title">
-      <div class="tut-icon" id="tutIcon"></div>
-      <div class="tut-title" id="tutTitle"></div>
-    </div>
-    <div class="tut-body" id="tutBody"></div>
-    <div class="tut-nav">
-      <button class="tut-skip" id="tutSkipBtn">スキップ</button>
-      <div class="tut-btns">
-        <button class="tut-btn-prev" id="tutPrevBtn">← 戻る</button>
-        <button class="tut-btn-next" id="tutNextBtn">次へ →</button>
-      </div>
-    </div>
-  </div>
-</div>
 </body>
 </html>
