@@ -509,6 +509,20 @@ select.fc{font-size:14px}
 .friend-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--sur2);border:1.5px solid var(--bd);border-radius:var(--rs);margin-bottom:6px}
 .friend-item-name{flex:1;font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .friend-item-meta{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* ── 1日ビュー ── */
+.day-section-lbl{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;padding:8px 0 6px;border-bottom:1px solid var(--bd);margin-bottom:10px}
+.day-shift-card{background:var(--sur2);border:1.5px solid var(--bd);border-radius:var(--rs);padding:11px 13px;margin-bottom:8px;border-left:4px solid;cursor:pointer;transition:border-color .12s}
+.day-shift-card:hover{filter:brightness(.96)}
+.day-shift-wp{font-size:10.5px;font-weight:700;color:var(--muted);margin-bottom:3px}
+.day-shift-time{font-size:17px;font-weight:800;color:var(--txt);letter-spacing:-.3px}
+.day-shift-loc{font-size:11px;color:var(--muted);margin-top:4px;display:flex;align-items:flex-start;gap:3px}
+.day-shift-wage{font-size:12px;font-weight:700;margin-top:5px}
+.day-friend-card{border-radius:var(--rs);padding:10px 13px;margin-bottom:7px;border-left:4px solid}
+.day-friend-name{font-size:12px;font-weight:800;margin-bottom:2px}
+.day-friend-time{font-size:15px;font-weight:800;letter-spacing:-.3px}
+.day-friend-loc{font-size:11px;margin-top:3px;opacity:.8;display:flex;align-items:flex-start;gap:3px}
+.day-empty{text-align:center;padding:20px 0;font-size:12px;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -542,6 +556,7 @@ select.fc{font-size:14px}
       <div class="view-toggle">
         <button class="vtbtn on" id="btnWeek">週</button>
         <button class="vtbtn" id="btnMonth">月</button>
+        <button class="vtbtn" id="btnDay">日</button>
       </div>
     </div>
     <button class="icon-btn" id="btnNext" style="font-size:22px;padding:0 6px">›</button>
@@ -1509,6 +1524,18 @@ DD(曜日) 予定開始:予定終了 実績開始-実績終了 休憩分 備考
         </div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- ── Day Detail Modal ── -->
+<div class="overlay" id="dayDetailOverlay" role="dialog" aria-modal="true">
+  <div class="modal" style="max-height:88vh;display:flex;flex-direction:column">
+    <div class="modal-hdr">
+      <div class="modal-ttl" id="dayDetailTitle"></div>
+      <button class="close-btn" id="closeDayDetailBtn" aria-label="閉じる">✕</button>
+    </div>
+    <div id="dayDetailContent" style="overflow-y:auto;flex:1;padding-bottom:4px"></div>
+    <button class="btn btn-pri" id="dayDetailAddBtn" style="margin-top:10px;flex-shrink:0">+ この日にシフトを追加</button>
   </div>
 </div>
 
@@ -2855,13 +2882,20 @@ function renderFriendsList() {
   if (accepted.length) {
     h += `<div class="friend-section-ttl">✅ フレンド (${accepted.length}人)</div>`;
     for (const [uid, f] of accepted) {
-      const sc = (friendShifts[uid] || []).length;
+      const sc      = (friendShifts[uid] || []).length;
+      const fc      = friendColor(uid);
+      const visible = friendVisible(uid);
+      const chkId   = `fvis_${uid}`;
       h += `<div class="friend-item">
-        <div style="font-size:22px;flex-shrink:0">👤</div>
+        <div style="width:12px;height:32px;border-radius:2px;flex-shrink:0;background:${fc};opacity:.85"></div>
         <div style="flex:1;min-width:0">
           <div class="friend-item-name">${escHtml(f.name || uid)}</div>
-          <div class="friend-item-meta">シフト ${sc}件表示中</div>
+          <div class="friend-item-meta">シフト ${sc}件</div>
         </div>
+        <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);cursor:pointer;flex-shrink:0;margin-right:8px;white-space:nowrap">
+          <input type="checkbox" id="${chkId}" ${visible?'checked':''} onchange="toggleFriendVisibility('${uid}',this.checked)" style="width:15px;height:15px;cursor:pointer">
+          表示
+        </label>
         <button class="btn btn-sm" style="background:#fee2e2;color:#b91c1c;border:1.5px solid #fca5a5;white-space:nowrap" onclick="deleteFriend('${uid}')">削除</button>
       </div>`;
     }
@@ -3231,7 +3265,11 @@ function getPayPeriod(startDay, refDate) {
 // ══════════════════════════════════════
 function render() {
   renderTitle();
-  document.getElementById('calWrap').innerHTML = view === 'week' ? renderWeek() : renderMonth();
+  let content;
+  if (view === 'week')       content = renderWeek();
+  else if (view === 'month') content = renderMonth();
+  else                       content = renderDay();
+  document.getElementById('calWrap').innerHTML = content;
   attachCal();
 }
 
@@ -3239,6 +3277,8 @@ function renderTitle() {
   const d = cur;
   if (view === 'month') {
     document.getElementById('navTitle').textContent = `${d.getFullYear()}年${d.getMonth()+1}月`;
+  } else if (view === 'day') {
+    document.getElementById('navTitle').textContent = `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${DOW[d.getDay()]}）`;
   } else {
     const ws = weekStart(d), we = new Date(ws);
     we.setDate(we.getDate() + 6);
@@ -3248,6 +3288,99 @@ function renderTitle() {
     else
       document.getElementById('navTitle').textContent = `${ws.getFullYear()}年${sm}/${ws.getDate()}〜${em}/${we.getDate()}`;
   }
+}
+
+// ─ 1日ビュー ─
+function renderDay() {
+  return renderDayContent(fmtDate(cur));
+}
+
+function renderDayContent(ds) {
+  let h = '<div style="padding:4px 0">';
+  const ss = shiftsOn(ds);
+
+  // ── 自分のシフト ──
+  h += '<div class="day-section-lbl">自分のシフト</div>';
+  if (!ss.length) {
+    h += '<div class="day-empty">シフトはありません</div>';
+  } else {
+    for (const sh of ss) {
+      const w   = getWP(sh.workplaceId);
+      const res = calcShiftWage(sh, w);
+      const timeLabel = sh.isPaidLeave ? '有休' : `${sh.startTime}〜${sh.endTime}`;
+      const wageLabel = sh.isPaidLeave
+        ? `有給休暇 ¥${res.totalWage.toLocaleString()}`
+        : res.isMonthly
+          ? (res.totalWage > 0 ? `残業 ¥${res.totalWage.toLocaleString()}` : '月給制')
+          : `¥${res.totalWage.toLocaleString()}`;
+      const locHtml = sh.location
+        ? `<div class="day-shift-loc">📍 ${escHtml(sh.location.split('\n').slice(0,2).join(' / '))}</div>` : '';
+      h += `<div class="day-shift-card" data-sid="${sh.id}" style="border-left-color:${w?.color||'#94a3b8'}">
+        <div class="day-shift-wp">${escHtml(w?.name || '不明な勤務先')}</div>
+        <div class="day-shift-time">${timeLabel}</div>
+        ${locHtml}
+        <div class="day-shift-wage" style="color:${w?.color||'var(--pri)'}">
+          ${sh.isPaidLeave?'🌴':'💴'} ${wageLabel}
+        </div>
+      </div>`;
+    }
+  }
+
+  // ── フレンドのシフト ──
+  const visibleFriends = Object.keys(friendShifts).filter(fid => friendVisible(fid));
+  if (visibleFriends.length) {
+    h += '<div class="day-section-lbl" style="margin-top:14px">フレンドのシフト</div>';
+    let anyFriend = false;
+    for (const fid of visibleFriends) {
+      const fname = getFriendName(fid);
+      const fc    = friendColor(fid);
+      for (const fs of (friendShifts[fid] || []).filter(s => s.date === ds)) {
+        anyFriend = true;
+        const locHtml = fs.location
+          ? `<div class="day-friend-loc" style="color:${fc}">📍 ${escHtml(fs.location.split('\n').slice(0,2).join(' / '))}</div>` : '';
+        h += `<div class="day-friend-card" style="background:${fc}18;border-left-color:${fc}">
+          <div class="day-friend-name" style="color:${fc}">${escHtml(fname)}</div>
+          <div class="day-friend-time" style="color:${fc}">${fs.startTime}〜${fs.endTime}</div>
+          ${locHtml}
+        </div>`;
+      }
+    }
+    if (!anyFriend) h += '<div class="day-empty">フレンドのシフトはありません</div>';
+  }
+
+  h += '</div>';
+  return h;
+}
+
+function openDayDetail(ds) {
+  const d = new Date(ds + 'T00:00:00');
+  document.getElementById('dayDetailTitle').textContent =
+    `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${DOW[d.getDay()]}）`;
+  document.getElementById('dayDetailContent').innerHTML = renderDayContent(ds);
+  document.getElementById('dayDetailAddBtn').onclick = () => {
+    closeDayDetail(); openShift(null, ds);
+  };
+  document.querySelectorAll('#dayDetailContent .day-shift-card[data-sid]').forEach(el => {
+    el.addEventListener('click', () => { closeDayDetail(); openShift(el.dataset.sid); });
+  });
+  document.getElementById('dayDetailOverlay').classList.add('on');
+}
+
+function closeDayDetail() {
+  document.getElementById('dayDetailOverlay').classList.remove('on');
+}
+
+// ── フレンド表示フィルター ──
+function friendVisible(uid) {
+  const v = appSettings.friendVisibility;
+  return !v || v[uid] !== false;
+}
+
+function toggleFriendVisibility(uid, checked) {
+  if (!appSettings.friendVisibility) appSettings.friendVisibility = {};
+  appSettings.friendVisibility[uid] = checked;
+  saveAppSetting('friendVisibility', appSettings.friendVisibility);
+  render();
 }
 
 // ─ 週ビュー ─
@@ -3301,12 +3434,14 @@ function renderWeek() {
     }
     // フレンドのシフト（日付・時間・場所のみ、給与情報なし）
     for (const [fid, fshifts] of Object.entries(friendShifts)) {
+      if (!friendVisible(fid)) continue;
       const fname = getFriendName(fid);
       const short = fname.split(/[\s　]/)[0];
       const fc    = friendColor(fid);
       for (const fs of fshifts.filter(s => s.date === ds)) {
+        const floc = fs.location ? `<br><span style="opacity:.85;font-size:8px">${escHtml(fs.location.split('\n')[0])}</span>` : '';
         h += `<div class="chip wk fc" style="background:${fc}" title="${escHtml(fname)}" onclick="event.stopPropagation()">
-          ${escHtml(short)}: ${fs.startTime}〜${fs.endTime}
+          ${escHtml(short)}: ${fs.startTime}〜${fs.endTime}${floc}
         </div>`;
       }
     }
@@ -3362,8 +3497,9 @@ function renderMonth() {
       </div>`;
     }
     if (ss.length > 2) h += `<div style="font-size:9px;color:var(--muted);text-align:center;padding:1px">+${ss.length-2}</div>`;
-    // フレンドのシフト（月ビュー：時間帯のみ・色分け）
+    // フレンドのシフト（月ビュー：名前+開始時刻・色分け）
     for (const [fid, fshifts] of Object.entries(friendShifts)) {
+      if (!friendVisible(fid)) continue;
       const fname = getFriendName(fid);
       const short = fname.split(/[\s　]/)[0];
       const fc    = friendColor(fid);
@@ -3530,7 +3666,10 @@ function renderPayPeriodSummary() {
 
 function attachCal() {
   document.querySelectorAll('[data-date]').forEach(el => {
-    el.addEventListener('click', () => openShift(null, el.dataset.date));
+    el.addEventListener('click', () => {
+      if (view === 'day') openShift(null, el.dataset.date);
+      else openDayDetail(el.dataset.date);
+    });
   });
   document.querySelectorAll('[data-sid]').forEach(el => {
     el.addEventListener('click', () => openShift(el.dataset.sid));
@@ -5891,8 +6030,9 @@ function renderHY() {
 // ══════════════════════════════════════
 function nav(delta) {
   const d = new Date(cur);
-  if (view === 'week') d.setDate(d.getDate() + delta * 7);
-  else d.setMonth(d.getMonth() + delta);
+  if (view === 'week')      d.setDate(d.getDate() + delta * 7);
+  else if (view === 'day')  d.setDate(d.getDate() + delta);
+  else                      d.setMonth(d.getMonth() + delta);
   cur = d;
   render();
 }
@@ -5902,20 +6042,23 @@ function nav(delta) {
 // ══════════════════════════════════════
 document.getElementById('btnPrev').onclick  = () => nav(-1);
 document.getElementById('btnNext').onclick  = () => nav(1);
-document.getElementById('btnToday').onclick = () => { cur = new Date(); render(); };
+document.getElementById('btnToday').onclick = () => {
+  cur = new Date();
+  _setView('day');
+};
 
-document.getElementById('btnWeek').onclick = () => {
-  view = 'week';
-  document.getElementById('btnWeek').classList.add('on');
-  document.getElementById('btnMonth').classList.remove('on');
+function _setView(v) {
+  view = v;
+  ['btnWeek','btnMonth','btnDay'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle('on', id === 'btn' + v.charAt(0).toUpperCase() + v.slice(1));
+  });
   render();
-};
-document.getElementById('btnMonth').onclick = () => {
-  view = 'month';
-  document.getElementById('btnMonth').classList.add('on');
-  document.getElementById('btnWeek').classList.remove('on');
-  render();
-};
+}
+
+document.getElementById('btnWeek').onclick  = () => _setView('week');
+document.getElementById('btnMonth').onclick = () => _setView('month');
+document.getElementById('btnDay').onclick   = () => _setView('day');
 
 document.getElementById('fab').onclick   = () => openShift(null);
 document.getElementById('btnHY').onclick = openHY;
@@ -5989,7 +6132,7 @@ document.getElementById('delWP').onclick       = deleteWP;
   el.addEventListener('change', livePreview);
 });
 
-['shiftOverlay','wpOverlay','wpEditOverlay','hyOverlay','bulkDeleteOverlay','importChoiceOverlay','importOverlay','attendOverlay','adminOverlay','changePasswordOverlay','settingsOverlay','restoreOverlay','aiGuideOverlay','friendsOverlay','noticesOverlay','noticeEditOverlay'].forEach(id => {
+['shiftOverlay','wpOverlay','wpEditOverlay','hyOverlay','bulkDeleteOverlay','importChoiceOverlay','importOverlay','attendOverlay','adminOverlay','changePasswordOverlay','settingsOverlay','restoreOverlay','aiGuideOverlay','dayDetailOverlay','friendsOverlay','noticesOverlay','noticeEditOverlay'].forEach(id => {
   document.getElementById(id).addEventListener('click', function(e) {
     if (e.target === this) this.classList.remove('on');
   });
@@ -5997,6 +6140,7 @@ document.getElementById('delWP').onclick       = deleteWP;
 
 document.getElementById('btnTutorial').onclick      = () => openTutorial(0);
 document.getElementById('btnFriends').onclick       = openFriends;
+document.getElementById('closeDayDetailBtn').onclick = closeDayDetail;
 document.getElementById('closeFriendsBtn').onclick  = closeFriends;
 document.getElementById('friendReqBtn').onclick     = sendFriendRequest;
 document.getElementById('friendReqId').addEventListener('keydown', e => { if (e.key === 'Enter') sendFriendRequest(); });
