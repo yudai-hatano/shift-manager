@@ -446,6 +446,47 @@ select.fc{font-size:14px}
   white-space:nowrap;min-height:26px;flex-shrink:0;
 }
 .vb-back:hover{background:#ea6c00}
+
+/* ── AI Prompt Box ── */
+.ai-prompt-box{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:var(--rs);padding:10px 12px;margin-bottom:12px}
+.ai-prompt-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;gap:8px}
+.ai-prompt-label{font-size:10.5px;font-weight:700;color:#065f46;text-transform:uppercase;letter-spacing:.4px}
+.ai-prompt-copy-btn{font-size:11px;padding:4px 11px;background:#fff;border:1.5px solid #6ee7b7;border-radius:6px;color:#065f46;cursor:pointer;font-weight:700;transition:all .15s;white-space:nowrap;flex-shrink:0}
+.ai-prompt-copy-btn:hover{background:#d1fae5}
+.ai-prompt-copy-btn.copied{background:#d1fae5;border-color:#34d399}
+.ai-prompt-text{font-size:11px;line-height:1.65;color:#374151;white-space:pre-wrap}
+
+/* ── Tutorial ── */
+#tutorialRing{
+  display:none;position:fixed;z-index:9998;pointer-events:none;
+  border:3px solid var(--pri);border-radius:12px;
+  box-shadow:0 0 0 9999px rgba(0,0,0,.52),0 0 0 5px rgba(99,102,241,.25);
+  box-sizing:border-box;transition:top .25s ease,left .25s ease,width .25s ease,height .25s ease;
+}
+#tutorialOverlay{
+  display:none;position:fixed;inset:0;z-index:9999;pointer-events:none;
+}
+.tutorial-card{
+  position:absolute;bottom:max(20px,env(safe-area-inset-bottom));left:12px;right:12px;
+  background:#fff;border-radius:16px;padding:18px 18px 14px;
+  box-shadow:0 8px 32px rgba(0,0,0,.2),0 2px 8px rgba(0,0,0,.1);
+  pointer-events:all;max-width:500px;margin:0 auto;
+}
+.tut-steps{font-size:10px;font-weight:700;color:var(--muted);margin-bottom:5px;letter-spacing:.6px;text-transform:uppercase}
+.tut-progress{height:3px;background:var(--bd);border-radius:2px;margin-bottom:12px;overflow:hidden}
+.tut-progress-fill{height:100%;background:var(--pri);border-radius:2px;transition:width .35s ease}
+.tut-icon-title{display:flex;align-items:center;gap:9px;margin-bottom:8px}
+.tut-icon{font-size:22px;line-height:1}
+.tut-title{font-size:14px;font-weight:800;color:var(--tx)}
+.tut-body{font-size:12.5px;color:#374151;line-height:1.72;margin-bottom:14px;white-space:pre-wrap}
+.tut-nav{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.tut-skip{background:none;border:none;font-size:12px;color:var(--muted);cursor:pointer;padding:6px 2px;text-decoration:underline;flex-shrink:0}
+.tut-skip:hover{color:var(--tx)}
+.tut-btns{display:flex;gap:8px}
+.tut-btn-prev{padding:8px 14px;border-radius:var(--rs);border:1.5px solid var(--bd);background:var(--sur2);color:var(--tx);font-size:13px;font-weight:700;cursor:pointer;min-height:38px}
+.tut-btn-next{padding:8px 20px;border-radius:var(--rs);border:none;background:var(--pri);color:#fff;font-size:13px;font-weight:700;cursor:pointer;min-height:38px}
+.tut-btn-prev:hover{background:var(--bd)}
+.tut-btn-next:hover{background:var(--pri-d)}
 </style>
 </head>
 <body>
@@ -890,10 +931,28 @@ select.fc{font-size:14px}
         </div>
       </div>
 
+      <div class="ai-prompt-box">
+        <div class="ai-prompt-header">
+          <span class="ai-prompt-label">🤖 AI文字起こしプロンプト</span>
+          <button class="ai-prompt-copy-btn" onclick="copyPrompt('shift', this)">📋 コピー</button>
+        </div>
+        <div class="ai-prompt-text">以下のシフト表の画像を文字起こしして、下記のフォーマットで出力してください。それ以外の情報（氏名・所属・連絡事項など）は不要です。
+
+【出力フォーマット】
+勤務予定日
+YYYY/MM/DD (曜日)
+勤務予定時間
+HH:MM〜HH:MM
+所定時間
+HH:MM〜HH:MM
+勤務予定
+・ポジション名</div>
+      </div>
+
       <div class="fg">
         <label class="fl">シフト情報を貼り付け</label>
         <textarea class="fc" id="importText"
-          style="height:160px;resize:vertical;font-size:13px;line-height:1.6"
+          style="height:150px;resize:vertical;font-size:13px;line-height:1.6"
           placeholder="ここにテキストを貼り付け..."></textarea>
       </div>
       <button class="btn btn-pri" id="parseShiftsBtn">解析する</button>
@@ -997,10 +1056,25 @@ select.fc{font-size:14px}
         </div>
       </details>
 
+      <div class="ai-prompt-box">
+        <div class="ai-prompt-header">
+          <span class="ai-prompt-label">🤖 AI文字起こしプロンプト</span>
+          <button class="ai-prompt-copy-btn" onclick="copyPrompt('attend', this)">📋 コピー</button>
+        </div>
+        <div class="ai-prompt-text">以下の日別勤怠表の画像を文字起こしして、下記のフォーマットで1行ずつ出力してください。
+
+【出力フォーマット】
+DD(曜日) 予定開始:予定終了 実績開始-実績終了 休憩分 備考
+
+例:
+02(土) 9:15-17:45 9:15-22:00 60 残業
+19(火) 10:30-17:15 10:30-16:30 45 部解</div>
+      </div>
+
       <div class="fg">
         <label class="fl">日別勤怠表を貼り付け</label>
         <textarea class="fc" id="attendText"
-          style="height:210px;resize:vertical;font-size:12px;line-height:1.7;font-family:monospace"
+          style="height:160px;resize:vertical;font-size:12px;line-height:1.7;font-family:monospace"
           placeholder="ここに日別勤怠表のテキストをコピー＆ペーストしてください..."></textarea>
       </div>
       <button class="btn btn-pri" id="parseAttendBtn">突合する</button>
@@ -1153,6 +1227,11 @@ select.fc{font-size:14px}
     <div class="sec-ttl"><span>勤務先</span></div>
     <button class="settings-nav-btn" onclick="closeSettings();openWPList()">
       🏢 勤務先の登録・編集
+    </button>
+
+    <div class="sec-ttl"><span>ヘルプ</span></div>
+    <button class="settings-nav-btn" onclick="closeSettings();setTimeout(()=>openTutorial(0),300)">
+      📖 チュートリアルを見る
     </button>
 
     <hr class="sec-divider">
@@ -2276,9 +2355,138 @@ async function saveReadNotices() {
   try { await fdb.ref(getDBPath() + '/readNotices').set(readNotices); } catch(e) {}
 }
 
-function toggleNoticesShowAll() {
-  _noticesShowAll = !_noticesShowAll;
-  renderNoticeList();
+// ══════════════════════════════════════
+// AIプロンプト コピー
+// ══════════════════════════════════════
+const PROMPT_SHIFT = `以下のシフト表の画像を文字起こしして、下記のフォーマットで出力してください。それ以外の情報（氏名・所属・連絡事項など）は不要です。
+
+【出力フォーマット】
+勤務予定日
+YYYY/MM/DD (曜日)
+勤務予定時間
+HH:MM〜HH:MM
+所定時間
+HH:MM〜HH:MM
+勤務予定
+・ポジション名`;
+
+const PROMPT_ATTEND = `以下の日別勤怠表の画像を文字起こしして、下記のフォーマットで1行ずつ出力してください。
+
+【出力フォーマット】
+DD(曜日) 予定開始:予定終了 実績開始-実績終了 休憩分 備考
+
+例:
+02(土) 9:15-17:45 9:15-22:00 60 残業
+19(火) 10:30-17:15 10:30-16:30 45 部解`;
+
+async function copyPrompt(type, btn) {
+  const text = type === 'shift' ? PROMPT_SHIFT : PROMPT_ATTEND;
+  try {
+    await navigator.clipboard.writeText(text);
+    const orig = btn.textContent;
+    btn.textContent = '✓ コピーしました';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 2000);
+  } catch(e) {
+    showToast('コピーに失敗しました');
+  }
+}
+
+// ══════════════════════════════════════
+// チュートリアル
+// ══════════════════════════════════════
+const TUTORIAL_STEPS = [
+  {
+    title: '勤務先を登録しよう',
+    icon: '🏢',
+    body: '右上の ⚙️ ボタンから「勤務先の登録・編集」を開き、「＋ 勤務先を追加」で勤務先の名称・雇用形態・時給を登録しましょう。',
+    target: 'btnSettings',
+  },
+  {
+    title: '有給・時給を設定しよう',
+    icon: '📋',
+    body: '勤務先リストの「編集」ボタンから、年休残・換算時間・雇用開始日・週の契約日数を設定できます。\n有給が「法定」の場合は雇用開始日を入力すると自動計算されます。',
+    target: 'btnSettings',
+  },
+  {
+    title: 'シフトをカレンダーに登録しよう',
+    icon: '📅',
+    body: '右下の【＋】ボタンか、カレンダーの日付をタップしてシフトを登録できます。\n開始・終了時刻・勤務先・休憩時間を入力してください。',
+    target: 'fab',
+  },
+  {
+    title: 'テキストでシフトを一括インポートしよう',
+    icon: '📥',
+    body: '右上の 📥 ボタン →「シフトのテキストインポート」から、AIで文字起こしした内容を貼り付けてシフトを一括登録できます。\nプロンプトのコピーボタンも活用してください。',
+    target: 'btnImport',
+  },
+  {
+    title: '日別勤怠表と突合しよう',
+    icon: '🔍',
+    body: '同じく 📥 ボタン →「日別勤怠表との突合」から、会社の勤怠記録と登録したシフトを比較・修正できます。\nAIで文字起こしたテキストをそのまま貼り付けて使えます。',
+    target: 'btnImport',
+  },
+];
+
+let _tutorialStep = 0;
+
+function openTutorial(step = 0) {
+  _tutorialStep = step;
+  _renderTutorialStep();
+  document.getElementById('tutorialOverlay').style.display = '';
+  document.getElementById('tutorialRing').style.display = '';
+}
+
+function closeTutorial() {
+  document.getElementById('tutorialOverlay').style.display = 'none';
+  document.getElementById('tutorialRing').style.display = 'none';
+  saveAppSetting('tutorialDone', true);
+}
+
+function _renderTutorialStep() {
+  const step  = TUTORIAL_STEPS[_tutorialStep];
+  const total = TUTORIAL_STEPS.length;
+  document.getElementById('tutSteps').textContent        = `STEP ${_tutorialStep + 1} / ${total}`;
+  document.getElementById('tutProgressFill').style.width = `${((_tutorialStep + 1) / total) * 100}%`;
+  document.getElementById('tutIcon').textContent         = step.icon;
+  document.getElementById('tutTitle').textContent        = step.title;
+  document.getElementById('tutBody').textContent         = step.body;
+
+  const prevBtn = document.getElementById('tutPrevBtn');
+  const nextBtn = document.getElementById('tutNextBtn');
+  prevBtn.style.visibility = _tutorialStep === 0 ? 'hidden' : 'visible';
+  nextBtn.textContent = _tutorialStep === total - 1 ? '完了 ✓' : '次へ →';
+
+  _tutorialHighlight(step.target);
+}
+
+function _tutorialHighlight(targetId) {
+  const ring = document.getElementById('tutorialRing');
+  const el   = targetId ? document.getElementById(targetId) : null;
+  if (!el) { ring.style.display = 'none'; return; }
+  const rect = el.getBoundingClientRect();
+  const pad  = 7;
+  ring.style.top    = (rect.top  - pad) + 'px';
+  ring.style.left   = (rect.left - pad) + 'px';
+  ring.style.width  = (rect.width  + pad * 2) + 'px';
+  ring.style.height = (rect.height + pad * 2) + 'px';
+  ring.style.display = '';
+}
+
+function _tutorialNext() {
+  if (_tutorialStep >= TUTORIAL_STEPS.length - 1) {
+    closeTutorial();
+    showToast('チュートリアル完了！🎉');
+    return;
+  }
+  _tutorialStep++;
+  _renderTutorialStep();
+}
+
+function _tutorialPrev() {
+  if (_tutorialStep <= 0) return;
+  _tutorialStep--;
+  _renderTutorialStep();
 }
 
 function openNoticeEdit(noticeId) {
@@ -4262,8 +4470,10 @@ async function doRegister() {
     hideLoginScreen(); switchToLogin();
     document.getElementById('loadingOverlay').style.display = 'flex';
     await loadData();
+    await loadNotices().catch(() => {});
     document.getElementById('loadingOverlay').style.display = 'none';
     updateUserBar(); render();
+    openTutorial(0);
   } catch(e) {
     showAuthErr(err, '登録に失敗しました。再試行してください。');
   } finally { btn.disabled = false; btn.textContent = '登録してはじめる'; }
@@ -5022,6 +5232,10 @@ document.getElementById('noticesAddBtn').onclick    = () => openNoticeEdit(null)
 document.getElementById('closeNoticeEditBtn').onclick = closeNoticeEdit;
 document.getElementById('noticeEditSubmitBtn').onclick = submitNoticeEdit;
 
+document.getElementById('tutSkipBtn').onclick = closeTutorial;
+document.getElementById('tutPrevBtn').onclick = _tutorialPrev;
+document.getElementById('tutNextBtn').onclick = _tutorialNext;
+
 // ══════════════════════════════════════
 // 初期化
 // ══════════════════════════════════════
@@ -5074,5 +5288,26 @@ _startup().catch(e => {
   }
 });
 </script>
+
+<!-- ── Tutorial ── -->
+<div id="tutorialRing"></div>
+<div id="tutorialOverlay">
+  <div class="tutorial-card">
+    <div class="tut-steps" id="tutSteps"></div>
+    <div class="tut-progress"><div class="tut-progress-fill" id="tutProgressFill"></div></div>
+    <div class="tut-icon-title">
+      <div class="tut-icon" id="tutIcon"></div>
+      <div class="tut-title" id="tutTitle"></div>
+    </div>
+    <div class="tut-body" id="tutBody"></div>
+    <div class="tut-nav">
+      <button class="tut-skip" id="tutSkipBtn">スキップ</button>
+      <div class="tut-btns">
+        <button class="tut-btn-prev" id="tutPrevBtn">← 戻る</button>
+        <button class="tut-btn-next" id="tutNextBtn">次へ →</button>
+      </div>
+    </div>
+  </div>
+</div>
 </body>
 </html>
