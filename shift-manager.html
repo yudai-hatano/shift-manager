@@ -1732,6 +1732,8 @@ let _editNoticeId    = null;
 let friendsOutgoing  = {};   // { uid: { name, status, sentAt } } 自分が送った申請
 let friendsIncoming  = {};   // { uid: { name, status, sentAt } } 受け取った申請
 let friendShifts     = {};   // { uid: [shift objects] } 承認済みフレンドのシフト
+let friendNicknames  = {};   // { uid: "nickname" } 自分のみが見るコテハン
+let _editingNickname = null; // 現在ニックネーム編集中のuid
 let currentUser  = null;
 let viewingUserId = null; // 管理者が他ユーザーのデータを閲覧中の場合にセット
 let attendFilter    = null; // null | 'diff' | 'noshift'
@@ -2816,6 +2818,7 @@ async function loadFriends() {
     } else {
       friendsOutgoing = {}; friendsIncoming = {};
     }
+    await loadFriendNicknames();
     updateFriendBadge();
     await loadFriendShifts();
   } catch(e) { console.error('loadFriends:', e); }
@@ -2846,6 +2849,55 @@ async function loadFriendShifts() {
 
 function getFriendName(uid) {
   return friendsOutgoing[uid]?.name || friendsIncoming[uid]?.name || uid;
+}
+
+function getFriendDisplayName(uid) {
+  return friendNicknames[uid] || getFriendName(uid);
+}
+
+async function loadFriendNicknames() {
+  if (!currentUser) return;
+  try {
+    const snap = await fdb.ref(getDBPath(currentUser.id) + '/friendNicknames').get();
+    friendNicknames = snap.exists() ? (snap.val() || {}) : {};
+  } catch(e) { friendNicknames = {}; }
+}
+
+function editFriendNickname(uid) {
+  _editingNickname = uid;
+  renderFriendsList();
+  setTimeout(() => {
+    const inp = document.getElementById('nicknameInp_' + uid);
+    if (inp) { inp.focus(); inp.select(); }
+  }, 30);
+}
+
+function cancelNicknameEdit() {
+  _editingNickname = null;
+  renderFriendsList();
+}
+
+async function saveFriendNickname(uid, value) {
+  const trimmed = (value || '').trim();
+  try {
+    if (trimmed) {
+      await fdb.ref(getDBPath(currentUser.id) + '/friendNicknames/' + uid).set(trimmed);
+      friendNicknames[uid] = trimmed;
+      toast(`「${trimmed}」として保存しました`);
+    } else {
+      await fdb.ref(getDBPath(currentUser.id) + '/friendNicknames/' + uid).remove();
+      delete friendNicknames[uid];
+      toast('ニックネームを削除しました');
+    }
+  } catch(e) { toast('保存に失敗しました'); return; }
+  _editingNickname = null;
+  renderFriendsList();
+  render();
+}
+
+function saveNicknameFromInput(uid) {
+  const inp = document.getElementById('nicknameInp_' + uid);
+  if (inp) saveFriendNickname(uid, inp.value);
 }
 
 function openFriends() {
@@ -2882,22 +2934,40 @@ function renderFriendsList() {
   if (accepted.length) {
     h += `<div class="friend-section-ttl">✅ フレンド (${accepted.length}人)</div>`;
     for (const [uid, f] of accepted) {
-      const sc      = (friendShifts[uid] || []).length;
-      const fc      = friendColor(uid);
-      const visible = friendVisible(uid);
-      const chkId   = `fvis_${uid}`;
-      h += `<div class="friend-item">
-        <div style="width:12px;height:32px;border-radius:2px;flex-shrink:0;background:${fc};opacity:.85"></div>
-        <div style="flex:1;min-width:0">
-          <div class="friend-item-name">${escHtml(f.name || uid)}</div>
-          <div class="friend-item-meta">シフト ${sc}件</div>
-        </div>
-        <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);cursor:pointer;flex-shrink:0;margin-right:8px;white-space:nowrap">
-          <input type="checkbox" id="${chkId}" ${visible?'checked':''} onchange="toggleFriendVisibility('${uid}',this.checked)" style="width:15px;height:15px;cursor:pointer">
-          表示
-        </label>
-        <button class="btn btn-sm" style="background:#fee2e2;color:#b91c1c;border:1.5px solid #fca5a5;white-space:nowrap" onclick="deleteFriend('${uid}')">削除</button>
-      </div>`;
+      const sc          = (friendShifts[uid] || []).length;
+      const fc          = friendColor(uid);
+      const visible     = friendVisible(uid);
+      const realName    = getFriendName(uid);
+      const nickname    = friendNicknames[uid] || '';
+      const displayName = nickname || realName;
+      const isEditing   = _editingNickname === uid;
+
+      h += `<div class="friend-item" style="flex-direction:column;align-items:stretch;gap:0">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:4px;align-self:stretch;border-radius:2px;flex-shrink:0;background:${fc}"></div>
+          <div style="flex:1;min-width:0">
+            <div class="friend-item-name">${escHtml(displayName)}</div>
+            <div class="friend-item-meta">${nickname ? `登録名: ${escHtml(realName)}` : `シフト ${sc}件`}</div>
+          </div>
+          <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted);cursor:pointer;flex-shrink:0;white-space:nowrap">
+            <input type="checkbox" ${visible?'checked':''} onchange="toggleFriendVisibility('${uid}',this.checked)" style="width:15px;height:15px;cursor:pointer">
+            表示
+          </label>
+          <button class="btn btn-sm" style="background:var(--sur2);border:1.5px solid var(--bd);color:var(--muted);margin-left:6px" title="ニックネームを編集" onclick="editFriendNickname('${uid}')">✏️</button>
+          <button class="btn btn-sm" style="background:#fee2e2;color:#b91c1c;border:1.5px solid #fca5a5;white-space:nowrap" onclick="deleteFriend('${uid}')">削除</button>
+        </div>`;
+
+      if (isEditing) {
+        h += `<div style="display:flex;gap:6px;padding:8px 0 2px 14px">
+          <input type="text" class="fc" id="nicknameInp_${uid}" value="${escHtml(nickname)}"
+            placeholder="ニックネーム（空欄で削除）" style="flex:1;font-size:12px;padding:6px 9px"
+            onkeydown="if(event.key==='Enter')saveNicknameFromInput('${uid}');if(event.key==='Escape')cancelNicknameEdit()">
+          <button class="btn btn-sm btn-pri" onclick="saveNicknameFromInput('${uid}')">保存</button>
+          <button class="btn btn-sm" style="background:var(--sur2);border:1.5px solid var(--bd)" onclick="cancelNicknameEdit()">✕</button>
+        </div>`;
+      }
+
+      h += `</div>`;
     }
   }
 
@@ -3012,7 +3082,7 @@ async function cancelFriendRequest(targetId) {
 }
 
 async function deleteFriend(friendId) {
-  const name = getFriendName(friendId);
+  const name = getFriendDisplayName(friendId);
   if (!confirm(`${name} さんをフレンドから削除しますか？`)) return;
   try {
     const updates = {};
@@ -3020,10 +3090,13 @@ async function deleteFriend(friendId) {
     updates[`${FRIENDS_PATH}/${currentUser.id}/incoming/${friendId}`] = null;
     updates[`${FRIENDS_PATH}/${friendId}/outgoing/${currentUser.id}`] = null;
     updates[`${FRIENDS_PATH}/${friendId}/incoming/${currentUser.id}`] = null;
+    updates[`${getDBPath(currentUser.id)}/friendNicknames/${friendId}`] = null;
     await fdb.ref().update(updates);
     delete friendsOutgoing[friendId];
     delete friendsIncoming[friendId];
     delete friendShifts[friendId];
+    delete friendNicknames[friendId];
+    if (_editingNickname === friendId) _editingNickname = null;
     updateFriendBadge();
     toast('フレンドを削除しました');
     renderFriendsList();
@@ -3332,7 +3405,7 @@ function renderDayContent(ds) {
     h += '<div class="day-section-lbl" style="margin-top:14px">フレンドのシフト</div>';
     let anyFriend = false;
     for (const fid of visibleFriends) {
-      const fname = getFriendName(fid);
+      const fname = getFriendDisplayName(fid);
       const fc    = friendColor(fid);
       for (const fs of (friendShifts[fid] || []).filter(s => s.date === ds)) {
         anyFriend = true;
@@ -3435,7 +3508,7 @@ function renderWeek() {
     // フレンドのシフト（日付・時間・場所のみ、給与情報なし）
     for (const [fid, fshifts] of Object.entries(friendShifts)) {
       if (!friendVisible(fid)) continue;
-      const fname = getFriendName(fid);
+      const fname = getFriendDisplayName(fid);
       const short = fname.split(/[\s　]/)[0];
       const fc    = friendColor(fid);
       for (const fs of fshifts.filter(s => s.date === ds)) {
@@ -3500,7 +3573,7 @@ function renderMonth() {
     // フレンドのシフト（月ビュー：名前+開始時刻・色分け）
     for (const [fid, fshifts] of Object.entries(friendShifts)) {
       if (!friendVisible(fid)) continue;
-      const fname = getFriendName(fid);
+      const fname = getFriendDisplayName(fid);
       const short = fname.split(/[\s　]/)[0];
       const fc    = friendColor(fid);
       for (const fs of fshifts.filter(s => s.date === ds)) {
@@ -5156,7 +5229,8 @@ async function doRegister() {
 function doLogout() {
   localStorage.removeItem(AUTH_SESSION_KEY);
   currentUser = null; viewingUserId = null;
-  workplaces = []; shifts = []; friendsOutgoing = {}; friendsIncoming = {}; friendShifts = {};
+  workplaces = []; shifts = []; friendsOutgoing = {}; friendsIncoming = {};
+  friendShifts = {}; friendNicknames = {}; _editingNickname = null;
   appSettings = { ..._APP_SETTINGS_DEFAULTS };
   document.getElementById('viewingBanner').classList.remove('on');
   showLoginScreen();
