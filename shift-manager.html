@@ -1386,6 +1386,15 @@ DD(曜日) 予定開始:予定終了 実績開始-実績終了 休憩分 備考
 
     <hr class="sec-divider">
     <div class="sec-ttl"><span>通知設定</span></div>
+    <!-- iOS バックグラウンド通知の案内 -->
+    <div id="iosNotifGuide" style="display:none;background:#eff6ff;border:1px solid #bfdbfe;border-radius:var(--rs);padding:10px 12px;font-size:12px;color:#1e40af;line-height:1.9;margin-bottom:10px">
+      📱 <b>iOSでバックグラウンド通知を受け取るには</b><br>
+      ① Safari でこのページを開く<br>
+      ② 画面下の共有ボタン → <b>「ホーム画面に追加」</b><br>
+      ③ ホーム画面のアイコンからアプリを起動<br>
+      ④ 通知を許可する<br>
+      <span style="color:#6b7280">※ iOS 16.4以降 / Chrome・LINE内ブラウザは非対応</span>
+    </div>
     <div id="notifPermInfo" style="display:none;background:#fef9c3;border:1px solid #fde047;border-radius:var(--rs);padding:10px 12px;font-size:12px;color:#854d0e;line-height:1.7;margin-bottom:10px"></div>
     <div class="setting-area" style="margin-bottom:8px">
       <div class="setting-row">
@@ -6488,9 +6497,17 @@ function _applyNotifSettingsUI() {
 }
 
 function _updateNotifPermButton() {
-  const btn = document.getElementById('btnRequestNotifPerm');
-  const info = document.getElementById('notifPermInfo');
+  const btn     = document.getElementById('btnRequestNotifPerm');
+  const info    = document.getElementById('notifPermInfo');
+  const iosGuide = document.getElementById('iosNotifGuide');
   if (!btn || !info) return;
+
+  // iOS 判定（Safari + スタンドアロン以外でガイドを表示）
+  const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent);
+  const isStandalone = window.navigator.standalone === true ||
+                       window.matchMedia('(display-mode: standalone)').matches;
+  if (iosGuide) iosGuide.style.display = (isIOS && !isStandalone) ? 'block' : 'none';
+
   const perm = Notification.permission;
   if (perm === 'granted') {
     btn.textContent = '✅ 通知は許可済みです';
