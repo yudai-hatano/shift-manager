@@ -13,10 +13,12 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// ── オフラインキャッシュ ──────────────────────────────
-const CACHE_NAME = 'shim-v2';
+// ── キャッシュ ────────────────────────────────────────────
+// バージョンを上げると旧キャッシュが activate 時に自動削除される
+const CACHE_NAME = 'shim-v4';
+
+// shift-manager.html はキャッシュしない（常にネットワークから取得）
 const CACHE_ASSETS = [
-  './shift-manager.html',
   './manifest.json',
   './icons/icon.png',
   './icons/icon-192.png',
@@ -24,45 +26,69 @@ const CACHE_ASSETS = [
 ];
 
 self.addEventListener('install', event => {
-  console.log('[SW] Installing...');
+  console.log('[SW] Installing', CACHE_NAME);
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => cache.addAll(CACHE_ASSETS))
-      .then(() => self.skipWaiting())
+      .then(() => self.skipWaiting()) // 待機せず即座に有効化
   );
 });
 
 self.addEventListener('activate', event => {
-  console.log('[SW] Activating...');
+  console.log('[SW] Activating', CACHE_NAME);
   event.waitUntil(
     caches.keys()
       .then(keys => Promise.all(
-        keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
+        keys.filter(k => k !== CACHE_NAME).map(k => {
+          console.log('[SW] Deleting old cache:', k);
+          return caches.delete(k);
+        })
       ))
       .then(() => self.clients.claim())
+      // clients.claim() 後に controllerchange がクライアントで発火し自動リロードされる
   );
 });
 
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
+
   // Firebase / Google の外部リクエストはネットワーク直通
   if (
     url.hostname.includes('firebase') ||
     url.hostname.includes('googleapis') ||
     url.hostname.includes('gstatic') ||
     url.hostname.includes('google')
-  ) {
-    return; // ブラウザのデフォルト処理に委ねる
-  }
-  // 同一オリジンのみキャッシュ対応
+  ) return;
+
   if (url.origin !== self.location.origin) return;
 
+  // shift-manager.html → ネットワーク優先（最新版を常に返す・失敗時はキャッシュ）
+  if (
+    url.pathname.endsWith('shift-manager.html') ||
+    url.pathname === '/shift-manager/' ||
+    url.pathname.endsWith('/')
+  ) {
+    event.respondWith(
+      fetch(event.request)
+        .then(res => {
+          const clone = res.clone();
+          caches.open(CACHE_NAME).then(c => c.put(event.request, clone));
+          return res;
+        })
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  // その他のアセット → キャッシュ優先
   event.respondWith(
     caches.match(event.request).then(cached => {
       if (cached) return cached;
-      return fetch(event.request).catch(() =>
-        caches.match('./shift-manager.html')
-      );
+      return fetch(event.request).then(res => {
+        const clone = res.clone();
+        caches.open(CACHE_NAME).then(c => c.put(event.request, clone));
+        return res;
+      });
     })
   );
 });
@@ -82,11 +108,15 @@ messaging.onBackgroundMessage(payload => {
   });
 });
 
-// ── メインスレッドからの通知表示（フォアグラウンド用）────
+// ── メインスレッドからのメッセージ ───────────────────────
 self.addEventListener('message', event => {
+  // ページ側からの強制バージョンアップ指示
+  if (event.data?.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+    return;
+  }
   if (event.data?.type === 'SHOW_NOTIFICATION') {
     const { title, body, icon, tag } = event.data;
-    console.log('[SW] Showing notification from message:', title);
     self.registration.showNotification(title, {
       body,
       icon: icon || './icons/icon-192.png',
@@ -96,6 +126,7 @@ self.addEventListener('message', event => {
     });
   }
 });
+// ─────────────────────────────────────────────────────────
 
 // ── 通知クリック ─────────────────────────────────────────
 self.addEventListener('notificationclick', event => {

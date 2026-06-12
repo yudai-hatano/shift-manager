@@ -6519,9 +6519,33 @@ _startup().catch(e => {
 // ══════════════════════════════════════
 let _swRegistration = null;
 if ('serviceWorker' in navigator) {
+  // 既にコントローラーがある場合のみ controllerchange でリロード（初回インストール時は除外）
+  const _hadSWController = !!navigator.serviceWorker.controller;
+  let _swReloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (_hadSWController && !_swReloading) {
+      _swReloading = true;
+      console.log('[SW] New version activated — reloading...');
+      window.location.reload();
+    }
+  });
+
   navigator.serviceWorker.register('./firebase-messaging-sw.js').then(reg => {
     _swRegistration = reg;
     console.log('[SW] ✅ Registered:', reg.scope);
+    // 登録直後に待機中の新バージョンがあれば即座に有効化
+    if (reg.waiting) {
+      reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+    }
+    reg.addEventListener('updatefound', () => {
+      const newSW = reg.installing;
+      if (!newSW) return;
+      newSW.addEventListener('statechange', () => {
+        if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+          newSW.postMessage({ type: 'SKIP_WAITING' });
+        }
+      });
+    });
   }).catch(e => console.error('[SW] ❌ Registration failed:', e));
 }
 
