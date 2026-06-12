@@ -3,12 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<meta name="theme-color" content="#6366f1">
-<title>シフト管理</title>
+<meta name="theme-color" content="#22c55e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ShiM">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>ShiM</title>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --pri:#6366f1;--pri-d:#4f46e5;--pri-l:#818cf8;
+  --pri:#22c55e;--pri-d:#16a34a;--pri-l:#4ade80;
   --bg:#f1f5f9;--sur:#fff;--sur2:#f8fafc;
   --bd:#e2e8f0;--tx:#1e293b;--muted:#64748b;
   --red:#ef4444;--blu:#3b82f6;--org:#f97316;--grn:#22c55e;
@@ -411,9 +416,16 @@ select.fc{font-size:14px}
   padding:26px 22px;box-shadow:var(--shl);
 }
 .login-logo{text-align:center;margin-bottom:22px}
-.login-logo-icon{font-size:44px;margin-bottom:6px}
+.login-logo-img{width:80px;height:80px;object-fit:contain;border-radius:20px;margin-bottom:8px;display:block;margin-left:auto;margin-right:auto}
 .login-logo-title{font-size:22px;font-weight:800;color:var(--pri)}
 .login-logo-sub{font-size:11px;color:var(--muted);margin-top:4px}
+/* ── Toggle Switch ── */
+.toggle-sw{display:inline-flex;align-items:center;cursor:pointer;position:relative}
+.toggle-sw input{opacity:0;width:0;height:0;position:absolute}
+.toggle-slider{width:44px;height:24px;background:var(--bd);border-radius:12px;transition:background .2s;position:relative;flex-shrink:0}
+.toggle-slider::before{content:'';position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.toggle-sw input:checked + .toggle-slider{background:var(--pri)}
+.toggle-sw input:checked + .toggle-slider::before{transform:translateX(20px)}
 .login-err{
   color:var(--red);font-size:12px;margin-bottom:10px;
   background:#fee2e2;padding:8px 10px;border-radius:6px;display:none;
@@ -538,7 +550,7 @@ select.fc{font-size:14px}
     <button class="vb-back" onclick="stopViewingUserData()">自分のデータに戻る</button>
   </div>
   <div class="hdr-top">
-    <div class="app-title">📋 シフト管理</div>
+    <div class="app-title"><img src="icons/icon.png" alt="ShiM" style="width:24px;height:24px;object-fit:contain;border-radius:6px;margin-right:5px;vertical-align:middle"> ShiM</div>
     <div style="display:flex;gap:4px">
       <button class="icon-btn notice-bell" id="btnNotices" title="お知らせ" style="font-size:18px">🔔<span id="noticeBadge"></span></button>
       <button class="icon-btn notice-bell" id="btnFriends" title="フレンド" style="font-size:18px;position:relative">👥<span id="friendBadge"></span></button>
@@ -1178,8 +1190,8 @@ DD(曜日) 予定開始:予定終了 実績開始-実績終了 休憩分 備考
 <div id="loginScreen">
   <div class="login-card">
     <div class="login-logo">
-      <div class="login-logo-icon">📋</div>
-      <div class="login-logo-title">シフト管理</div>
+      <img src="icons/icon.png" alt="ShiM" class="login-logo-img">
+      <div class="login-logo-title">ShiM</div>
       <div class="login-logo-sub">社員番号でログインして利用できます</div>
     </div>
 
@@ -1370,6 +1382,40 @@ DD(曜日) 予定開始:予定終了 実績開始-実績終了 休憩分 備考
         <button class="btn btn-pri" id="btnSettingsImportExec" style="flex:2">インポートする</button>
       </div>
     </div>
+
+    <hr class="sec-divider">
+    <div class="sec-ttl"><span>通知設定</span></div>
+    <div id="notifPermInfo" style="display:none;background:#fef9c3;border:1px solid #fde047;border-radius:var(--rs);padding:10px 12px;font-size:12px;color:#854d0e;line-height:1.7;margin-bottom:10px"></div>
+    <div class="setting-area" style="margin-bottom:8px">
+      <div class="setting-row">
+        <div class="setting-label">
+          <b>フレンド申請の通知</b>
+          <small>申請が届いたとき</small>
+        </div>
+        <div class="setting-ctrl">
+          <label class="toggle-sw"><input type="checkbox" id="notifFriendReq" onchange="saveNotifSettings()"><span class="toggle-slider"></span></label>
+        </div>
+      </div>
+      <div class="setting-row">
+        <div class="setting-label">
+          <b>お知らせの通知</b>
+          <small>新規お知らせが投稿されたとき</small>
+        </div>
+        <div class="setting-ctrl">
+          <label class="toggle-sw"><input type="checkbox" id="notifNotices" onchange="saveNotifSettings()"><span class="toggle-slider"></span></label>
+        </div>
+      </div>
+      <div class="setting-row">
+        <div class="setting-label">
+          <b>翌日シフトのリマインダー</b>
+          <small>翌日シフトがある日の20:00に通知</small>
+        </div>
+        <div class="setting-ctrl">
+          <label class="toggle-sw"><input type="checkbox" id="notifShiftReminder" onchange="saveNotifSettings()"><span class="toggle-slider"></span></label>
+        </div>
+      </div>
+    </div>
+    <button class="btn" id="btnRequestNotifPerm" style="width:100%;margin-top:4px" onclick="requestNotificationPermission()">🔔 通知を許可する</button>
   </div>
 </div>
 
@@ -1625,6 +1671,7 @@ DD(曜日) 予定開始:予定終了 実績開始-実績終了 休憩分 備考
 
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-messaging-compat.js"></script>
 <script>
 'use strict';
 // ══════════════════════════════════════
@@ -6312,6 +6359,255 @@ _startup().catch(e => {
     showLoginScreen();
   }
 });
+
+// ══════════════════════════════════════
+// PWA – Service Worker 登録
+// ══════════════════════════════════════
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').then(reg => {
+    console.log('[SW] registered:', reg.scope);
+  }).catch(e => console.warn('[SW] registration failed:', e));
+}
+
+// ══════════════════════════════════════
+// 通知設定（Firebase に保存・読み込み）
+// ══════════════════════════════════════
+const NOTIF_PATH = 'notificationSettings';
+let notifSettings = { friendRequest: true, notices: true, shiftReminder: true };
+
+async function loadNotifSettings() {
+  if (!currentUser) return;
+  try {
+    const snap = await fdb.ref(`${USERS_PATH}/${currentUser.id}/${NOTIF_PATH}`).get();
+    if (snap.exists()) notifSettings = { ...notifSettings, ...snap.val() };
+  } catch(e) {}
+  _applyNotifSettingsUI();
+}
+
+async function saveNotifSettings() {
+  notifSettings = {
+    friendRequest: document.getElementById('notifFriendReq')?.checked ?? true,
+    notices:       document.getElementById('notifNotices')?.checked ?? true,
+    shiftReminder: document.getElementById('notifShiftReminder')?.checked ?? true
+  };
+  if (!currentUser) return;
+  try {
+    await fdb.ref(`${USERS_PATH}/${currentUser.id}/${NOTIF_PATH}`).set(notifSettings);
+  } catch(e) { console.warn('Failed to save notif settings:', e); }
+  scheduleShiftReminder();
+}
+
+function _applyNotifSettingsUI() {
+  const fr = document.getElementById('notifFriendReq');
+  const no = document.getElementById('notifNotices');
+  const sr = document.getElementById('notifShiftReminder');
+  if (fr) fr.checked = notifSettings.friendRequest !== false;
+  if (no) no.checked = notifSettings.notices !== false;
+  if (sr) sr.checked = notifSettings.shiftReminder !== false;
+  _updateNotifPermButton();
+}
+
+function _updateNotifPermButton() {
+  const btn = document.getElementById('btnRequestNotifPerm');
+  const info = document.getElementById('notifPermInfo');
+  if (!btn || !info) return;
+  const perm = Notification.permission;
+  if (perm === 'granted') {
+    btn.textContent = '✅ 通知は許可済みです';
+    btn.disabled = true;
+    info.style.display = 'none';
+  } else if (perm === 'denied') {
+    btn.textContent = '🚫 通知がブロックされています';
+    btn.disabled = true;
+    info.style.display = 'block';
+    info.textContent = 'ブラウザの設定から通知を許可してください。（サイト設定 → 通知 → 許可）';
+  } else {
+    btn.textContent = '🔔 通知を許可する';
+    btn.disabled = false;
+    info.style.display = 'none';
+  }
+}
+
+async function requestNotificationPermission() {
+  if (!('Notification' in window)) {
+    toast('このブラウザは通知をサポートしていません');
+    return;
+  }
+  const perm = await Notification.requestPermission();
+  _updateNotifPermButton();
+  if (perm === 'granted') {
+    toast('通知を許可しました');
+    _registerFCMToken();
+    scheduleShiftReminder();
+  } else {
+    toast('通知が拒否されました。ブラウザの設定から許可してください。');
+  }
+}
+
+// ══════════════════════════════════════
+// FCM トークン登録
+// ══════════════════════════════════════
+// VAPID キーは Firebase Console > プロジェクト設定 > Cloud Messaging >
+// ウェブプッシュ証明書 で生成してここに貼り付けてください。
+const VAPID_KEY = null; // 例: 'BAbCdEfGhIjKlMnOpQrStUvWxYz...'
+
+let _fcmMessaging = null;
+async function _registerFCMToken() {
+  if (!VAPID_KEY) return;
+  if (!currentUser) return;
+  if (Notification.permission !== 'granted') return;
+  try {
+    if (!_fcmMessaging) _fcmMessaging = firebase.messaging();
+    const token = await _fcmMessaging.getToken({ vapidKey: VAPID_KEY });
+    if (token) {
+      await fdb.ref(`${USERS_PATH}/${currentUser.id}/fcmToken`).set(token);
+      console.log('[FCM] token registered');
+    }
+  } catch(e) { console.warn('[FCM] token registration failed:', e); }
+}
+
+// ══════════════════════════════════════
+// ローカル通知送信
+// ══════════════════════════════════════
+function sendLocalNotification(title, body, tag) {
+  if (Notification.permission !== 'granted') return;
+  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+    navigator.serviceWorker.controller.postMessage({
+      type: 'SHOW_NOTIFICATION', title, body,
+      icon: './icons/icon-192.png',
+      tag: tag || 'shim-notif'
+    });
+  } else {
+    new Notification(title, { body, icon: './icons/icon-192.png' });
+  }
+}
+
+// ══════════════════════════════════════
+// リアルタイムリスナー（フレンド申請）
+// ══════════════════════════════════════
+let _friendListener = null;
+let _friendListenerInit = false;
+
+function startFriendListener() {
+  if (!currentUser) return;
+  if (_friendListener) { _friendListener.off(); _friendListener = null; }
+  _friendListenerInit = false;
+  const ref = fdb.ref(`${FRIENDS_PATH}/${currentUser.id}/incoming`);
+  _friendListener = ref;
+  ref.on('value', snap => {
+    if (!_friendListenerInit) { _friendListenerInit = true; return; }
+    const data = snap.val() || {};
+    const newPending = Object.values(data).filter(f => {
+      return f.status === 'pending' && (Date.now() - (f.sentAt || 0)) < 30000;
+    });
+    if (newPending.length > 0 && notifSettings.friendRequest !== false) {
+      const name = newPending[0].name || 'ユーザー';
+      sendLocalNotification('フレンド申請', `${name} さんからフレンド申請が届きました`, 'friend-request');
+    }
+    friendsIncoming = data;
+    updateFriendBadge();
+  });
+}
+
+function stopFriendListener() {
+  if (_friendListener) { _friendListener.off(); _friendListener = null; }
+}
+
+// ══════════════════════════════════════
+// リアルタイムリスナー（お知らせ）
+// ══════════════════════════════════════
+let _noticesListener = null;
+let _noticesListenerInit = false;
+
+function startNoticesListener() {
+  if (!currentUser) return;
+  if (_noticesListener) { _noticesListener.off(); _noticesListener = null; }
+  _noticesListenerInit = false;
+  const ref = fdb.ref(NOTICES_PATH);
+  _noticesListener = ref;
+  ref.on('child_added', snap => {
+    if (!_noticesListenerInit) return;
+    if (notifSettings.notices === false) return;
+    const data = snap.val();
+    if (!data) return;
+    const age = Date.now() - (data.postedAt || data.createdAt || 0);
+    if (age < 30000) {
+      sendLocalNotification('お知らせ', data.title || '新しいお知らせがあります', 'notice');
+    }
+  });
+  ref.once('value', () => { _noticesListenerInit = true; });
+}
+
+function stopNoticesListener() {
+  if (_noticesListener) { _noticesListener.off(); _noticesListener = null; }
+}
+
+// ══════════════════════════════════════
+// 翌日シフトのリマインダー（20:00）
+// ══════════════════════════════════════
+let _reminderTimer = null;
+
+function scheduleShiftReminder() {
+  if (_reminderTimer) { clearTimeout(_reminderTimer); _reminderTimer = null; }
+  if (notifSettings.shiftReminder === false) return;
+  if (Notification.permission !== 'granted') return;
+
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth()+1).padStart(2,'0')}-${String(tomorrow.getDate()).padStart(2,'0')}`;
+
+  const tomorrowShifts = (shifts || []).filter(s => s.date === tomorrowStr);
+  if (tomorrowShifts.length === 0) return;
+
+  const now = new Date();
+  const target = new Date(now);
+  target.setHours(20, 0, 0, 0);
+  if (now >= target) return; // すでに20時を過ぎている場合はスキップ
+
+  const delay = target - now;
+  _reminderTimer = setTimeout(() => {
+    const wpNames = tomorrowShifts.map(s => s.wpName || s.workplace || '').filter(Boolean).join(', ');
+    sendLocalNotification(
+      '明日のシフトリマインダー',
+      `明日（${tomorrowStr}）にシフトがあります${wpNames ? '：' + wpNames : ''}`,
+      'shift-reminder'
+    );
+  }, delay);
+}
+
+// ══════════════════════════════════════
+// ログイン後に各種リスナーを起動
+// ══════════════════════════════════════
+const _origHideLoginScreen = hideLoginScreen;
+hideLoginScreen = function() {
+  _origHideLoginScreen();
+  setTimeout(async () => {
+    await loadNotifSettings().catch(() => {});
+    _updateNotifPermButton();
+    if (Notification.permission === 'granted') {
+      startFriendListener();
+      startNoticesListener();
+      scheduleShiftReminder();
+      _registerFCMToken();
+    }
+  }, 500);
+};
+
+const _origDoLogout = doLogout;
+doLogout = function() {
+  stopFriendListener();
+  stopNoticesListener();
+  if (_reminderTimer) { clearTimeout(_reminderTimer); _reminderTimer = null; }
+  notifSettings = { friendRequest: true, notices: true, shiftReminder: true };
+  _origDoLogout();
+};
+
+// 設定モーダルを開いたときに通知許可状態を更新
+const _origOpenSettings = openSettings;
+openSettings = function() {
+  _origOpenSettings();
+  _applyNotifSettingsUI();
+};
 </script>
 </body>
 </html>
