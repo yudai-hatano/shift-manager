@@ -6362,12 +6362,16 @@ _startup().catch(e => {
 });
 
 // ══════════════════════════════════════
-// PWA – Service Worker 登録
+// PWA – Service Worker 登録（FCM兼用）
+// firebase-messaging-sw.js をキャッシュ + FCM の統合 SW として使用する。
+// FCM の getToken() にこの registration を渡すことで sw.js との競合を防ぐ。
 // ══════════════════════════════════════
+let _swRegistration = null;
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js').then(reg => {
-    console.log('[SW] registered:', reg.scope);
-  }).catch(e => console.warn('[SW] registration failed:', e));
+  navigator.serviceWorker.register('./firebase-messaging-sw.js').then(reg => {
+    _swRegistration = reg;
+    console.log('[SW] ✅ Registered:', reg.scope);
+  }).catch(e => console.error('[SW] ❌ Registration failed:', e));
 }
 
 // ══════════════════════════════════════
@@ -6377,11 +6381,20 @@ const NOTIF_PATH = 'notificationSettings';
 let notifSettings = { friendRequest: true, notices: true, shiftReminder: true };
 
 async function loadNotifSettings() {
-  if (!currentUser) return;
+  if (!currentUser) { console.log('[Notif] loadNotifSettings: no currentUser'); return; }
   try {
-    const snap = await fdb.ref(`${USERS_PATH}/${currentUser.id}/${NOTIF_PATH}`).get();
-    if (snap.exists()) notifSettings = { ...notifSettings, ...snap.val() };
-  } catch(e) {}
+    const path = `${USERS_PATH}/${currentUser.id}/${NOTIF_PATH}`;
+    console.log('[Notif] Loading settings from Firebase:', path);
+    const snap = await fdb.ref(path).get();
+    if (snap.exists()) {
+      notifSettings = { ...notifSettings, ...snap.val() };
+      console.log('[Notif] ✅ Settings loaded:', JSON.stringify(notifSettings));
+    } else {
+      console.log('[Notif] No saved settings in Firebase, using defaults');
+    }
+  } catch(e) {
+    console.error('[Notif] ❌ Failed to load settings:', e);
+  }
   _applyNotifSettingsUI();
 }
 
@@ -6391,10 +6404,14 @@ async function saveNotifSettings() {
     notices:       document.getElementById('notifNotices')?.checked ?? true,
     shiftReminder: document.getElementById('notifShiftReminder')?.checked ?? true
   };
-  if (!currentUser) return;
+  if (!currentUser) { console.log('[Notif] saveNotifSettings: no currentUser'); return; }
   try {
-    await fdb.ref(`${USERS_PATH}/${currentUser.id}/${NOTIF_PATH}`).set(notifSettings);
-  } catch(e) { console.warn('Failed to save notif settings:', e); }
+    const path = `${USERS_PATH}/${currentUser.id}/${NOTIF_PATH}`;
+    await fdb.ref(path).set(notifSettings);
+    console.log('[Notif] ✅ Settings saved to Firebase:', JSON.stringify(notifSettings));
+  } catch(e) {
+    console.error('[Notif] ❌ Failed to save settings:', e);
+  }
   scheduleShiftReminder();
 }
 
@@ -6434,12 +6451,16 @@ async function requestNotificationPermission() {
     toast('このブラウザは通知をサポートしていません');
     return;
   }
+  console.log('[Notif] Requesting permission...');
   const perm = await Notification.requestPermission();
+  console.log('[Notif] Permission result:', perm);
   _updateNotifPermButton();
   if (perm === 'granted') {
     toast('通知を許可しました');
-    _registerFCMToken();
+    startFriendListener();
+    startNoticesListener();
     scheduleShiftReminder();
+    await _registerFCMToken().catch(e => console.error('[FCM] Post-permission token error:', e));
   } else {
     toast('通知が拒否されました。ブラウザの設定から許可してください。');
   }
@@ -6447,39 +6468,60 @@ async function requestNotificationPermission() {
 
 // ══════════════════════════════════════
 // FCM トークン登録
+// SW registration を明示的に渡すことで firebase-messaging-sw.js を確実に使用する
 // ══════════════════════════════════════
-// VAPID キーは Firebase Console > プロジェクト設定 > Cloud Messaging >
-// ウェブプッシュ証明書 で生成してここに貼り付けてください。
 const VAPID_KEY = "BN_7DqXacpwnZOT3lcpidanEZ4b4LZYnkItM-DrdQEgedHJZ2KlpjM0BsuYuhSRnHBjQtNH-OP4dQvkDFwU9Ly8";
 
 let _fcmMessaging = null;
+
 async function _registerFCMToken() {
-  if (!VAPID_KEY) return;
-  if (!currentUser) return;
-  if (Notification.permission !== 'granted') return;
+  if (!currentUser) { console.log('[FCM] No currentUser, skipping'); return; }
+  if (Notification.permission !== 'granted') { console.log('[FCM] Permission not granted, skipping'); return; }
   try {
+    // SW の準備を待つ（登録直後は _swRegistration が null の場合がある）
+    const swReg = _swRegistration || await navigator.serviceWorker.ready;
+    console.log('[FCM] Using SW registration:', swReg.scope);
+
     if (!_fcmMessaging) _fcmMessaging = firebase.messaging();
-    const token = await _fcmMessaging.getToken({ vapidKey: VAPID_KEY });
+
+    const token = await _fcmMessaging.getToken({
+      vapidKey: VAPID_KEY,
+      serviceWorkerRegistration: swReg
+    });
+
     if (token) {
       await fdb.ref(`${USERS_PATH}/${currentUser.id}/fcmToken`).set(token);
-      console.log('[FCM] token registered');
+      console.log('[FCM] ✅ Token saved:', token.substring(0, 20) + '...');
+    } else {
+      console.warn('[FCM] ⚠️ getToken returned empty token');
     }
-  } catch(e) { console.warn('[FCM] token registration failed:', e); }
+  } catch(e) {
+    console.error('[FCM] ❌ Token registration failed:', e.message || e);
+  }
 }
 
 // ══════════════════════════════════════
-// ローカル通知送信
+// ローカル通知送信（serviceWorker.ready を使い controller の null を回避）
 // ══════════════════════════════════════
 function sendLocalNotification(title, body, tag) {
-  if (Notification.permission !== 'granted') return;
-  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-    navigator.serviceWorker.controller.postMessage({
-      type: 'SHOW_NOTIFICATION', title, body,
-      icon: './icons/icon-192.png',
-      tag: tag || 'shim-notif'
-    });
+  if (Notification.permission !== 'granted') {
+    console.log('[Notif] Skipped (no permission):', title);
+    return;
+  }
+  console.log('[Notif] 📣 Sending notification:', title, '|', body);
+  const options = {
+    body,
+    icon: './icons/icon-192.png',
+    badge: './icons/icon-192.png',
+    tag: tag || 'shim-notif',
+    vibrate: [200, 100, 200]
+  };
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.ready
+      .then(reg => reg.showNotification(title, options))
+      .catch(() => new Notification(title, options));
   } else {
-    new Notification(title, { body, icon: './icons/icon-192.png' });
+    new Notification(title, options);
   }
 }
 
@@ -6493,16 +6535,18 @@ function startFriendListener() {
   if (!currentUser) return;
   if (_friendListener) { _friendListener.off(); _friendListener = null; }
   _friendListenerInit = false;
+  console.log('[Notif] Starting friend request listener for:', currentUser.id);
   const ref = fdb.ref(`${FRIENDS_PATH}/${currentUser.id}/incoming`);
   _friendListener = ref;
   ref.on('value', snap => {
     if (!_friendListenerInit) { _friendListenerInit = true; return; }
     const data = snap.val() || {};
-    const newPending = Object.values(data).filter(f => {
-      return f.status === 'pending' && (Date.now() - (f.sentAt || 0)) < 30000;
-    });
+    const newPending = Object.values(data).filter(f =>
+      f.status === 'pending' && (Date.now() - (f.sentAt || 0)) < 30000
+    );
     if (newPending.length > 0 && notifSettings.friendRequest !== false) {
       const name = newPending[0].name || 'ユーザー';
+      console.log('[Notif] New friend request from:', name);
       sendLocalNotification('フレンド申請', `${name} さんからフレンド申請が届きました`, 'friend-request');
     }
     friendsIncoming = data;
@@ -6524,6 +6568,7 @@ function startNoticesListener() {
   if (!currentUser) return;
   if (_noticesListener) { _noticesListener.off(); _noticesListener = null; }
   _noticesListenerInit = false;
+  console.log('[Notif] Starting notices listener');
   const ref = fdb.ref(NOTICES_PATH);
   _noticesListener = ref;
   ref.on('child_added', snap => {
@@ -6533,6 +6578,7 @@ function startNoticesListener() {
     if (!data) return;
     const age = Date.now() - (data.postedAt || data.createdAt || 0);
     if (age < 30000) {
+      console.log('[Notif] New notice:', data.title);
       sendLocalNotification('お知らせ', data.title || '新しいお知らせがあります', 'notice');
     }
   });
@@ -6558,14 +6604,24 @@ function scheduleShiftReminder() {
   const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth()+1).padStart(2,'0')}-${String(tomorrow.getDate()).padStart(2,'0')}`;
 
   const tomorrowShifts = (shifts || []).filter(s => s.date === tomorrowStr);
-  if (tomorrowShifts.length === 0) return;
+  if (tomorrowShifts.length === 0) {
+    console.log('[Notif] No shifts tomorrow, reminder skipped');
+    return;
+  }
 
   const now = new Date();
   const target = new Date(now);
   target.setHours(20, 0, 0, 0);
-  if (now >= target) return; // すでに20時を過ぎている場合はスキップ
+  if (now >= target) {
+    console.log('[Notif] Already past 20:00, reminder skipped');
+    return;
+  }
 
   const delay = target - now;
+  const h = Math.floor(delay / 3600000);
+  const m = Math.floor((delay % 3600000) / 60000);
+  console.log(`[Notif] ⏰ Shift reminder scheduled in ${h}h ${m}m for ${tomorrowStr}`);
+
   _reminderTimer = setTimeout(() => {
     const wpNames = tomorrowShifts.map(s => s.wpName || s.workplace || '').filter(Boolean).join(', ');
     sendLocalNotification(
@@ -6581,13 +6637,17 @@ function scheduleShiftReminder() {
 // ══════════════════════════════════════
 async function _initNotifications() {
   if (!currentUser) return;
-  await loadNotifSettings().catch(() => {});
+  console.log('[Notif] Initializing for user:', currentUser.id);
+  await loadNotifSettings().catch(e => console.error('[Notif] loadNotifSettings error:', e));
   _updateNotifPermButton();
   if (Notification.permission === 'granted') {
+    console.log('[Notif] Permission granted — starting listeners + FCM token');
     startFriendListener();
     startNoticesListener();
     scheduleShiftReminder();
-    await _registerFCMToken().catch(() => {});
+    await _registerFCMToken().catch(e => console.error('[FCM] Init error:', e));
+  } else {
+    console.log('[Notif] Permission:', Notification.permission, '— skipping listeners');
   }
 }
 
@@ -6595,7 +6655,6 @@ async function _initNotifications() {
 const _origHideLoginScreen = hideLoginScreen;
 hideLoginScreen = function() {
   _origHideLoginScreen();
-  // doLogin/doRegister がデータ読み込みを完了するのを待ってから初期化
   setTimeout(() => _initNotifications().catch(() => {}), 2500);
 };
 
