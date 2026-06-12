@@ -34,7 +34,7 @@ body{
   padding:10px 12px;padding-top:max(10px,env(safe-area-inset-top));
   position:sticky;top:0;z-index:100;box-shadow:var(--sh);
 }
-.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.hdr-top{display:flex;flex-direction:column;align-items:stretch;gap:6px;margin-bottom:8px}
 .app-title{font-size:16px;font-weight:800;color:var(--pri);letter-spacing:-.3px}
 .hdr-nav{display:flex;align-items:center;gap:3px}
 .nav-mid{display:flex;align-items:center;gap:5px;flex:1;justify-content:center;min-width:0;overflow:hidden}
@@ -47,8 +47,9 @@ body{
 }
 .icon-btn:hover{background:var(--bd)}
 .icon-btn:active{background:var(--bd);transform:scale(.95)}
-/* ヘッダー上段のアイコンボタンはコンパクトに（スマホ収まり対応） */
-.hdr-top .icon-btn{min-width:30px;height:32px;padding:0 3px;font-size:16px}
+/* ヘッダー2段目：アイコンをフル幅で右寄せ */
+.hdr-top .icon-row{display:flex;justify-content:flex-end;gap:4px}
+.hdr-top .icon-btn{font-size:18px}
 .view-toggle{display:flex;background:var(--sur2);border-radius:var(--rs);padding:2px;gap:2px;flex-shrink:0}
 .vtbtn{
   padding:4px 10px;border:none;background:transparent;border-radius:6px;
@@ -566,8 +567,8 @@ select.fc{font-size:14px}
     <button class="vb-back" onclick="stopViewingUserData()">自分のデータに戻る</button>
   </div>
   <div class="hdr-top">
-    <div class="app-title"><img src="icons/icon.png" alt="ShiM" style="width:44px;height:44px;object-fit:contain;border-radius:11px;display:block"></div>
-    <div style="display:flex;gap:2px">
+    <div class="app-title"><img src="icons/icon.png" alt="ShiM" style="width:110px;height:110px;object-fit:contain;border-radius:26px;display:block"></div>
+    <div class="icon-row">
       <button class="icon-btn notice-bell" id="btnNotices" title="お知らせ">🔔<span id="noticeBadge"></span></button>
       <button class="icon-btn notice-bell" id="btnFriends" title="フレンド" style="position:relative">👥<span id="friendBadge"></span></button>
       <button class="icon-btn" id="btnTutorial" title="使い方">🔰</button>
