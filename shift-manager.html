@@ -682,6 +682,7 @@ select.fc{font-size:14px}
     <div class="fg">
       <label class="fl">勤務先名</label>
       <input type="text" class="fc" id="wpName" placeholder="例: カフェ ○○店">
+      <p style="font-size:11px;color:var(--muted);margin-top:5px;line-height:1.6">※ 勤務先名はフレンドのカレンダーに表示されます</p>
     </div>
     <div class="fg">
       <label class="fl">カラー</label>
@@ -1789,6 +1790,8 @@ let _editNoticeId    = null;
 let friendsOutgoing  = {};   // { uid: { name, status, sentAt } } 自分が送った申請
 let friendsIncoming  = {};   // { uid: { name, status, sentAt } } 受け取った申請
 let friendShifts     = {};   // { uid: [shift objects] } 承認済みフレンドのシフト
+let friendWorkplaces = {};   // { uid: [wp objects] }  承認済みフレンドの勤務先
+let friendWpSettings = {};   // { uid: { wpId: { visible, color } } } 勤務先表示設定
 let friendNicknames  = {};   // { uid: "nickname" } 自分のみが見るコテハン
 let _editingNickname = null; // 現在ニックネーム編集中のuid
 let currentUser  = null;
@@ -2876,6 +2879,7 @@ async function loadFriends() {
       friendsOutgoing = {}; friendsIncoming = {};
     }
     await loadFriendNicknames();
+    await loadFriendWpSettings();
     updateFriendBadge();
     await loadFriendShifts();
   } catch(e) { console.error('loadFriends:', e); }
@@ -2895,13 +2899,69 @@ function updateFriendBadge() {
 
 async function loadFriendShifts() {
   friendShifts = {};
+  friendWorkplaces = {};
   const accepted = Object.keys(friendsOutgoing).filter(id => friendsOutgoing[id].status === 'accepted');
   for (const fid of accepted) {
     try {
-      const snap = await fdb.ref(getDBPath(fid) + '/shifts').get();
-      if (snap.exists()) friendShifts[fid] = fbArr(snap.val());
+      const [sSnap, wSnap] = await Promise.all([
+        fdb.ref(getDBPath(fid) + '/shifts').get(),
+        fdb.ref(getDBPath(fid) + '/workplaces').get()
+      ]);
+      if (sSnap.exists()) friendShifts[fid]     = fbArr(sSnap.val());
+      if (wSnap.exists()) friendWorkplaces[fid]  = fbArr(wSnap.val());
     } catch(e) {}
   }
+}
+
+function getFriendWP(uid, wpId) {
+  return (friendWorkplaces[uid] || []).find(w => w.id === wpId);
+}
+
+function getFriendWpColor(uid, wpId) {
+  const custom = friendWpSettings[uid]?.[wpId]?.color;
+  if (custom) return custom;
+  return getFriendWP(uid, wpId)?.color || friendColor(uid);
+}
+
+function isFriendWpVisible(uid, wpId) {
+  return friendWpSettings[uid]?.[wpId]?.visible !== false;
+}
+
+async function loadFriendWpSettings() {
+  if (!currentUser) return;
+  try {
+    const snap = await fdb.ref(getDBPath(currentUser.id) + '/friendWpSettings').get();
+    friendWpSettings = snap.exists() ? (snap.val() || {}) : {};
+  } catch(e) { friendWpSettings = {}; }
+}
+
+async function _saveFriendWpSettings() {
+  try {
+    await fdb.ref(getDBPath(currentUser.id) + '/friendWpSettings').set(friendWpSettings);
+  } catch(e) { console.error('saveFriendWpSettings:', e); }
+}
+
+function setFriendWpVisible(uid, wpId, visible) {
+  if (!friendWpSettings[uid]) friendWpSettings[uid] = {};
+  if (!friendWpSettings[uid][wpId]) friendWpSettings[uid][wpId] = {};
+  friendWpSettings[uid][wpId].visible = visible;
+  _saveFriendWpSettings();
+  render();
+}
+
+function setFriendWpColor(uid, wpId, color) {
+  if (!friendWpSettings[uid]) friendWpSettings[uid] = {};
+  if (!friendWpSettings[uid][wpId]) friendWpSettings[uid][wpId] = {};
+  friendWpSettings[uid][wpId].color = color;
+  _saveFriendWpSettings();
+  renderFriendsList();
+  render();
+}
+
+function toggleFriendWpColorPicker(uid, wpId) {
+  const cp = document.getElementById(`fwpcp_${uid}_${wpId}`);
+  if (!cp) return;
+  cp.style.display = cp.style.display === 'none' ? 'flex' : 'none';
 }
 
 function getFriendName(uid) {
@@ -2998,6 +3058,7 @@ function renderFriendsList() {
       const nickname    = friendNicknames[uid] || '';
       const displayName = nickname || realName;
       const isEditing   = _editingNickname === uid;
+      const fWps        = friendWorkplaces[uid] || [];
 
       h += `<div class="friend-item" style="flex-direction:column;align-items:stretch;gap:0">
         <div style="display:flex;align-items:center;gap:10px">
@@ -3023,6 +3084,37 @@ function renderFriendsList() {
           <button class="btn btn-sm" style="background:var(--sur2);border:1.5px solid var(--bd)" onclick="cancelNicknameEdit()">✕</button>
         </div>`;
       }
+
+      // 勤務先ごとの表示設定
+      h += `<div style="padding:6px 0 4px 14px;border-top:1px solid var(--bd);margin-top:6px">
+        <div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:5px;letter-spacing:.4px">🏢 勤務先設定</div>`;
+      if (fWps.length) {
+        for (const wp of fWps) {
+          const wpColor   = getFriendWpColor(uid, wp.id);
+          const wpVisible = isFriendWpVisible(uid, wp.id);
+          h += `<div style="margin-bottom:4px">
+            <div style="display:flex;align-items:center;gap:7px">
+              <div id="fwpdot_${uid}_${wp.id}"
+                   style="width:14px;height:14px;border-radius:50%;background:${wpColor};cursor:pointer;flex-shrink:0;border:1.5px solid rgba(0,0,0,.15);transition:transform .15s"
+                   title="色を変更" onclick="toggleFriendWpColorPicker('${uid}','${wp.id}')"></div>
+              <span style="font-size:12px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(wp.name)}</span>
+              <label style="display:flex;align-items:center;gap:3px;font-size:11px;color:var(--muted);cursor:pointer;flex-shrink:0">
+                <input type="checkbox" ${wpVisible?'checked':''} style="width:13px;height:13px;cursor:pointer"
+                       onchange="setFriendWpVisible('${uid}','${wp.id}',this.checked)"> 表示
+              </label>
+            </div>
+            <div id="fwpcp_${uid}_${wp.id}" style="display:none;flex-wrap:wrap;gap:5px;padding:6px 0 2px 20px">
+              ${[...COLORS, ...FRIEND_COLORS].map(c =>
+                `<div class="colop${wpColor===c?' on':''}" style="background:${c};width:22px;height:22px" data-c="${c}"
+                  onclick="setFriendWpColor('${uid}','${wp.id}','${c}')"></div>`
+              ).join('')}
+            </div>
+          </div>`;
+        }
+      } else {
+        h += `<div style="font-size:11px;color:var(--muted)">勤務先情報なし</div>`;
+      }
+      h += `</div>`;
 
       h += `</div>`;
     }
@@ -3152,6 +3244,7 @@ async function deleteFriend(friendId) {
     delete friendsOutgoing[friendId];
     delete friendsIncoming[friendId];
     delete friendShifts[friendId];
+    delete friendWorkplaces[friendId];
     delete friendNicknames[friendId];
     if (_editingNickname === friendId) _editingNickname = null;
     updateFriendBadge();
@@ -3463,15 +3556,19 @@ function renderDayContent(ds) {
     let anyFriend = false;
     for (const fid of visibleFriends) {
       const fname = getFriendDisplayName(fid);
-      const fc    = friendColor(fid);
       for (const fs of (friendShifts[fid] || []).filter(s => s.date === ds)) {
+        if (!isFriendWpVisible(fid, fs.workplaceId)) continue;
         anyFriend = true;
+        const fc      = getFriendWpColor(fid, fs.workplaceId);
+        const wpName  = getFriendWP(fid, fs.workplaceId)?.name || '';
+        const wpHtml  = wpName
+          ? `<div class="day-friend-loc" style="color:${fc}">🏢 ${escHtml(wpName)}</div>` : '';
         const locHtml = fs.location
           ? `<div class="day-friend-loc" style="color:${fc}">📍 ${escHtml(fs.location.split('\n').slice(0,2).join(' / '))}</div>` : '';
         h += `<div class="day-friend-card" style="background:${fc}18;border-left-color:${fc}">
           <div class="day-friend-name" style="color:${fc}">${escHtml(fname)}</div>
           <div class="day-friend-time" style="color:${fc}">${fs.startTime}〜${fs.endTime}</div>
-          ${locHtml}
+          ${wpHtml}${locHtml}
         </div>`;
       }
     }
@@ -3562,16 +3659,18 @@ function renderWeek() {
         </div>`;
       }
     }
-    // フレンドのシフト（日付・時間・場所のみ、給与情報なし）
+    // フレンドのシフト（日付・時間・勤務先、給与情報なし）
     for (const [fid, fshifts] of Object.entries(friendShifts)) {
       if (!friendVisible(fid)) continue;
       const fname = getFriendDisplayName(fid);
       const short = fname.split(/[\s　]/)[0];
-      const fc    = friendColor(fid);
       for (const fs of fshifts.filter(s => s.date === ds)) {
-        const floc = fs.location ? `<br><span style="opacity:.85;font-size:8px">${escHtml(fs.location.split('\n')[0])}</span>` : '';
-        h += `<div class="chip wk fc" style="background:${fc}" title="${escHtml(fname)}" onclick="event.stopPropagation()">
-          ${escHtml(short)}: ${fs.startTime}〜${fs.endTime}${floc}
+        if (!isFriendWpVisible(fid, fs.workplaceId)) continue;
+        const fc     = getFriendWpColor(fid, fs.workplaceId);
+        const wpName = getFriendWP(fid, fs.workplaceId)?.name || '';
+        const fwp    = wpName ? `<br><span style="opacity:.9;font-size:8px">${escHtml(wpName)}</span>` : '';
+        h += `<div class="chip wk fc" style="background:${fc}" title="${escHtml(fname)}: ${escHtml(wpName)}" onclick="event.stopPropagation()">
+          ${escHtml(short)}: ${fs.startTime}〜${fs.endTime}${fwp}
         </div>`;
       }
     }
@@ -3627,14 +3726,16 @@ function renderMonth() {
       </div>`;
     }
     if (ss.length > 2) h += `<div style="font-size:9px;color:var(--muted);text-align:center;padding:1px">+${ss.length-2}</div>`;
-    // フレンドのシフト（月ビュー：名前+開始時刻・色分け）
+    // フレンドのシフト（月ビュー：名前+開始時刻・勤務先色分け）
     for (const [fid, fshifts] of Object.entries(friendShifts)) {
       if (!friendVisible(fid)) continue;
       const fname = getFriendDisplayName(fid);
       const short = fname.split(/[\s　]/)[0];
-      const fc    = friendColor(fid);
       for (const fs of fshifts.filter(s => s.date === ds)) {
-        h += `<div class="chip mo fc" style="background:${fc}" title="${escHtml(fname)}" onclick="event.stopPropagation()">
+        if (!isFriendWpVisible(fid, fs.workplaceId)) continue;
+        const fc     = getFriendWpColor(fid, fs.workplaceId);
+        const wpName = getFriendWP(fid, fs.workplaceId)?.name || '';
+        h += `<div class="chip mo fc" style="background:${fc}" title="${escHtml(fname)}: ${escHtml(wpName)}" onclick="event.stopPropagation()">
           ${escHtml(short)}: ${fs.startTime}〜
         </div>`;
       }
