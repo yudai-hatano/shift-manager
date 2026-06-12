@@ -15,7 +15,7 @@ const messaging = firebase.messaging();
 
 // ── キャッシュ ────────────────────────────────────────────
 // バージョンを上げると旧キャッシュが activate 時に自動削除される
-const CACHE_NAME = 'shim-v4';
+const CACHE_NAME = 'shim-v5';
 
 // shift-manager.html はキャッシュしない（常にネットワークから取得）
 const CACHE_ASSETS = [
