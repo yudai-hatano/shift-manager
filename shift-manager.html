@@ -361,7 +361,7 @@ select.fc{font-size:14px}
   flex-direction:column;gap:0;z-index:9999;
 }
 #loadingOverlay .ld-logo{
-  width:140px;height:140px;object-fit:contain;border-radius:32px;
+  width:280px;height:280px;object-fit:contain;border-radius:60px;
   margin-bottom:16px;
 }
 #loadingOverlay .ld-title{
@@ -564,7 +564,7 @@ select.fc{font-size:14px}
     <button class="vb-back" onclick="stopViewingUserData()">自分のデータに戻る</button>
   </div>
   <div class="hdr-top">
-    <div class="app-title"><img src="icons/icon.png" alt="ShiM" style="width:24px;height:24px;object-fit:contain;border-radius:6px;display:block"></div>
+    <div class="app-title"><img src="icons/icon.png" alt="ShiM" style="width:96px;height:96px;object-fit:contain;border-radius:22px;display:block"></div>
     <div style="display:flex;gap:4px">
       <button class="icon-btn notice-bell" id="btnNotices" title="お知らせ" style="font-size:18px">🔔<span id="noticeBadge"></span></button>
       <button class="icon-btn notice-bell" id="btnFriends" title="フレンド" style="font-size:18px;position:relative">👥<span id="friendBadge"></span></button>
@@ -6533,6 +6533,10 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./firebase-messaging-sw.js').then(reg => {
     _swRegistration = reg;
     console.log('[SW] ✅ Registered:', reg.scope);
+
+    // 起動のたびに新バージョンを確認（ホーム画面アイコンからの起動にも対応）
+    reg.update().catch(() => {});
+
     // 登録直後に待機中の新バージョンがあれば即座に有効化
     if (reg.waiting) {
       reg.waiting.postMessage({ type: 'SKIP_WAITING' });
