@@ -47,6 +47,8 @@ body{
 }
 .icon-btn:hover{background:var(--bd)}
 .icon-btn:active{background:var(--bd);transform:scale(.95)}
+/* ヘッダー上段のアイコンボタンはコンパクトに（スマホ収まり対応） */
+.hdr-top .icon-btn{min-width:30px;height:32px;padding:0 3px;font-size:16px}
 .view-toggle{display:flex;background:var(--sur2);border-radius:var(--rs);padding:2px;gap:2px;flex-shrink:0}
 .vtbtn{
   padding:4px 10px;border:none;background:transparent;border-radius:6px;
@@ -564,15 +566,15 @@ select.fc{font-size:14px}
     <button class="vb-back" onclick="stopViewingUserData()">自分のデータに戻る</button>
   </div>
   <div class="hdr-top">
-    <div class="app-title"><img src="icons/icon.png" alt="ShiM" style="width:96px;height:96px;object-fit:contain;border-radius:22px;display:block"></div>
-    <div style="display:flex;gap:4px">
-      <button class="icon-btn notice-bell" id="btnNotices" title="お知らせ" style="font-size:18px">🔔<span id="noticeBadge"></span></button>
-      <button class="icon-btn notice-bell" id="btnFriends" title="フレンド" style="font-size:18px;position:relative">👥<span id="friendBadge"></span></button>
-      <button class="icon-btn" id="btnTutorial" title="使い方" style="font-size:18px">🔰</button>
-      <button class="icon-btn" id="btnImport" title="インポート" style="font-size:18px">📥</button>
-      <button class="icon-btn" id="btnHY" title="半期集計" style="font-size:18px">📊</button>
-      <button class="icon-btn" id="btnRefresh" title="更新" style="font-size:18px">🔄</button>
-      <button class="icon-btn" id="btnSettings" title="設定" style="font-size:18px">⚙️</button>
+    <div class="app-title"><img src="icons/icon.png" alt="ShiM" style="width:44px;height:44px;object-fit:contain;border-radius:11px;display:block"></div>
+    <div style="display:flex;gap:2px">
+      <button class="icon-btn notice-bell" id="btnNotices" title="お知らせ">🔔<span id="noticeBadge"></span></button>
+      <button class="icon-btn notice-bell" id="btnFriends" title="フレンド" style="position:relative">👥<span id="friendBadge"></span></button>
+      <button class="icon-btn" id="btnTutorial" title="使い方">🔰</button>
+      <button class="icon-btn" id="btnImport" title="インポート">📥</button>
+      <button class="icon-btn" id="btnHY" title="半期集計">📊</button>
+      <button class="icon-btn" id="btnRefresh" title="更新">🔄</button>
+      <button class="icon-btn" id="btnSettings" title="設定">⚙️</button>
     </div>
   </div>
   <div class="hdr-nav">
