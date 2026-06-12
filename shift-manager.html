@@ -557,6 +557,7 @@ select.fc{font-size:14px}
       <button class="icon-btn" id="btnTutorial" title="使い方" style="font-size:18px">🔰</button>
       <button class="icon-btn" id="btnImport" title="インポート" style="font-size:18px">📥</button>
       <button class="icon-btn" id="btnHY" title="半期集計" style="font-size:18px">📊</button>
+      <button class="icon-btn" id="btnRefresh" title="更新" style="font-size:18px">🔄</button>
       <button class="icon-btn" id="btnSettings" title="設定" style="font-size:18px">⚙️</button>
     </div>
   </div>
@@ -6207,6 +6208,28 @@ document.getElementById('cpSubmitBtn').onclick   = doChangePassword;
 document.getElementById('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 document.getElementById('loginId').addEventListener('keydown',   e => { if (e.key === 'Enter') document.getElementById('loginPass').focus(); });
 
+// 🔄 更新ボタン
+document.getElementById('btnRefresh').onclick = async function() {
+  if (!currentUser) return;
+  const btn = this;
+  btn.disabled = true;
+  btn.style.animation = 'spin .7s linear infinite';
+  try {
+    document.getElementById('loadingOverlay').style.display = 'flex';
+    await loadData().catch(() => {});
+    await loadNotices().catch(() => {});
+    await loadFriends().catch(() => {});
+    updateUserBar();
+    render();
+    scheduleShiftReminder();
+    toast('データを更新しました');
+  } finally {
+    document.getElementById('loadingOverlay').style.display = 'none';
+    btn.style.animation = '';
+    btn.disabled = false;
+  }
+};
+
 // 設定・インポートイベント
 document.getElementById('btnSettings').onclick          = openSettings;
 document.getElementById('closeSettings').onclick        = closeSettings;
@@ -6380,21 +6403,49 @@ if ('serviceWorker' in navigator) {
 const NOTIF_PATH = 'notificationSettings';
 let notifSettings = { friendRequest: true, notices: true, shiftReminder: true };
 
+function _notifLSKey() {
+  return currentUser ? `notifSettings_${currentUser.id}` : null;
+}
+
 async function loadNotifSettings() {
   if (!currentUser) { console.log('[Notif] loadNotifSettings: no currentUser'); return; }
+
+  // ① localStorage から即座に読み込んで UI に反映（ネットワーク不要・高速）
+  const lsKey = _notifLSKey();
   try {
-    const path = `${USERS_PATH}/${currentUser.id}/${NOTIF_PATH}`;
-    console.log('[Notif] Loading settings from Firebase:', path);
-    const snap = await fdb.ref(path).get();
+    const ls = localStorage.getItem(lsKey);
+    if (ls) {
+      const parsed = JSON.parse(ls);
+      notifSettings = { ...notifSettings, ...parsed };
+      console.log('[Notif] 📦 Loaded from localStorage (fast):', JSON.stringify(notifSettings));
+      _applyNotifSettingsUI(); // ← 起動直後でも即座に反映
+    }
+  } catch(e) { console.warn('[Notif] localStorage load error:', e); }
+
+  // ② Firebase から読み込んで確実に上書き（権威ある最終値）
+  const fbPath = `${USERS_PATH}/${currentUser.id}/${NOTIF_PATH}`;
+  try {
+    console.log('[Notif] 🔥 Loading from Firebase:', fbPath);
+    const snap = await fdb.ref(fbPath).get();
     if (snap.exists()) {
-      notifSettings = { ...notifSettings, ...snap.val() };
-      console.log('[Notif] ✅ Settings loaded:', JSON.stringify(notifSettings));
+      const fbData = snap.val();
+      notifSettings = { ...notifSettings, ...fbData };
+      console.log('[Notif] ✅ Loaded from Firebase:', JSON.stringify(notifSettings));
+      // Firebase の値で localStorage を同期
+      try { localStorage.setItem(lsKey, JSON.stringify(notifSettings)); } catch(_) {}
     } else {
-      console.log('[Notif] No saved settings in Firebase, using defaults');
+      console.log('[Notif] No data in Firebase, keeping current values');
+      // Firebase に未保存の場合は現在値を書き込んで次回以降に備える
+      if (lsKey) {
+        await fdb.ref(fbPath).set(notifSettings).catch(e =>
+          console.warn('[Notif] Initial Firebase write failed:', e)
+        );
+      }
     }
   } catch(e) {
-    console.error('[Notif] ❌ Failed to load settings:', e);
+    console.error('[Notif] ❌ Firebase load failed:', e);
   }
+
   _applyNotifSettingsUI();
 }
 
@@ -6405,13 +6456,24 @@ async function saveNotifSettings() {
     shiftReminder: document.getElementById('notifShiftReminder')?.checked ?? true
   };
   if (!currentUser) { console.log('[Notif] saveNotifSettings: no currentUser'); return; }
+
+  const lsKey = _notifLSKey();
+  const fbPath = `${USERS_PATH}/${currentUser.id}/${NOTIF_PATH}`;
+
+  // ① localStorage に即座に保存（アプリを閉じても残る・高速）
   try {
-    const path = `${USERS_PATH}/${currentUser.id}/${NOTIF_PATH}`;
-    await fdb.ref(path).set(notifSettings);
-    console.log('[Notif] ✅ Settings saved to Firebase:', JSON.stringify(notifSettings));
+    localStorage.setItem(lsKey, JSON.stringify(notifSettings));
+    console.log('[Notif] 📦 Saved to localStorage:', JSON.stringify(notifSettings));
+  } catch(e) { console.warn('[Notif] localStorage save error:', e); }
+
+  // ② Firebase に保存（端末間同期・権威ある保存先）
+  try {
+    await fdb.ref(fbPath).set(notifSettings);
+    console.log('[Notif] ✅ Saved to Firebase:', JSON.stringify(notifSettings));
   } catch(e) {
-    console.error('[Notif] ❌ Failed to save settings:', e);
+    console.error('[Notif] ❌ Firebase save failed:', e);
   }
+
   scheduleShiftReminder();
 }
 
@@ -6667,11 +6729,12 @@ doLogout = function() {
   _origDoLogout();
 };
 
-// 設定モーダルを開いたときに通知許可状態を反映・シフトリマインダーを再スケジュール
+// 設定モーダルを開いたときに通知許可状態を反映・Firebase から最新値を再取得
 const _origOpenSettings = openSettings;
 openSettings = function() {
   _origOpenSettings();
-  _applyNotifSettingsUI();
+  _applyNotifSettingsUI();        // localStorage/メモリの値を即座に反映
+  loadNotifSettings().catch(() => {}); // Firebase から最新値を取得して上書き
   scheduleShiftReminder();
 };
 </script>
