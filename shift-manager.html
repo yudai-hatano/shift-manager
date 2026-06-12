@@ -358,7 +358,21 @@ select.fc{font-size:14px}
 #loadingOverlay{
   position:fixed;inset:0;background:var(--bg);
   display:flex;align-items:center;justify-content:center;
-  flex-direction:column;gap:14px;z-index:9999;
+  flex-direction:column;gap:0;z-index:9999;
+}
+#loadingOverlay .ld-logo{
+  width:88px;height:88px;object-fit:contain;border-radius:22px;
+  margin-bottom:16px;
+}
+#loadingOverlay .ld-title{
+  font-size:17px;font-weight:800;color:var(--pri);
+  letter-spacing:.8px;margin-bottom:28px;
+}
+#loadingOverlay .ld-spinner-wrap{
+  display:flex;flex-direction:column;align-items:center;gap:10px;
+}
+#loadingOverlay .ld-hint{
+  font-size:11px;color:var(--muted);
 }
 .spinner{
   width:34px;height:34px;border:3px solid var(--bd);
@@ -550,7 +564,7 @@ select.fc{font-size:14px}
     <button class="vb-back" onclick="stopViewingUserData()">自分のデータに戻る</button>
   </div>
   <div class="hdr-top">
-    <div class="app-title"><img src="icons/icon.png" alt="ShiM" style="width:24px;height:24px;object-fit:contain;border-radius:6px;margin-right:5px;vertical-align:middle"> ShiM</div>
+    <div class="app-title"><img src="icons/icon.png" alt="ShiM" style="width:36px;height:36px;object-fit:contain;border-radius:10px;vertical-align:middle;display:block"></div>
     <div style="display:flex;gap:4px">
       <button class="icon-btn notice-bell" id="btnNotices" title="お知らせ" style="font-size:18px">🔔<span id="noticeBadge"></span></button>
       <button class="icon-btn notice-bell" id="btnFriends" title="フレンド" style="font-size:18px;position:relative">👥<span id="friendBadge"></span></button>
@@ -1193,7 +1207,7 @@ DD(曜日) 予定開始:予定終了 実績開始-実績終了 休憩分 備考
   <div class="login-card">
     <div class="login-logo">
       <img src="icons/icon.png" alt="ShiM" class="login-logo-img">
-      <div class="login-logo-title">ShiM</div>
+      <div class="login-logo-title" style="font-size:14px;font-weight:800;letter-spacing:.6px">Shift Management</div>
       <div class="login-logo-sub">社員番号でログインして利用できます</div>
     </div>
 
@@ -1655,8 +1669,12 @@ DD(曜日) 予定開始:予定終了 実績開始-実績終了 休憩分 備考
 </div>
 
 <div id="loadingOverlay">
-  <div class="spinner"></div>
-  <div style="font-size:13px;color:var(--muted)">データを読み込み中...</div>
+  <img src="icons/icon.png" alt="ShiM" class="ld-logo">
+  <div class="ld-title">Shift Management</div>
+  <div class="ld-spinner-wrap">
+    <div class="spinner"></div>
+    <div class="ld-hint">データを読み込み中...</div>
+  </div>
 </div>
 
 <!-- ── Tutorial ── -->
