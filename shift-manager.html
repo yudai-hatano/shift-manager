@@ -6336,6 +6336,7 @@ async function _startup() {
     updateUserBar();
     render();
     if (!appSettings.tutorialDone) openTutorial(0);
+    await _initNotifications().catch(() => {});
   } else {
     showLoginScreen();
   }
@@ -6576,21 +6577,26 @@ function scheduleShiftReminder() {
 }
 
 // ══════════════════════════════════════
-// ログイン後に各種リスナーを起動
+// 通知の共通初期化（起動時・ログイン時に呼ぶ）
 // ══════════════════════════════════════
+async function _initNotifications() {
+  if (!currentUser) return;
+  await loadNotifSettings().catch(() => {});
+  _updateNotifPermButton();
+  if (Notification.permission === 'granted') {
+    startFriendListener();
+    startNoticesListener();
+    scheduleShiftReminder();
+    await _registerFCMToken().catch(() => {});
+  }
+}
+
+// ログイン・登録後に通知初期化（データ読み込み完了後に実行）
 const _origHideLoginScreen = hideLoginScreen;
 hideLoginScreen = function() {
   _origHideLoginScreen();
-  setTimeout(async () => {
-    await loadNotifSettings().catch(() => {});
-    _updateNotifPermButton();
-    if (Notification.permission === 'granted') {
-      startFriendListener();
-      startNoticesListener();
-      scheduleShiftReminder();
-      _registerFCMToken();
-    }
-  }, 500);
+  // doLogin/doRegister がデータ読み込みを完了するのを待ってから初期化
+  setTimeout(() => _initNotifications().catch(() => {}), 2500);
 };
 
 const _origDoLogout = doLogout;
@@ -6602,11 +6608,12 @@ doLogout = function() {
   _origDoLogout();
 };
 
-// 設定モーダルを開いたときに通知許可状態を更新
+// 設定モーダルを開いたときに通知許可状態を反映・シフトリマインダーを再スケジュール
 const _origOpenSettings = openSettings;
 openSettings = function() {
   _origOpenSettings();
   _applyNotifSettingsUI();
+  scheduleShiftReminder();
 };
 </script>
 </body>
