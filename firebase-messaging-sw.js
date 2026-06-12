@@ -1,23 +1,9 @@
-importScripts('https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/9.22.2/firebase-messaging-compat.js');
+// Service Worker — ShiM
+// Firebase SDK は main スクリプト側で使用。
+// SW では native Push API で受信し iOS 16.4+ にも対応。
 
-firebase.initializeApp({
-  apiKey: "AIzaSyCQyitTb9F4POLMR3_1elKu5lEcl7lBiHM",
-  authDomain: "shift-manager-de355.firebaseapp.com",
-  databaseURL: "https://shift-manager-de355-default-rtdb.firebaseio.com",
-  projectId: "shift-manager-de355",
-  storageBucket: "shift-manager-de355.firebasestorage.app",
-  messagingSenderId: "805065642268",
-  appId: "1:805065642268:web:2c1e864629d81e3d34aad9"
-});
+const CACHE_NAME = 'shim-v6';
 
-const messaging = firebase.messaging();
-
-// ── キャッシュ ────────────────────────────────────────────
-// バージョンを上げると旧キャッシュが activate 時に自動削除される
-const CACHE_NAME = 'shim-v5';
-
-// shift-manager.html はキャッシュしない（常にネットワークから取得）
 const CACHE_ASSETS = [
   './manifest.json',
   './icons/icon.png',
@@ -25,15 +11,17 @@ const CACHE_ASSETS = [
   './icons/icon-512.png'
 ];
 
+// ── インストール ──────────────────────────────────────────
 self.addEventListener('install', event => {
   console.log('[SW] Installing', CACHE_NAME);
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => cache.addAll(CACHE_ASSETS))
-      .then(() => self.skipWaiting()) // 待機せず即座に有効化
+      .then(() => self.skipWaiting())
   );
 });
 
+// ── アクティベート（旧キャッシュ削除） ────────────────────
 self.addEventListener('activate', event => {
   console.log('[SW] Activating', CACHE_NAME);
   event.waitUntil(
@@ -45,10 +33,10 @@ self.addEventListener('activate', event => {
         })
       ))
       .then(() => self.clients.claim())
-      // clients.claim() 後に controllerchange がクライアントで発火し自動リロードされる
   );
 });
 
+// ── フェッチ（HTML はネットワーク優先、その他はキャッシュ優先） ──
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
@@ -62,7 +50,7 @@ self.addEventListener('fetch', event => {
 
   if (url.origin !== self.location.origin) return;
 
-  // shift-manager.html → ネットワーク優先（最新版を常に返す・失敗時はキャッシュ）
+  // shift-manager.html → ネットワーク優先
   if (
     url.pathname.endsWith('shift-manager.html') ||
     url.pathname === '/shift-manager/' ||
@@ -93,24 +81,45 @@ self.addEventListener('fetch', event => {
   );
 });
 
-// ── FCM バックグラウンドメッセージ ──────────────────────
-messaging.onBackgroundMessage(payload => {
-  console.log('[SW] Background message received:', payload);
-  const title = payload.notification?.title || 'ShiM';
-  const body  = payload.notification?.body  || '';
-  const icon  = payload.notification?.icon  || './icons/icon-192.png';
-  self.registration.showNotification(title, {
-    body,
-    icon,
-    badge: './icons/icon-192.png',
-    vibrate: [200, 100, 200],
-    data: payload.data || {}
-  });
+// ── プッシュ通知受信（iOS 16.4+ / Android 両対応） ──────────
+// Firebase SDK を SW に importScripts せず native push event で処理。
+// Firebase SDK の onBackgroundMessage は iOS Safari で動作しないケースがある。
+// getToken() は main スクリプト側で Firebase SDK を使うため変更不要。
+self.addEventListener('push', event => {
+  if (!event.data) return;
+
+  let payload = {};
+  try { payload = event.data.json(); } catch (e) { return; }
+
+  // FCM は notification / data / webpush など複数パスでデータを送信
+  const n   = payload.notification || {};
+  const d   = payload.data         || {};
+  const wp  = (payload.webpush && payload.webpush.notification) || {};
+
+  const title = n.title || wp.title || d.title || 'ShiM';
+  const body  = n.body  || wp.body  || d.body  || '';
+  const icon  = n.icon  || wp.icon  || d.icon  || './icons/icon-192.png';
+  const badge = wp.badge || './icons/icon-192.png';
+  const link  = (payload.fcmOptions && payload.fcmOptions.link)
+             || (payload.webpush && payload.webpush.fcmOptions && payload.webpush.fcmOptions.link)
+             || d.url
+             || './shift-manager.html';
+
+  console.log('[SW] push received:', title, body);
+
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body,
+      icon,
+      badge,
+      vibrate: [200, 100, 200],
+      data: { url: link, ...d }
+    })
+  );
 });
 
-// ── メインスレッドからのメッセージ ───────────────────────
+// ── メインスレッドからのメッセージ ───────────────────────────
 self.addEventListener('message', event => {
-  // ページ側からの強制バージョンアップ指示
   if (event.data?.type === 'SKIP_WAITING') {
     self.skipWaiting();
     return;
@@ -119,23 +128,23 @@ self.addEventListener('message', event => {
     const { title, body, icon, tag } = event.data;
     self.registration.showNotification(title, {
       body,
-      icon: icon || './icons/icon-192.png',
-      badge: './icons/icon-192.png',
-      tag: tag || 'shim-notif',
+      icon:   icon || './icons/icon-192.png',
+      badge:  './icons/icon-192.png',
+      tag:    tag  || 'shim-notif',
       vibrate: [200, 100, 200]
     });
   }
 });
-// ─────────────────────────────────────────────────────────
 
-// ── 通知クリック ─────────────────────────────────────────
+// ── 通知クリック ─────────────────────────────────────────────
 self.addEventListener('notificationclick', event => {
   event.notification.close();
+  const url = event.notification.data?.url || './shift-manager.html';
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(cs => {
       const existing = cs.find(c => c.url.includes('shift-manager'));
       if (existing) return existing.focus();
-      return clients.openWindow('./shift-manager.html');
+      return clients.openWindow(url);
     })
   );
 });
