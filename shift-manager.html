@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<meta name="theme-color" content="#22c55e">
+<meta name="theme-color" content="#ffffff">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="ShiM">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -31,10 +31,10 @@ body{
 /* ── Header ── */
 .hdr{
   background:var(--sur);border-bottom:1px solid var(--bd);
-  padding:env(safe-area-inset-top) 12px 0;
+  padding:0 12px;
   position:sticky;top:0;z-index:100;box-shadow:var(--sh);
 }
-.hdr-top{display:flex;flex-direction:column;align-items:stretch;gap:0;margin-bottom:0}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;gap:0;margin-bottom:0}
 .app-title{font-size:16px;font-weight:800;color:var(--pri);letter-spacing:-.3px}
 .nav-mid{display:flex;align-items:center;gap:5px;flex:1;justify-content:center;min-width:0;overflow:hidden}
 .nav-title{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px}
@@ -46,9 +46,9 @@ body{
 }
 .icon-btn:hover{background:var(--bd)}
 .icon-btn:active{background:var(--bd);transform:scale(.95)}
-/* ヘッダー2段目：アイコンをフル幅で右寄せ */
-.hdr-top .icon-row{display:flex;justify-content:flex-end;gap:3px}
-.hdr-top .icon-btn{font-size:16px;height:28px;min-width:28px;padding:0 4px}
+/* ヘッダー1行：アイコン行 */
+.hdr-top .icon-row{display:flex;gap:3px}
+.hdr-top .icon-btn{font-size:16px;height:30px;min-width:28px;padding:0 4px}
 /* ヘッダーナビ行もコンパクト化 */
 .hdr-nav{display:flex;align-items:center;gap:2px}
 .hdr-nav .icon-btn{height:30px;min-width:30px}
@@ -569,7 +569,7 @@ select.fc{font-size:14px}
     <button class="vb-back" onclick="stopViewingUserData()">自分のデータに戻る</button>
   </div>
   <div class="hdr-top">
-    <div class="app-title"><img src="icons/icon.png" alt="ShiM" style="width:110px;height:110px;object-fit:contain;border-radius:26px;display:block"></div>
+    <div class="app-title"><img src="icons/icon.png" alt="ShiM" style="width:44px;height:44px;object-fit:contain;border-radius:11px;display:block"></div>
     <div class="icon-row">
       <button class="icon-btn notice-bell" id="btnNotices" title="お知らせ">🔔<span id="noticeBadge"></span></button>
       <button class="icon-btn notice-bell" id="btnFriends" title="フレンド" style="position:relative">👥<span id="friendBadge"></span></button>
