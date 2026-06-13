@@ -1,71 +1,79 @@
-const CACHE_NAME = 'shim-v1';
-const OFFLINE_ASSETS = [
-  './shift-manager.html',
+// Service Worker — ShiM (caching + auto-update only)
+const CACHE_NAME = 'shim-v7';
+
+const CACHE_ASSETS = [
+  './manifest.json',
   './icons/icon.png',
   './icons/icon-192.png',
-  './icons/icon-512.png',
-  './manifest.json'
+  './icons/icon-512.png'
 ];
 
 self.addEventListener('install', event => {
+  console.log('[SW] Installing', CACHE_NAME);
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(OFFLINE_ASSETS))
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(CACHE_ASSETS))
+      .then(() => self.skipWaiting())
   );
-  self.skipWaiting();
 });
 
 self.addEventListener('activate', event => {
+  console.log('[SW] Activating', CACHE_NAME);
   event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
-    )
+    caches.keys()
+      .then(keys => Promise.all(
+        keys.filter(k => k !== CACHE_NAME).map(k => {
+          console.log('[SW] Deleting old cache:', k);
+          return caches.delete(k);
+        })
+      ))
+      .then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
-  // Firebase や外部リクエストはネットワーク優先（オフライン時はスキップ）
   if (
     url.hostname.includes('firebase') ||
-    url.hostname.includes('google') ||
-    url.hostname.includes('gstatic')
+    url.hostname.includes('googleapis') ||
+    url.hostname.includes('gstatic') ||
+    url.hostname.includes('google')
+  ) return;
+
+  if (url.origin !== self.location.origin) return;
+
+  if (
+    url.pathname.endsWith('shift-manager.html') ||
+    url.pathname === '/shift-manager/' ||
+    url.pathname.endsWith('/')
   ) {
-    event.respondWith(fetch(event.request).catch(() => new Response('', { status: 503 })));
+    event.respondWith(
+      fetch(event.request)
+        .then(res => {
+          const clone = res.clone();
+          caches.open(CACHE_NAME).then(c => c.put(event.request, clone));
+          return res;
+        })
+        .catch(() => caches.match(event.request))
+    );
     return;
   }
 
-  // アプリ本体はキャッシュ優先（オフラインフォールバック）
   event.respondWith(
-    caches.match(event.request).then(cached => cached || fetch(event.request).catch(() =>
-      caches.match('./shift-manager.html')
-    ))
-  );
-});
-
-// メインスレッドからの通知表示リクエスト
-self.addEventListener('message', event => {
-  if (event.data && event.data.type === 'SHOW_NOTIFICATION') {
-    const { title, body, icon, tag } = event.data;
-    self.registration.showNotification(title, {
-      body,
-      icon: icon || './icons/icon-192.png',
-      badge: './icons/icon-192.png',
-      tag: tag || 'shim-notification',
-      requireInteraction: false,
-      vibrate: [200, 100, 200]
-    });
-  }
-});
-
-self.addEventListener('notificationclick', event => {
-  event.notification.close();
-  event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(cs => {
-      const existing = cs.find(c => c.url.includes('shift-manager'));
-      if (existing) return existing.focus();
-      return clients.openWindow('./shift-manager.html');
+    caches.match(event.request).then(cached => {
+      if (cached) return cached;
+      return fetch(event.request).then(res => {
+        const clone = res.clone();
+        caches.open(CACHE_NAME).then(c => c.put(event.request, clone));
+        return res;
+      });
     })
   );
+});
+
+self.addEventListener('message', event => {
+  if (event.data?.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
