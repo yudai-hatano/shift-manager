@@ -3729,7 +3729,7 @@ function renderMonth() {
     h += `<div class="mo-cell other${d.getDay()===0?' sun':d.getDay()===6?' sat':''}"><div class="dn">${d.getDate()}</div></div>`;
   }
   h += '</div>';
-  h += buildSummaryHTML(collectMonthStats(y, m), `${m+1}月のサマリー`);
+  h += buildSummaryHTML(collectMonthStats(y, m), `${m+1}月のサマリー`, y, m + 1);
   h += renderPayPeriodSummary();
   h += renderBulkDeleteButton();
   return h;
@@ -3768,10 +3768,25 @@ function collectMonthStats(y, m) {
   return collectStats(new Date(y, m, 1), lastDom(y, m));
 }
 
-function buildSummaryHTML({ byWP, totalW, totalH, totalOT }, title) {
+function buildSummaryHTML({ byWP, totalW, totalH, totalOT }, title, year, month) {
   let h = `<div class="sumbox"><div class="sumbox-ttl">${title}</div>`;
-  if (!totalW) {
-    h += `<div class="empty"><div class="empty-icon">📅</div>シフトが登録されていません<br><span style="font-size:11px">日付をタップして追加できます</span></div></div>`;
+  if (!totalW && !(year != null && month != null && getMonthWageGoal(year, month) > 0)) {
+    h += `<div class="empty"><div class="empty-icon">📅</div>シフトが登録されていません<br><span style="font-size:11px">日付をタップして追加できます</span></div>`;
+    if (year != null && month != null) {
+      const goal = getMonthWageGoal(year, month);
+      h += `<div style="padding:8px 0 4px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+          <span style="font-size:12px;font-weight:700;color:var(--muted)">給与目標</span>
+          <div style="display:flex;align-items:center;gap:3px">
+            <span style="font-size:11px;color:var(--muted)">¥</span>
+            <input type="number" value="${goal || ''}" min="0" max="9999999" placeholder="未設定" inputmode="numeric"
+              style="width:90px;padding:3px 6px;border:1.5px solid var(--bd);border-radius:6px;font-size:12px;font-weight:700;text-align:right;background:#fff;outline:none"
+              onchange="updateMonthWageGoal(${year},${month},this.value)">
+          </div>
+        </div>
+      </div>`;
+    }
+    h += '</div>';
     return h;
   }
   for (const [id, data] of Object.entries(byWP)) {
@@ -3791,6 +3806,32 @@ function buildSummaryHTML({ byWP, totalW, totalH, totalOT }, title) {
     h += `<div class="sum-row"><div class="sum-left">所定外労働時間 計</div><div class="sum-right"><span class="ot-badge">${fmtHM(totalOT)}</span></div></div>`;
   h += `<div class="sum-row"><div class="sum-left">合計勤務時間</div><div class="sum-right">${fmtHM(totalH)}</div></div>`;
   h += `<div class="sum-row"><div class="sum-left">給与合計</div><div class="sum-right"><span class="sum-total">¥${totalW.toLocaleString()}</span></div></div>`;
+  // 月ごとの給与目標
+  if (year != null && month != null) {
+    const goal = getMonthWageGoal(year, month);
+    const pct  = goal > 0 ? Math.min(100, Math.round(totalW / goal * 100)) : -1;
+    const bc   = pct >= 100 ? 'var(--grn)' : pct >= 70 ? 'var(--pri)' : 'var(--org)';
+    const rem  = Math.max(0, goal - totalW);
+    h += `<div style="border-top:1px solid var(--bd);margin-top:4px;padding-top:8px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <span style="font-size:12px;font-weight:700;color:var(--muted)">💰 給与目標${pct >= 100 ? ' 🎉' : ''}</span>
+        <div style="display:flex;align-items:center;gap:3px">
+          <span style="font-size:11px;color:var(--muted)">¥</span>
+          <input type="number" value="${goal || ''}" min="0" max="9999999" placeholder="未設定" inputmode="numeric"
+            style="width:90px;padding:3px 6px;border:1.5px solid var(--bd);border-radius:6px;font-size:12px;font-weight:700;text-align:right;background:#fff;outline:none"
+            onchange="updateMonthWageGoal(${year},${month},this.value)">
+        </div>
+      </div>
+      ${pct >= 0 ? `
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:11px">
+        <span style="color:var(--muted)">達成率 <b style="color:${bc}">${pct}%</b></span>
+        <span style="color:var(--muted)">${pct < 100 ? `残り <b>¥${rem.toLocaleString()}</b>` : `<b style="color:var(--grn)">目標達成！</b>`}</span>
+      </div>
+      <div style="height:9px;background:var(--bd);border-radius:5px;overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:${bc};border-radius:5px;transition:width .4s"></div>
+      </div>` : `<div style="font-size:11px;color:var(--muted);text-align:center;padding:4px 0">目標金額を入力すると達成率を表示します</div>`}
+    </div>`;
+  }
   h += '</div>';
   return h;
 }
@@ -5993,7 +6034,7 @@ async function registerSelectedNoShifts() {
 // ══════════════════════════════════════
 // アプリ設定（localStorage）
 // ══════════════════════════════════════
-const _APP_SETTINGS_DEFAULTS = { bonusThreshold: 900, periodThresholds: {}, weekStartDay: 0 };
+const _APP_SETTINGS_DEFAULTS = { bonusThreshold: 900, periodThresholds: {}, wpPeriodThresholds: {}, monthlyWageGoals: {}, weekStartDay: 0 };
 
 let appSettings = { ..._APP_SETTINGS_DEFAULTS };
 
@@ -6007,6 +6048,8 @@ function loadAppSettings() {
     const s = localStorage.getItem(getSettingsKey());
     if (s) appSettings = { ...appSettings, ...JSON.parse(s) };
     if (!appSettings.periodThresholds) appSettings.periodThresholds = {};
+    if (!appSettings.wpPeriodThresholds) appSettings.wpPeriodThresholds = {};
+    if (!appSettings.monthlyWageGoals) appSettings.monthlyWageGoals = {};
   } catch(e) { appSettings = { ..._APP_SETTINGS_DEFAULTS }; }
 }
 
@@ -6041,6 +6084,36 @@ function updatePeriodThreshold(year, period, val) {
 function updateBonusThreshold(val) {
   const v = parseInt(val);
   if (!isNaN(v) && v > 0) { saveAppSetting('bonusThreshold', v); renderHY(); }
+}
+
+// 勤務先ごとの期別目標時間
+function getWpHourTarget(year, period, wpId) {
+  return ((appSettings.wpPeriodThresholds || {})[`${year}-${period}-${wpId}`]) || 0;
+}
+
+function updateWpHourTarget(year, period, wpId, val) {
+  const v = parseInt(val);
+  if (!appSettings.wpPeriodThresholds) appSettings.wpPeriodThresholds = {};
+  const key = `${year}-${period}-${wpId}`;
+  if (isNaN(v) || v <= 0) delete appSettings.wpPeriodThresholds[key];
+  else appSettings.wpPeriodThresholds[key] = v;
+  saveAppSetting('wpPeriodThresholds', appSettings.wpPeriodThresholds);
+  renderHY();
+}
+
+// 月ごとの給与目標
+function getMonthWageGoal(year, month) {
+  return ((appSettings.monthlyWageGoals || {})[`${year}-${month}`]) || 0;
+}
+
+function updateMonthWageGoal(year, month, val) {
+  const v = parseInt(String(val).replace(/,/g, ''));
+  if (!appSettings.monthlyWageGoals) appSettings.monthlyWageGoals = {};
+  const key = `${year}-${month}`;
+  if (isNaN(v) || v <= 0) delete appSettings.monthlyWageGoals[key];
+  else appSettings.monthlyWageGoals[key] = v;
+  saveAppSetting('monthlyWageGoals', appSettings.monthlyWageGoals);
+  render();
 }
 
 // 賞与算定用統計（期間内全勤務先合計）
@@ -6185,28 +6258,64 @@ function renderHY() {
     h += '</div>';
   }
 
-  // ── 賞与算定セクション ──
+  // ── 目標勤務時間セクション ──
   const bs        = collectBonusStats(startStr, endStr);
-  const thrH      = getBonusThreshold(hyYear, hyPeriod);
-  const thrMin    = thrH * 60;
-  const bonusBase = bs.totalWorkMin + bs.totalEdMin; // 実働 + 一部解消時間
-  const remaining = Math.max(0, thrMin - bonusBase);
-  const pct       = thrMin > 0 ? Math.min(100, Math.round(bonusBase / thrMin * 100)) : 0;
-  const barColor  = pct >= 100 ? 'var(--grn)' : pct >= 70 ? 'var(--pri)' : 'var(--org)';
+  const bonusBase = bs.totalWorkMin + bs.totalEdMin;
+  const totalThrH   = getBonusThreshold(hyYear, hyPeriod);
+  const totalThrMin = totalThrH * 60;
+  const totalRem    = Math.max(0, totalThrMin - bonusBase);
+  const totalPct    = totalThrMin > 0 ? Math.min(100, Math.round(bonusBase / totalThrMin * 100)) : 0;
+  const totalBC     = totalPct >= 100 ? 'var(--grn)' : totalPct >= 70 ? 'var(--pri)' : 'var(--org)';
 
   h += `<div class="sumbox" style="margin-top:10px;border-color:var(--pri-l)">
-    <div class="sumbox-ttl" style="color:var(--pri)">目標勤務時間</div>
+    <div class="sumbox-ttl" style="color:var(--pri)">目標勤務時間</div>`;
+
+  // 勤務先ごとの目標
+  if (wpStats.length > 0) {
+    h += `<div style="margin-bottom:8px">
+      <div style="font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.3px;margin-bottom:6px">勤務先ごとの目標</div>`;
+    for (const st of wpStats) {
+      const wpThrH   = getWpHourTarget(hyYear, hyPeriod, st.wp.id);
+      const wpThrMin = wpThrH * 60;
+      const wpPct    = wpThrMin > 0 ? Math.min(100, Math.round(st.totalWorkMin / wpThrMin * 100)) : -1;
+      const wpBC     = wpPct >= 100 ? 'var(--grn)' : wpPct >= 70 ? 'var(--pri)' : 'var(--org)';
+      h += `<div style="margin-bottom:10px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
+          <div style="display:flex;align-items:center;gap:4px;min-width:0;flex:1">
+            <span class="dot" style="background:${st.wp.color};flex-shrink:0"></span>
+            <span style="font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(st.wp.name)}</span>
+            ${wpPct >= 100 ? `<span style="font-size:11px">✅</span>` : ''}
+          </div>
+          <div style="display:flex;align-items:center;gap:3px;flex-shrink:0;margin-left:6px">
+            <b style="font-size:12px;color:var(--pri)">${fmtHM(st.totalWorkMin)}</b>
+            <span style="font-size:10px;color:var(--muted)">/ 目標</span>
+            <input type="number" value="${wpThrH || ''}" min="0" max="5000"
+              placeholder="--" inputmode="numeric"
+              style="width:48px;padding:2px 4px;border:1.5px solid var(--bd);border-radius:6px;
+                     font-size:12px;font-weight:700;text-align:right;background:#fff;outline:none"
+              onchange="updateWpHourTarget(${hyYear},'${hyPeriod}','${st.wp.id}',this.value)">
+            <span style="font-size:10px;color:var(--muted)">h</span>
+          </div>
+        </div>
+        ${wpPct >= 0 ? `
+        <div style="display:flex;justify-content:space-between;margin-bottom:3px;font-size:10px">
+          <b style="color:${wpBC}">${wpPct}%</b>
+          <span style="color:var(--muted)">${wpPct < 100 ? `残り ${fmtHM(Math.max(0, wpThrMin - st.totalWorkMin))}` : '達成！'}</span>
+        </div>
+        <div style="height:6px;background:var(--bd);border-radius:3px;overflow:hidden">
+          <div style="height:100%;width:${wpPct}%;background:${wpBC};border-radius:3px;transition:width .4s"></div>
+        </div>` : `<div style="font-size:10px;color:var(--muted)">目標時間を入力すると達成率を表示します</div>`}
+      </div>`;
+    }
+    h += '</div>';
+  }
+
+  // 合計目標
+  h += `<div style="border-top:1px solid var(--bd);padding-top:8px">
+    <div style="font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.3px;margin-bottom:6px">合計目標</div>
     <div class="sum-row">
-      <div class="sum-left">実働時間</div>
-      <div class="sum-right"><b>${fmtHM(bs.totalWorkMin)}</b></div>
-    </div>
-    <div class="sum-row">
-      <div class="sum-left">一部解消時間</div>
-      <div class="sum-right">${fmtHM(bs.totalEdMin)}</div>
-    </div>
-    <div class="sum-row">
-      <div class="sum-left"><b>算定対象時間</b><br><span style="font-size:10px;color:var(--muted)">実働 + 一部解消</span></div>
-      <div class="sum-right"><span class="sum-total" style="font-size:16px">${fmtHM(bonusBase)}</span></div>
+      <div class="sum-left">算定対象時間<br><span style="font-size:10px;color:var(--muted)">実働 + 一部解消</span></div>
+      <div class="sum-right"><b style="font-size:15px">${fmtHM(bonusBase)}</b></div>
     </div>
     <div class="sum-row">
       <div class="sum-left">所定外労働時間</div>
@@ -6214,11 +6323,11 @@ function renderHY() {
     </div>
     <div class="sum-row" style="align-items:center">
       <div class="sum-left">
-        <div>目標勤務時間</div>
+        <div>合計目標時間</div>
         <div style="font-size:10px;color:var(--muted);margin-top:2px">この期間の個別設定</div>
       </div>
       <div class="sum-right" style="display:flex;align-items:center;gap:4px">
-        <input type="number" id="bonusThrInp" value="${thrH}" min="1" max="5000"
+        <input type="number" id="bonusThrInp" value="${totalThrH}" min="1" max="5000"
           inputmode="numeric"
           style="width:64px;padding:4px 6px;border:1.5px solid var(--bd);border-radius:6px;
                  font-size:13px;font-weight:700;text-align:right;background:#fff;outline:none"
@@ -6228,14 +6337,15 @@ function renderHY() {
     </div>
     <div style="margin-top:10px">
       <div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:11px">
-        <span style="color:var(--muted)">達成率 <b style="color:${barColor}">${pct}%</b></span>
-        <span style="color:var(--muted)">残り <b>${fmtHM(remaining)}</b></span>
+        <span style="color:var(--muted)">達成率 <b style="color:${totalBC}">${totalPct}%</b></span>
+        <span style="color:var(--muted)">残り <b>${fmtHM(totalRem)}</b></span>
       </div>
       <div style="height:11px;background:var(--bd);border-radius:6px;overflow:hidden">
-        <div style="height:100%;width:${pct}%;background:${barColor};border-radius:6px;transition:width .4s"></div>
+        <div style="height:100%;width:${totalPct}%;background:${totalBC};border-radius:6px;transition:width .4s"></div>
       </div>
-      ${pct >= 100 ? `<div style="text-align:center;font-size:11px;color:var(--grn);font-weight:700;margin-top:5px">算定ラインを達成しました！</div>` : ''}
+      ${totalPct >= 100 ? `<div style="text-align:center;font-size:11px;color:var(--grn);font-weight:700;margin-top:5px">算定ラインを達成しました！</div>` : ''}
     </div>
+  </div>
   </div>`;
 
   document.getElementById('hyContent').innerHTML = h;
