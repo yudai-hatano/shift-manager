@@ -6050,9 +6050,11 @@ function collectBonusStats(startStr, endStr) {
     const wpShifts = shifts.filter(s => s.workplaceId === wp.id && s.date >= startStr && s.date <= endStr);
     for (const sh of wpShifts) {
       const r = calcShiftWage(sh, wp);
-      totalWorkMin += r.workMin;
-      totalOTMin   += r.overtimeWorkMin;
-      totalEdMin   += Math.max(0, sh.earlyDepartureMin || 0);
+      if (!sh.isPaidLeave) {
+        totalWorkMin += r.workMin;
+        totalOTMin   += r.overtimeWorkMin;
+        totalEdMin   += Math.max(0, sh.earlyDepartureMin || 0);
+      }
       totalShifts++;
     }
   }
@@ -6105,9 +6107,11 @@ function renderHY() {
     let totalWorkMin = 0, totalOTMin = 0, totalWage = 0, plCount = 0;
     for (const sh of wpShifts) {
       const r = calcShiftWage(sh, wp);
-      totalWorkMin += r.workMin;
-      totalOTMin   += r.overtimeWorkMin;
-      totalWage    += r.totalWage;
+      if (!sh.isPaidLeave) {
+        totalWorkMin += r.workMin;
+        totalOTMin   += r.overtimeWorkMin;
+      }
+      totalWage += r.totalWage;
       if (sh.isPaidLeave) plCount++;
     }
     wpStats.push({ wp, totalWorkMin, totalOTMin, totalWage, count: wpShifts.length, plCount });
