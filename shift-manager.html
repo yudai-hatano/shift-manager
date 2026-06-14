@@ -637,22 +637,26 @@ select.fc{font-size:14px}
     </div>
 
     <hr class="sec-divider" id="specialDivider">
-    <div class="sec-ttl" id="specialTitle"><span>🕐 特殊勤務（任意）</span></div>
+    <div class="sec-ttl" id="specialTitle"><span>🕐 実績・特殊勤務（任意）</span></div>
     <div class="special-panel" id="specialPanel">
       <div class="frow">
         <div class="fg" style="margin-bottom:0">
-          <label class="fl">当日残業時間（分）</label>
-          <input type="number" class="fc" id="sManualOT" min="0" max="480" value="0" inputmode="numeric">
+          <label class="fl">実績開始</label>
+          <input type="time" class="fc" id="sActualStart" oninput="livePreview()">
         </div>
         <div class="fg" style="margin-bottom:0">
-          <label class="fl">一部解消時間（分）</label>
-          <input type="number" class="fc" id="sEarlyDep" min="0" max="480" value="0" inputmode="numeric">
+          <label class="fl">実績終了</label>
+          <input type="time" class="fc" id="sActualEnd" oninput="livePreview()">
         </div>
       </div>
+      <div class="fg" style="margin-bottom:0;margin-top:8px">
+        <label class="fl">一部解消時間（分）</label>
+        <input type="number" class="fc" id="sEarlyDep" min="0" max="480" value="0" inputmode="numeric">
+      </div>
       <p style="font-size:11px;color:#9a3412;margin-top:8px;line-height:1.6">
-        当日残業時間: 予定終了後の追加時間 ×1.25 を加算<br>
-        一部解消時間: 予定終了より早く上がった時間 ×0.6 を補填<br>
-        <span style="opacity:.8">※ 終了時間には予定終了時刻を入力</span>
+        実績開始が予定より早い: 早出 ×1.25 を自動計算<br>
+        実績終了が予定より遅い: 残業 ×1.25 を自動計算<br>
+        一部解消: 会社都合で早退した時間 ×0.6 を補填
       </p>
     </div>
 
@@ -1853,6 +1857,8 @@ async function loadData(uid) {
     if (s.earlyDepartureMin == null) s.earlyDepartureMin = 0;
     if (s.location          === undefined) s.location    = '';
     if (s.isPaidLeave       === undefined) s.isPaidLeave = false;
+    if (s.actualStart       === undefined) s.actualStart = null;
+    if (s.actualEnd         === undefined) s.actualEnd   = null;
     s.breakMinutes = Number(s.breakMinutes);
   }
 
@@ -2036,13 +2042,12 @@ function calcWageItems(items, multiplier) {
 }
 
 /**
- * シフト全体の給与計算
+ * シフト全体の給与計算（3ゾーン方式）
  *
- * ・所定外判定: 拘束時間（= elapsed、休憩込み）> threshold
- * ・休憩: 通常期間のみに適用。所定外期間には配分しない。
- * ・全金額: Math.ceil（小数点以下切り上げ）
- * ・返却: normalBreakdown / otBreakdown / manualOTBreakdown を
- *         それぞれ時刻情報付きアイテムリストで返す（表示の詳細化に対応）
+ * ・早出: actualStart < startTime → [actualStart, startTime] × 1.25
+ * ・通常: [max(startTime,actualStart), min(endTime,actualEnd)] × 1.0、休憩はここから差引
+ * ・残業: actualEnd > endTime → [endTime, actualEnd] × 1.25
+ * ・一部解消: earlyDepartureMin × 0.6 補填（別途手動入力）
  */
 function calcShiftWage(shift, wp) {
   if (shift.isPaidLeave) return calcPaidLeaveWage(shift, wp);
@@ -2050,78 +2055,80 @@ function calcShiftWage(shift, wp) {
 
   const zero = {
     totalWage:0, normalWage:0, normalBreakdown:[],
+    earlyOTBreakdown:[], earlyOTWage:0, earlyOTMin:0,
     otBreakdown:[], overtimeWage:0, overtimeWorkMin:0,
-    manualOTWage:0, manualOTBreakdown:[],
     earlyDeptBonus:0, workMin:0,
     breakZoneId:null, breakZoneLabel:'',
     isMonthly:false,
   };
   if (!wp?.zones?.length || !shift.startTime || !shift.endTime) return zero;
 
-  const segs      = buildSegs(wp.zones);
-  const threshold = wp.overtimeThreshold ?? 510;
+  const segs = buildSegs(wp.zones);
 
-  let s = t2m(shift.startTime), e = t2m(shift.endTime);
-  if (e <= s) e += 1440;
-  // 早上がり分を除いた実際の退勤時刻（終了時間欄 = 予定終了時刻）
-  const edMin   = Math.max(0, shift.earlyDepartureMin || 0);
-  const actualE = e - edMin;           // 実際の退勤（予定終了 − 早上がり）
-  const elapsed = actualE - s;         // 実際の拘束時間
+  let schedS = t2m(shift.startTime), schedE = t2m(shift.endTime);
+  if (schedE <= schedS) schedE += 1440;
+
+  let actualS = shift.actualStart ? t2m(shift.actualStart) : schedS;
+  let actualE = shift.actualEnd   ? t2m(shift.actualEnd)   : schedE;
+  if (actualE <= actualS) actualE += 1440;
+  // 日またぎ補正: actualStart が schedStart から 12h 以上ずれていれば調整
+  if (shift.actualStart && actualS > schedS + 720) actualS -= 1440;
+  if (shift.actualStart && actualS < schedS - 720) actualS += 1440;
+
   const breakMin = Math.max(0, shift.breakMinutes || 0);
+  const edMin    = Math.max(0, shift.earlyDepartureMin || 0);
 
-  const bzId    = shift.breakZoneId || findAutoBreakZone(wp, s, actualE, segs);
+  // 通常ゾーン
+  const normS = Math.max(schedS, actualS);
+  const normE = Math.min(schedE, actualE);
+
+  const bzId    = shift.breakZoneId || findAutoBreakZone(wp, normS < normE ? normS : schedS, normE > normS ? normE : schedE, segs);
   const bzLabel = wp.zones.find(z => z.id === bzId)?.name || '';
 
   let normalBreakdown = [], normalWage = 0;
-  let otBreakdown     = [], overtimeWage = 0, overtimeWorkMin = 0;
-
-  if (elapsed <= threshold) {
-    // ─ 所定外なし ─
-    const items      = calcZoneBreakdown(s, actualE, segs);
-    const afterBreak = applyBreakToItems(items, breakMin, bzId, wp);
-    normalBreakdown  = calcWageItems(afterBreak, 1);
-    normalWage       = normalBreakdown.reduce((sum, it) => sum + it.wage, 0);
-
-  } else {
-    // ─ 所定外あり（拘束時間 > 閾値） ─
-    // ★ 休憩はすべて通常期間から差し引く。所定外期間には休憩を配分しない。
-    const splitPt = s + threshold;
-
-    const nItems      = calcZoneBreakdown(s, splitPt, segs);
+  if (normS < normE) {
+    const nItems      = calcZoneBreakdown(normS, normE, segs);
     const nAfterBreak = applyBreakToItems(nItems, breakMin, bzId, wp);
     normalBreakdown   = calcWageItems(nAfterBreak, 1);
     normalWage        = normalBreakdown.reduce((sum, it) => sum + it.wage, 0);
-
-    // 所定外期間：ゾーンごとに ×1.25
-    const oItems    = calcZoneBreakdown(splitPt, actualE, segs);
-    otBreakdown     = calcWageItems(oItems, 1.25);
-    overtimeWage    = otBreakdown.reduce((sum, it) => sum + it.wage, 0);
-    overtimeWorkMin = elapsed - threshold;
   }
 
-  // 手動残業（予定終了後、×1.25）
-  let manualOTBreakdown = [], manualOTWage = 0;
-  const manOTMin = Math.max(0, shift.manualOvertimeMin || 0);
-  if (manOTMin > 0) {
-    const mItems      = calcZoneBreakdown(e, e + manOTMin, segs);
-    manualOTBreakdown = calcWageItems(mItems, 1.25);
-    manualOTWage      = manualOTBreakdown.reduce((sum, it) => sum + it.wage, 0);
-    overtimeWorkMin  += manOTMin;
+  // 早出ゾーン: actualS < schedS
+  let earlyOTBreakdown = [], earlyOTWage = 0, earlyOTMin = 0;
+  if (actualS < schedS) {
+    earlyOTMin       = schedS - actualS;
+    const eItems     = calcZoneBreakdown(actualS, schedS, segs);
+    earlyOTBreakdown = calcWageItems(eItems, 1.25);
+    earlyOTWage      = earlyOTBreakdown.reduce((sum, it) => sum + it.wage, 0);
   }
 
-  // 早上がり補填（実際の退勤〜予定終了、×0.6）
+  // 残業ゾーン: actualE > schedE
+  let otBreakdown = [], overtimeWage = 0, lateOTMin = 0;
+  if (actualE > schedE) {
+    lateOTMin    = actualE - schedE;
+    const oItems = calcZoneBreakdown(schedE, actualE, segs);
+    otBreakdown  = calcWageItems(oItems, 1.25);
+    overtimeWage = otBreakdown.reduce((sum, it) => sum + it.wage, 0);
+  }
+
+  const overtimeWorkMin = earlyOTMin + lateOTMin;
+
+  // 一部解消補填: 会社都合早退 [schedE - edMin, schedE] × 0.6
   let earlyDeptBonus = 0;
   if (edMin > 0) {
-    earlyDeptBonus = calcWageItems(calcZoneBreakdown(actualE, e, segs), 0.6)
+    earlyDeptBonus = calcWageItems(calcZoneBreakdown(schedE - edMin, schedE, segs), 0.6)
       .reduce((sum, it) => sum + it.wage, 0);
   }
 
+  const normalWorkMin = Math.max(0, Math.max(0, normE - normS) - breakMin);
+  const workMin = normalWorkMin + earlyOTMin + lateOTMin;
+
   return {
-    totalWage: normalWage + overtimeWage + manualOTWage + earlyDeptBonus,
+    totalWage: normalWage + earlyOTWage + overtimeWage + earlyDeptBonus,
     normalWage, normalBreakdown,
+    earlyOTBreakdown, earlyOTWage, earlyOTMin,
     otBreakdown, overtimeWage, overtimeWorkMin,
-    manualOTWage, manualOTBreakdown,
-    earlyDeptBonus, workMin: elapsed - breakMin + manOTMin,
+    earlyDeptBonus, workMin,
     breakZoneId: bzId, breakZoneLabel: bzLabel,
     isMonthly: false,
   };
@@ -2134,8 +2141,8 @@ function calcShiftWage(shift, wp) {
 function calcMonthlyShiftWage(shift, wp) {
   const zero = {
     totalWage:0, normalWage:0, normalBreakdown:[],
+    earlyOTBreakdown:[], earlyOTWage:0, earlyOTMin:0,
     otBreakdown:[], overtimeWage:0, overtimeWorkMin:0,
-    manualOTWage:0, manualOTBreakdown:[],
     earlyDeptBonus:0, workMin:0,
     breakZoneId:null, breakZoneLabel:'',
     isMonthly:true,
@@ -2144,48 +2151,51 @@ function calcMonthlyShiftWage(shift, wp) {
   };
   if (!shift.startTime || !shift.endTime) return zero;
 
-  const threshold = wp.overtimeThreshold ?? 510;
-  let s = t2m(shift.startTime), e = t2m(shift.endTime);
-  if (e <= s) e += 1440;
+  let schedS = t2m(shift.startTime), schedE = t2m(shift.endTime);
+  if (schedE <= schedS) schedE += 1440;
 
-  const edMin   = Math.max(0, shift.earlyDepartureMin || 0);
-  const actualE = e - edMin;
-  const elapsed = actualE - s;
+  let actualS = shift.actualStart ? t2m(shift.actualStart) : schedS;
+  let actualE = shift.actualEnd   ? t2m(shift.actualEnd)   : schedE;
+  if (actualE <= actualS) actualE += 1440;
+  if (shift.actualStart && actualS > schedS + 720) actualS -= 1440;
+  if (shift.actualStart && actualS < schedS - 720) actualS += 1440;
+
   const breakMin = Math.max(0, shift.breakMinutes || 0);
-  const workMin  = Math.max(0, elapsed - breakMin);
+  const normS = Math.max(schedS, actualS);
+  const normE = Math.min(schedE, actualE);
+  const normalWorkMin = Math.max(0, Math.max(0, normE - normS) - breakMin);
 
-  // 残業単価の決定
   const overtimeRate = wp.monthlyOvertimeMethod === 'manual'
     ? (wp.monthlyOvertimeRate || 0)
     : (wp.monthlyBaseSalary || 0) / Math.max(1, wp.monthlyStdHours || 160);
 
-  let overtimeWage = 0, overtimeWorkMin = 0;
+  // 早出
+  let earlyOTMin = 0, earlyOTWage = 0;
+  const earlyOTBreakdown = [];
+  if (actualS < schedS) {
+    earlyOTMin  = schedS - actualS;
+    earlyOTWage = Math.ceil(earlyOTMin / 60 * overtimeRate * 1.25);
+    earlyOTBreakdown.push({ label: '早出', min: earlyOTMin, rate: overtimeRate, wage: earlyOTWage, from: actualS, to: schedS });
+  }
+
+  // 残業
+  let lateOTMin = 0, overtimeWage = 0;
   const otBreakdown = [];
-
-  if (elapsed > threshold) {
-    const otMin = elapsed - threshold;
-    overtimeWorkMin = otMin;
-    overtimeWage = Math.ceil(otMin / 60 * overtimeRate * 1.25);
-    otBreakdown.push({ label: '所定外', min: otMin, rate: overtimeRate, wage: overtimeWage, from: s + threshold, to: actualE });
+  if (actualE > schedE) {
+    lateOTMin    = actualE - schedE;
+    overtimeWage = Math.ceil(lateOTMin / 60 * overtimeRate * 1.25);
+    otBreakdown.push({ label: '残業', min: lateOTMin, rate: overtimeRate, wage: overtimeWage, from: schedE, to: actualE });
   }
 
-  // 手動残業
-  const manOTMin = Math.max(0, shift.manualOvertimeMin || 0);
-  let manualOTWage = 0;
-  const manualOTBreakdown = [];
-  if (manOTMin > 0) {
-    manualOTWage = Math.ceil(manOTMin / 60 * overtimeRate * 1.25);
-    overtimeWorkMin += manOTMin;
-    manualOTBreakdown.push({ label: '当日残業', min: manOTMin, rate: overtimeRate, wage: manualOTWage, from: e, to: e + manOTMin });
-  }
+  const overtimeWorkMin = earlyOTMin + lateOTMin;
 
   return {
-    totalWage: overtimeWage + manualOTWage,
+    totalWage: earlyOTWage + overtimeWage,
     normalWage: 0, normalBreakdown: [],
+    earlyOTBreakdown, earlyOTWage, earlyOTMin,
     otBreakdown, overtimeWage, overtimeWorkMin,
-    manualOTWage, manualOTBreakdown,
     earlyDeptBonus: 0,
-    workMin: workMin + manOTMin,
+    workMin: normalWorkMin + earlyOTMin + lateOTMin,
     breakZoneId: null, breakZoneLabel: '',
     isMonthly: true,
     monthlyBaseSalary: wp.monthlyBaseSalary || 0,
@@ -2223,8 +2233,8 @@ function calcPaidLeaveWage(shift, wp) {
 
   return {
     totalWage: wage, normalWage: wage, normalBreakdown: [],
+    earlyOTBreakdown: [], earlyOTWage: 0, earlyOTMin: 0,
     otBreakdown: [], overtimeWage: 0, overtimeWorkMin: 0,
-    manualOTWage: 0, manualOTBreakdown: [],
     earlyDeptBonus: 0, workMin: Math.round(plHours * 60),
     breakZoneId: null, breakZoneLabel: '',
     isMonthly: wp.wageType === 'monthly', isMonthlyPaidLeave: wp.wageType === 'monthly',
@@ -3621,7 +3631,7 @@ function renderWeek() {
       for (const sh of ss) {
         const w   = getWP(sh.workplaceId);
         const res = calcShiftWage(sh, w);
-        const otIcon = (res.overtimeWage > 0 || res.manualOTWage > 0) ? '<span class="ot-dot"></span>' : '';
+        const otIcon = (res.overtimeWage > 0 || res.earlyOTWage > 0) ? '<span class="ot-dot"></span>' : '';
         const edIcon = res.earlyDeptBonus > 0 ? '<span class="ed-dot"></span>' : '';
         const locLines = sh.location ? sh.location.split('\n') : [];
         const locLabel = locLines.length
@@ -3697,7 +3707,7 @@ function renderMonth() {
     for (const sh of ss.slice(0, 2)) {
       const w       = getWP(sh.workplaceId);
       const res     = calcShiftWage(sh, w);
-      const otIcon  = (res.overtimeWage > 0 || res.manualOTWage > 0) ? '<span class="ot-dot" style="width:4px;height:4px"></span>' : '';
+      const otIcon  = (res.overtimeWage > 0 || res.earlyOTWage > 0) ? '<span class="ot-dot" style="width:4px;height:4px"></span>' : '';
       const plDotMo = sh.isPaidLeave ? '<span class="pl-dot" style="width:4px;height:4px;margin-left:2px;vertical-align:middle"></span>' : '';
       const locLine = sh.location ? `<br><span style="font-size:8px;opacity:.88">${escHtml(sh.location.split('\n')[0])}</span>` : '';
       const moLabel = sh.isPaidLeave ? '有休' : `${sh.startTime}〜${sh.endTime}`;
@@ -3973,8 +3983,9 @@ function openShift(id, date) {
     document.getElementById('sStart').value  = sh.startTime;
     document.getElementById('sEnd').value    = sh.endTime;
     document.getElementById('sBreak').value  = sh.breakMinutes || 0;
-    document.getElementById('sManualOT').value  = sh.manualOvertimeMin  || 0;
-    document.getElementById('sEarlyDep').value  = sh.earlyDepartureMin  || 0;
+    document.getElementById('sActualStart').value = sh.actualStart || '';
+    document.getElementById('sActualEnd').value   = sh.actualEnd   || '';
+    document.getElementById('sEarlyDep').value    = sh.earlyDepartureMin || 0;
     document.getElementById('sLocation').value  = sh.location || '';
     document.getElementById('delShift').style.display = 'block';
     // 休憩ゾーンのセレクトをシフト時間帯で更新し、保存値を復元
@@ -3987,8 +3998,9 @@ function openShift(id, date) {
     document.getElementById('sStart').value = '09:00';
     document.getElementById('sEnd').value   = '17:00';
     document.getElementById('sBreak').value = '60';
-    document.getElementById('sManualOT').value  = '0';
-    document.getElementById('sEarlyDep').value  = '0';
+    document.getElementById('sActualStart').value = '';
+    document.getElementById('sActualEnd').value   = '';
+    document.getElementById('sEarlyDep').value    = '0';
     document.getElementById('sLocation').value  = '';
     document.getElementById('sBreakZone').value = '';
     document.getElementById('delShift').style.display = 'none';
@@ -4009,7 +4021,8 @@ function livePreview() {
   const st     = document.getElementById('sStart').value;
   const en     = document.getElementById('sEnd').value;
   const brk    = parseInt(document.getElementById('sBreak').value) || 0;
-  const manOT  = parseInt(document.getElementById('sManualOT').value) || 0;
+  const actualStart = document.getElementById('sActualStart').value || null;
+  const actualEnd   = document.getElementById('sActualEnd').value   || null;
   const earlyD = parseInt(document.getElementById('sEarlyDep').value) || 0;
   const prev   = document.getElementById('wPreview');
   const isPL   = document.getElementById('sPaidLeave').checked;
@@ -4083,7 +4096,7 @@ function livePreview() {
     return;
   }
 
-  const mock = { startTime:st, endTime:en, breakMinutes:brk, manualOvertimeMin:manOT, earlyDepartureMin:earlyD, breakZoneId };
+  const mock = { startTime:st, endTime:en, breakMinutes:brk, actualStart, actualEnd, earlyDepartureMin:earlyD, breakZoneId };
   const res  = calcShiftWage(mock, w);
   if (!res.totalWage) { prev.style.display = 'none'; return; }
 
@@ -4095,15 +4108,19 @@ function livePreview() {
     const base = res.monthlyBaseSalary;
     const rate = res.overtimeRate;
     bh += `<div class="wr"><span>月額基本給</span><span>¥${base.toLocaleString()}（月額固定）</span></div>`;
-    if (res.overtimeWorkMin > 0) {
-      const otH = (res.overtimeWorkMin / 60).toFixed(2);
+    if (res.earlyOTMin > 0) {
       bh += `<div class="wr ot" style="margin-top:5px;border-top:1px dashed var(--bd);padding-top:4px">
-        <span>⏰ 所定外（${fmtHM(res.overtimeWorkMin)}）</span><span>× 1.25</span>
+        <span>🌅 早出</span><span>× 1.25</span>
+      </div>`;
+      for (const b of res.earlyOTBreakdown)
+        bh += `<div class="wr ot"><span>　${absToHHMM(b.from)}〜${absToHHMM(b.to)} ${minToHoursStr(b.min)}</span><span>${minToHoursStr(b.min)} × ¥${Math.round(rate).toLocaleString()} × 1.25 = ¥${b.wage.toLocaleString()}</span></div>`;
+    }
+    if (res.overtimeWage > 0) {
+      bh += `<div class="wr ot" style="margin-top:5px;border-top:1px dashed var(--bd);padding-top:4px">
+        <span>⏰ 残業</span><span>× 1.25</span>
       </div>`;
       for (const b of res.otBreakdown)
-        bh += `<div class="wr ot"><span>　残業 ${minToHoursStr(b.min)}</span><span>${minToHoursStr(b.min)} × ¥${Math.round(rate).toLocaleString()} × 1.25 = ¥${b.wage.toLocaleString()}</span></div>`;
-      for (const b of res.manualOTBreakdown)
-        bh += `<div class="wr ot"><span>　当日残業 ${minToHoursStr(b.min)}</span><span>${minToHoursStr(b.min)} × ¥${Math.round(rate).toLocaleString()} × 1.25 = ¥${b.wage.toLocaleString()}</span></div>`;
+        bh += `<div class="wr ot"><span>　${absToHHMM(b.from)}〜${absToHHMM(b.to)} ${minToHoursStr(b.min)}</span><span>${minToHoursStr(b.min)} × ¥${Math.round(rate).toLocaleString()} × 1.25 = ¥${b.wage.toLocaleString()}</span></div>`;
     }
     bh += `<div class="wr wr-sep"><span>実働時間</span><span>${minStr(res.workMin)}</span></div>`;
     bh += `<div class="wr" style="color:var(--muted)"><span>この日の残業代</span><span>¥${res.totalWage.toLocaleString()}</span></div>`;
@@ -4129,13 +4146,12 @@ function livePreview() {
     </div>`;
   }
 
-  // ── 所定外期間（ゾーンごとに×1.25、時刻付き） ──
-  if (res.otBreakdown.length > 0) {
-    const thr = fmtHM(w?.overtimeThreshold ?? 510);
+  // ── 早出（×1.25） ──
+  if (res.earlyOTBreakdown.length > 0) {
     bh += `<div class="wr ot" style="margin-top:5px;border-top:1px dashed var(--bd);padding-top:4px">
-      <span>⏰ 所定外（拘束${thr}超）</span><span>× 1.25</span>
+      <span>🌅 早出</span><span>× 1.25</span>
     </div>`;
-    for (const b of res.otBreakdown) {
+    for (const b of res.earlyOTBreakdown) {
       const timeStr = `${absToHHMM(b.from)}〜${absToHHMM(b.to)}`;
       const durStr  = minToHoursStr(b.min);
       bh += `<div class="wr ot">
@@ -4145,12 +4161,12 @@ function livePreview() {
     }
   }
 
-  // ── 当日残業時間（ゾーンごとに×1.25、時刻付き） ──
-  if (res.manualOTBreakdown.length > 0) {
+  // ── 残業（×1.25） ──
+  if (res.otBreakdown.length > 0) {
     bh += `<div class="wr ot" style="margin-top:5px;border-top:1px dashed var(--bd);padding-top:4px">
-      <span>⏰ 当日残業時間（${manOT}分）</span><span>× 1.25</span>
+      <span>⏰ 残業</span><span>× 1.25</span>
     </div>`;
-    for (const b of res.manualOTBreakdown) {
+    for (const b of res.otBreakdown) {
       const timeStr = `${absToHHMM(b.from)}〜${absToHHMM(b.to)}`;
       const durStr  = minToHoursStr(b.min);
       bh += `<div class="wr ot">
@@ -4179,7 +4195,8 @@ async function saveShift() {
   const startTime        = document.getElementById('sStart').value;
   const endTime          = document.getElementById('sEnd').value;
   const breakMinutes      = Math.max(0, parseInt(document.getElementById('sBreak').value,    10) || 0);
-  const manualOvertimeMin = Math.max(0, parseInt(document.getElementById('sManualOT').value, 10) || 0);
+  const actualStart       = document.getElementById('sActualStart').value || null;
+  const actualEnd         = document.getElementById('sActualEnd').value   || null;
   const earlyDepartureMin = Math.max(0, parseInt(document.getElementById('sEarlyDep').value, 10) || 0);
   const breakZoneId       = document.getElementById('sBreakZone').value || null;
   const location          = document.getElementById('sLocation').value.trim();
@@ -4205,7 +4222,7 @@ async function saveShift() {
     }
   }
 
-  const data = { date, workplaceId, startTime, endTime, breakMinutes, manualOvertimeMin, earlyDepartureMin, breakZoneId, location, isPaidLeave };
+  const data = { date, workplaceId, startTime, endTime, breakMinutes, actualStart, actualEnd, earlyDepartureMin, breakZoneId, location, isPaidLeave };
   const isEdit = !!editShiftId;
   if (isEdit) {
     const i = shifts.findIndex(s => s.id === editShiftId);
@@ -4789,7 +4806,8 @@ async function doImport() {
     shifts.push({
       id: uid(), date: r.date, workplaceId: wpId,
       startTime: r.startTime, endTime: r.endTime,
-      breakMinutes: 60, manualOvertimeMin: 0, earlyDepartureMin: 0,
+      breakMinutes: 60, earlyDepartureMin: 0,
+      actualStart: null, actualEnd: null,
       location: r.location || '',
     });
     added++;
@@ -4892,42 +4910,31 @@ function calcAttendDiffs(shift, att) {
   const diffs = [];
   if (!shift) return diffs;
 
-  // 開始時間
-  if (t2m(shift.startTime) !== t2m(att.actual.start))
-    diffs.push({ field: 'startTime', label: '開始',
-      registered: shift.startTime, actual: att.actual.start,
+  // 予定開始
+  if (att.scheduled.start && t2m(shift.startTime) !== t2m(att.scheduled.start))
+    diffs.push({ field: 'startTime', label: '予定開始',
+      registered: shift.startTime, actual: att.scheduled.start,
+      applyValue: att.scheduled.start });
+
+  // 予定終了
+  if (att.scheduled.end && t2m(shift.endTime) !== t2m(att.scheduled.end))
+    diffs.push({ field: 'endTime', label: '予定終了',
+      registered: shift.endTime, actual: att.scheduled.end,
+      applyValue: att.scheduled.end });
+
+  // 実績開始
+  const curAS = shift.actualStart || null;
+  if (att.actual.start && curAS !== att.actual.start)
+    diffs.push({ field: 'actualStart', label: '実績開始',
+      registered: curAS || '未設定', actual: att.actual.start,
       applyValue: att.actual.start });
 
-  // 終了時間 / 一部解消の判定
-  const schedEndMin  = t2m(att.scheduled.end);
-  const actualEndMin = t2m(att.actual.end);
-  const isEarlyDep   = actualEndMin < schedEndMin;
-
-  if (isEarlyDep) {
-    // 一部解消ケース: 実績終了 < 予定終了
-    // → 予定終了時刻を維持し、差分を earlyDepartureMin としてセット
-    const newEdMin = schedEndMin - actualEndMin;
-    const curEdMin = shift.earlyDepartureMin || 0;
-    if (t2m(shift.endTime) !== schedEndMin)
-      diffs.push({ field: 'endTime', label: '予定終了',
-        registered: shift.endTime, actual: att.scheduled.end,
-        applyValue: att.scheduled.end });
-    if (curEdMin !== newEdMin)
-      diffs.push({ field: 'earlyDepartureMin', label: '一部解消',
-        registered: `${curEdMin}分`, actual: `${newEdMin}分`,
-        applyValue: newEdMin });
-  } else {
-    // 通常ケース: 実績終了を終了時間として更新
-    if (t2m(shift.endTime) !== actualEndMin)
-      diffs.push({ field: 'endTime', label: '終了',
-        registered: shift.endTime, actual: att.actual.end,
-        applyValue: att.actual.end });
-    // 一部解消が設定済みで実績≥予定ならクリア
-    if ((shift.earlyDepartureMin || 0) > 0)
-      diffs.push({ field: 'earlyDepartureMin', label: '一部解消',
-        registered: `${shift.earlyDepartureMin}分`, actual: '0分（クリア）',
-        applyValue: 0 });
-  }
+  // 実績終了
+  const curAE = shift.actualEnd || null;
+  if (att.actual.end && curAE !== att.actual.end)
+    diffs.push({ field: 'actualEnd', label: '実績終了',
+      registered: curAE || '未設定', actual: att.actual.end,
+      applyValue: att.actual.end });
 
   // 休憩時間
   if (att.breakMinutes !== null && shift.breakMinutes !== att.breakMinutes)
@@ -5247,10 +5254,11 @@ async function applyOneDiff(i) {
   if (idx < 0) return;
 
   for (const diff of r.diffs) {
-    if (diff.field === 'startTime')         shifts[idx].startTime        = diff.applyValue;
-    if (diff.field === 'endTime')           shifts[idx].endTime          = diff.applyValue;
-    if (diff.field === 'earlyDepartureMin') shifts[idx].earlyDepartureMin = diff.applyValue;
-    if (diff.field === 'breakMinutes')      shifts[idx].breakMinutes     = diff.applyValue;
+    if (diff.field === 'startTime')    shifts[idx].startTime    = diff.applyValue;
+    if (diff.field === 'endTime')      shifts[idx].endTime      = diff.applyValue;
+    if (diff.field === 'actualStart')  shifts[idx].actualStart  = diff.applyValue;
+    if (diff.field === 'actualEnd')    shifts[idx].actualEnd    = diff.applyValue;
+    if (diff.field === 'breakMinutes') shifts[idx].breakMinutes = diff.applyValue;
   }
 
   try {
@@ -5283,10 +5291,11 @@ async function bulkApplyAttend() {
     const idx = shifts.findIndex(s => s.id === r.shift.id);
     if (idx < 0) continue;
     for (const diff of r.diffs) {
-      if (diff.field === 'startTime')         shifts[idx].startTime        = diff.applyValue;
-      if (diff.field === 'endTime')           shifts[idx].endTime          = diff.applyValue;
-      if (diff.field === 'earlyDepartureMin') shifts[idx].earlyDepartureMin = diff.applyValue;
-      if (diff.field === 'breakMinutes')      shifts[idx].breakMinutes     = diff.applyValue;
+      if (diff.field === 'startTime')    shifts[idx].startTime    = diff.applyValue;
+      if (diff.field === 'endTime')      shifts[idx].endTime      = diff.applyValue;
+      if (diff.field === 'actualStart')  shifts[idx].actualStart  = diff.applyValue;
+      if (diff.field === 'actualEnd')    shifts[idx].actualEnd    = diff.applyValue;
+      if (diff.field === 'breakMinutes') shifts[idx].breakMinutes = diff.applyValue;
     }
     updated++;
   }
@@ -5695,6 +5704,8 @@ async function executeSettingsImport() {
         if (s.manualOvertimeMin == null) s.manualOvertimeMin = 0;
         if (s.earlyDepartureMin == null) s.earlyDepartureMin = 0;
         if (s.location === undefined) s.location = '';
+        if (s.actualStart === undefined) s.actualStart = null;
+        if (s.actualEnd   === undefined) s.actualEnd   = null;
         s.breakMinutes = Number(s.breakMinutes);
       }
       render();
@@ -5970,9 +5981,7 @@ async function registerSelectedNoShifts() {
     const { att } = r;
     const d  = new Date(att.date + 'T00:00:00');
     if (r.isYearlyLeave) return `・${d.getMonth()+1}/${padZ(d.getDate())}（${DOW[d.getDay()]}）: 年休`;
-    const ed = t2m(att.actual.end) < t2m(att.scheduled.end);
-    const endDisp = ed ? att.scheduled.end : att.actual.end;
-    return `・${d.getMonth()+1}/${padZ(d.getDate())}（${DOW[d.getDay()]}）: ${att.actual.start}〜${endDisp}`;
+    return `・${d.getMonth()+1}/${padZ(d.getDate())}（${DOW[d.getDay()]}）: ${att.scheduled.start}〜${att.scheduled.end}（実績${att.actual.start}〜${att.actual.end}）`;
   });
   if (!confirm(`以下の${idxs.length}件を新規シフトとして登録します。\n\n${previews.join('\n')}\n\nよろしいですか？`)) return;
 
@@ -5984,22 +5993,21 @@ async function registerSelectedNoShifts() {
       shifts.push({
         id: uid(), date: att.date, workplaceId: wpId,
         startTime: '09:00', endTime: '17:00',
-        breakMinutes: 0, earlyDepartureMin: 0, manualOvertimeMin: 0,
+        breakMinutes: 0, earlyDepartureMin: 0,
+        actualStart: null, actualEnd: null,
         breakZoneId: null, location: '', isPaidLeave: true,
       });
       added++;
       continue;
     }
-    const schedEndMin  = t2m(att.scheduled.end);
-    const actualEndMin = t2m(att.actual.end);
-    const isEarlyDep   = actualEndMin < schedEndMin;
     shifts.push({
       id: uid(), date: att.date, workplaceId: wpId,
-      startTime:        att.actual.start,
-      endTime:          isEarlyDep ? att.scheduled.end : att.actual.end,
-      breakMinutes:     att.breakMinutes ?? 60,
-      earlyDepartureMin: isEarlyDep ? (schedEndMin - actualEndMin) : 0,
-      manualOvertimeMin: 0,
+      startTime:  att.scheduled.start,
+      endTime:    att.scheduled.end,
+      actualStart: att.actual.start,
+      actualEnd:  att.actual.end,
+      breakMinutes: att.breakMinutes ?? 60,
+      earlyDepartureMin: 0,
       breakZoneId: null,
       location: '',
       isPaidLeave: false,
@@ -6473,7 +6481,7 @@ document.getElementById('addZone').onclick     = addZone;
 document.getElementById('saveWP').onclick      = saveWP;
 document.getElementById('delWP').onclick       = deleteWP;
 
-['sWP','sStart','sEnd','sBreak','sManualOT','sEarlyDep','sBreakZone'].forEach(id => {
+['sWP','sStart','sEnd','sBreak','sActualStart','sActualEnd','sEarlyDep','sBreakZone'].forEach(id => {
   const el = document.getElementById(id);
   el.addEventListener('input',  livePreview);
   el.addEventListener('change', livePreview);
