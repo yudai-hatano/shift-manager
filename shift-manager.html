@@ -1020,7 +1020,7 @@ select.fc{font-size:14px}
     <div class="setting-area">
       <div class="setting-row">
         <div class="setting-label">
-          <b>所定外の閾値（拘束時間）</b>
+          <b>所定外の閾値（実働時間）</b>
           <small>この時間を超えた部分が ×1.25</small>
         </div>
         <div class="setting-ctrl">
@@ -2349,7 +2349,6 @@ function calcShiftWage(shift, wp) {
 
   let schedS = t2m(shift.startTime), schedE = t2m(shift.endTime);
   if (schedE <= schedS) schedE += 1440;
-  const scheduledDuration = schedE - schedS;
   const breakMin = Math.max(0, shift.breakMinutes || 0);
   const edMin    = Math.max(0, shift.earlyDepartureMin || 0);
 
@@ -2371,41 +2370,39 @@ function calcShiftWage(shift, wp) {
   // 遅刻の場合: 通常開始を実績開始にずらす
   const normStart = (actualS !== null && actualS > schedS) ? actualS : schedS;
 
-  const scheduledOT = scheduledDuration > threshold;
-  const normalEnd   = scheduledOT ? schedS + threshold : schedE;
+  // 実働終了（当日残業があれば actualE、なければ schedE）
+  const workEnd = (actualE !== null && actualE > schedE) ? actualE : schedE;
 
-  const bzId    = shift.breakZoneId || findAutoBreakZone(wp, normStart, normalEnd, segs);
+  // 実働時間ベースの所定外判定
+  const totalConstrainedMin = Math.max(0, workEnd - normStart);
+  const totalWorkMin        = Math.max(0, totalConstrainedMin - breakMin);
+  const otMin               = Math.max(0, totalWorkMin - threshold);
+
+  const bzId    = shift.breakZoneId || findAutoBreakZone(wp, normStart, workEnd, segs);
   const bzLabel = wp.zones.find(z => z.id === bzId)?.name || '';
 
   let normalBreakdown = [], normalWage = 0;
-  let otBreakdown = [], overtimeWage = 0, lateOTMin = 0;
+  let otBreakdown = [], overtimeWage = 0;
 
-  if (scheduledOT) {
-    // ─ 予定が長い日: 閾値で分割。退勤時刻による当日残業は加算しない ─
-    const splitPt = schedS + threshold;
-    if (normStart < splitPt) {
-      const nItems      = calcZoneBreakdown(normStart, splitPt, segs);
+  if (otMin > 0) {
+    // 所定外あり: 退勤時刻からさかのぼって otMin 分が所定外区間
+    const otStart = workEnd - otMin;
+    if (normStart < otStart) {
+      const nItems      = calcZoneBreakdown(normStart, otStart, segs);
       const nAfterBreak = applyBreakToItems(nItems, breakMin, bzId, wp);
       normalBreakdown   = calcWageItems(nAfterBreak, 1);
       normalWage        = normalBreakdown.reduce((sum, it) => sum + it.wage, 0);
     }
-    const oItems = calcZoneBreakdown(splitPt, schedE, segs);
+    const oItems = calcZoneBreakdown(otStart, workEnd, segs);
     otBreakdown  = calcWageItems(oItems, 1.25);
     overtimeWage = otBreakdown.reduce((sum, it) => sum + it.wage, 0);
-    lateOTMin    = scheduledDuration - threshold;
   } else {
-    // ─ 予定が短い日: 通常 + 退勤時刻で当日残業 ─
-    if (normStart < schedE) {
-      const nItems      = calcZoneBreakdown(normStart, schedE, segs);
+    // 所定外なし: 全区間通常（休憩あり）
+    if (normStart < workEnd) {
+      const nItems      = calcZoneBreakdown(normStart, workEnd, segs);
       const nAfterBreak = applyBreakToItems(nItems, breakMin, bzId, wp);
       normalBreakdown   = calcWageItems(nAfterBreak, 1);
       normalWage        = normalBreakdown.reduce((sum, it) => sum + it.wage, 0);
-    }
-    if (actualE !== null && actualE > schedE) {
-      lateOTMin    = actualE - schedE;
-      const oItems = calcZoneBreakdown(schedE, actualE, segs);
-      otBreakdown  = calcWageItems(oItems, 1.25);
-      overtimeWage = otBreakdown.reduce((sum, it) => sum + it.wage, 0);
     }
   }
 
@@ -2418,7 +2415,7 @@ function calcShiftWage(shift, wp) {
     earlyOTWage      = earlyOTBreakdown.reduce((sum, it) => sum + it.wage, 0);
   }
 
-  const overtimeWorkMin = earlyOTMin + lateOTMin;
+  const overtimeWorkMin = earlyOTMin + otMin;
 
   // 一部解消補填: [schedE - edMin, schedE] × 0.6
   let earlyDeptBonus = 0;
@@ -2427,9 +2424,7 @@ function calcShiftWage(shift, wp) {
       .reduce((sum, it) => sum + it.wage, 0);
   }
 
-  const normalDuration = Math.max(0, normalEnd - normStart);
-  const normalWorkMin  = Math.max(0, normalDuration - breakMin);
-  const workMin = normalWorkMin + earlyOTMin + lateOTMin;
+  const workMin = totalWorkMin + earlyOTMin;
 
   return {
     totalWage: normalWage + earlyOTWage + overtimeWage + earlyDeptBonus,
@@ -2438,7 +2433,7 @@ function calcShiftWage(shift, wp) {
     otBreakdown, overtimeWage, overtimeWorkMin,
     earlyDeptBonus, workMin,
     breakZoneId: bzId, breakZoneLabel: bzLabel,
-    isMonthly: false, scheduledOT,
+    isMonthly: false, scheduledOT: otMin > 0,
   };
 }
 
