@@ -4815,7 +4815,7 @@ function renderAllowanceEditor() {
   }
   el.innerHTML = tempAllowanceTable.map((z, i) => `
     <div class="zone-card">
-      <div class="zone-time-row">
+      <div class="zone-time-row" style="grid-template-columns:1fr 1fr 1fr auto">
         <div>
           <div class="zlbl">開始</div>
           <input class="zinp" type="time" value="${z.startTime}" oninput="syncAllowanceEntry(${i},'startTime',this.value)">
@@ -4827,12 +4827,12 @@ function renderAllowanceEditor() {
         <div>
           <div class="zlbl">手当額</div>
           <div style="display:flex;align-items:center;gap:2px">
-            <input class="zinp" type="number" value="${z.allowance}" min="0" style="text-align:right;width:60px" inputmode="numeric"
+            <input class="zinp" type="number" value="${z.allowance}" min="0" style="text-align:right;width:56px" inputmode="numeric"
                    oninput="syncAllowanceEntry(${i},'allowance',parseInt(this.value)||0)">
             <span class="rsuffix">円</span>
           </div>
         </div>
-        <button class="zdel" onclick="deleteAllowanceEntry(${i})" title="削除">✕</button>
+        <button class="zdel" style="align-self:end" onclick="deleteAllowanceEntry(${i})" title="削除">✕</button>
       </div>
     </div>`).join('');
 }
@@ -4855,7 +4855,7 @@ function deleteAllowanceEntry(i) {
 function addZone() {
   tempZones.push({ id: uid(), name: '新しい時間帯', startTime: '00:00', endTime: '00:00', rate: 1440 });
   renderZoneEditor();
-  const cards = document.querySelectorAll('.zone-card');
+  const cards = document.querySelectorAll('#zoneEditor .zone-card');
   if (cards.length) cards[cards.length - 1].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
@@ -4880,7 +4880,8 @@ async function saveWP() {
   if (wageTypeCheck === 'hourly' && !tempZones.length) { toast('時間帯を1つ以上設定してください'); return; }
 
   // DOM から最新値を確実に取得（oninput が未発火のケースへの保険）
-  document.querySelectorAll('.zone-card').forEach((card, i) => {
+  // ※ '#zoneEditor .zone-card' で絞らないと allowanceEditor のカードも拾ってしまう
+  document.querySelectorAll('#zoneEditor .zone-card').forEach((card, i) => {
     if (i >= tempZones.length) return;
     const inps        = card.querySelectorAll('.zinp');
     tempZones[i].name      = inps[0].value;
