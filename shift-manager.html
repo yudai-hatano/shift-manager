@@ -6657,17 +6657,18 @@ function renderHY() {
   for (const wp of workplaces) {
     const wpShifts = shifts.filter(s => s.workplaceId === wp.id && s.date >= startStr && s.date <= endStr);
     if (!wpShifts.length) continue;
-    let totalWorkMin = 0, totalOTMin = 0, totalWage = 0, plCount = 0;
+    let totalWorkMin = 0, totalOTMin = 0, totalWage = 0, totalEdMin = 0, plCount = 0;
     for (const sh of wpShifts) {
       const r = calcShiftWage(sh, wp);
       if (!sh.isPaidLeave) {
         totalWorkMin += r.workMin;
         totalOTMin   += r.overtimeWorkMin;
+        totalEdMin   += Math.max(0, sh.earlyDepartureMin || 0);
       }
       totalWage += r.totalWage;
       if (sh.isPaidLeave) plCount++;
     }
-    wpStats.push({ wp, totalWorkMin, totalOTMin, totalWage, count: wpShifts.length, plCount });
+    wpStats.push({ wp, totalWorkMin, totalOTMin, totalWage, totalEdMin, count: wpShifts.length, plCount });
   }
 
   let h = `<div style="font-size:12px;font-weight:700;color:var(--pri);text-align:center;margin-bottom:12px">${periodLabel}</div>`;
@@ -6757,7 +6758,8 @@ function renderHY() {
     for (const st of wpStats) {
       const wpThrH   = getWpHourTarget(hyYear, hyPeriod, st.wp.id);
       const wpThrMin = wpThrH * 60;
-      const wpPct    = wpThrMin > 0 ? Math.min(100, Math.round(st.totalWorkMin / wpThrMin * 100)) : -1;
+      const wpBase   = st.totalWorkMin + st.totalEdMin;
+      const wpPct    = wpThrMin > 0 ? Math.min(100, Math.round(wpBase / wpThrMin * 100)) : -1;
       const wpBC     = wpPct >= 100 ? 'var(--grn)' : wpPct >= 70 ? 'var(--pri)' : 'var(--org)';
       h += `<div style="margin-bottom:10px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
@@ -6767,7 +6769,7 @@ function renderHY() {
             ${wpPct >= 100 ? `<span style="font-size:11px">✅</span>` : ''}
           </div>
           <div style="display:flex;align-items:center;gap:3px;flex-shrink:0;margin-left:6px">
-            <b style="font-size:12px;color:var(--pri)">${fmtHM(st.totalWorkMin)}</b>
+            <b style="font-size:12px;color:var(--pri)">${fmtHM(wpBase)}</b>
             <span style="font-size:10px;color:var(--muted)">/ 目標</span>
             <input type="number" value="${wpThrH || ''}" min="0" max="5000"
               placeholder="--" inputmode="numeric"
@@ -6780,7 +6782,7 @@ function renderHY() {
         ${wpPct >= 0 ? `
         <div style="display:flex;justify-content:space-between;margin-bottom:3px;font-size:10px">
           <b style="color:${wpBC}">${wpPct}%</b>
-          <span style="color:var(--muted)">${wpPct < 100 ? `残り ${fmtHM(Math.max(0, wpThrMin - st.totalWorkMin))}` : '達成！'}</span>
+          <span style="color:var(--muted)">${wpPct < 100 ? `残り ${fmtHM(Math.max(0, wpThrMin - wpBase))}` : '達成！'}</span>
         </div>
         <div style="height:6px;background:var(--bd);border-radius:3px;overflow:hidden">
           <div style="height:100%;width:${wpPct}%;background:${wpBC};border-radius:3px;transition:width .4s"></div>
