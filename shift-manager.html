@@ -733,6 +733,84 @@ select.fc{font-size:14px}
         ※ 深夜またぎ（例: 22:00〜01:00）はそのまま入力可能<br>
         ※ 時間帯の隙間にあたる時間は計算に含まれません
       </p>
+
+      <!-- 積み上げ方式 -->
+      <hr class="sec-divider" style="margin-top:16px">
+      <div class="sec-ttl">
+        <span>積み上げ方式（給与明細と完全一致）</span>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;font-weight:600;color:var(--muted)">
+          <input type="checkbox" id="wpUseAccumulation" onchange="toggleAccumulationMethod()" style="width:15px;height:15px;cursor:pointer;accent-color:var(--pri)">
+          使用する
+        </label>
+      </div>
+      <p style="font-size:11px;color:var(--muted);margin-bottom:8px;line-height:1.7">
+        ① 基本給 ＋ ② 時間帯手当 ＋ ③ 時間外割増 ＋ ④ 深夜手当 の積み上げで計算します。<br>
+        ゾーン時給×倍率の旧方式の代わりに使用してください。
+      </p>
+      <div id="accumulationFields" style="display:none">
+        <div class="setting-area">
+          <div class="setting-row">
+            <div class="setting-label">
+              <b>基本時給（①）</b>
+              <small>全実働時間にかける基本単価</small>
+            </div>
+            <div class="setting-ctrl">
+              <input class="sinp" type="number" id="wpBaseRate" value="1430" min="0" inputmode="numeric" style="width:90px">
+              <span class="smuted">円</span>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-label">
+              <b>日次割増閾値・実働（③）</b>
+              <small>これを超えた実働に×割増率（例: 7.5時間）</small>
+            </div>
+            <div class="setting-ctrl">
+              <input class="sinp" type="number" id="wpDailyOTHours" value="7.5" min="0" max="24" step="0.5" inputmode="decimal">
+              <span class="smuted">時間</span>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-label">
+              <b>時間外割増率（③）</b>
+              <small>例: 25% → 0.25 加算</small>
+            </div>
+            <div class="setting-ctrl">
+              <input class="sinp" type="number" id="wpOTRate" value="25" min="0" max="100" step="5" inputmode="decimal" style="width:70px">
+              <span class="smuted">%</span>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-label">
+              <b>深夜帯（④）</b>
+              <small>深夜手当を加算する時間帯</small>
+            </div>
+            <div class="setting-ctrl" style="gap:4px">
+              <input class="sinp" type="time" id="wpNightStart" value="22:00" style="width:82px;font-size:12px">
+              <span class="smuted">〜</span>
+              <input class="sinp" type="time" id="wpNightEnd" value="05:00" style="width:82px;font-size:12px">
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-label">
+              <b>深夜割増率（④）</b>
+              <small>例: 25% → 0.25 加算</small>
+            </div>
+            <div class="setting-ctrl">
+              <input class="sinp" type="number" id="wpNightRate" value="25" min="0" max="100" step="5" inputmode="decimal" style="width:70px">
+              <span class="smuted">%</span>
+            </div>
+          </div>
+        </div>
+        <div class="sec-ttl" style="margin-top:12px">
+          <span>② 時間帯手当テーブル</span>
+          <button class="btn btn-pri btn-sm" onclick="addAllowanceEntry()">＋ 追加</button>
+        </div>
+        <div id="allowanceEditor"></div>
+        <p style="font-size:11px;color:var(--muted);margin-top:6px;line-height:1.7">
+          ※ 時間帯手当は「その時間帯の実働 × 手当額」で加算（基本給とは別）<br>
+          ※ 24h を隙間なくカバーしてください（07:00〜07:00 形式でもOK）
+        </p>
+      </div>
     </div>
 
     <!-- 月給制：月給設定 -->
@@ -1717,6 +1795,14 @@ const DEFAULT_ZONES = [
   { id:'dz5', name:'深夜②', startTime:'01:00', endTime:'07:00', rate:1993 },
 ];
 
+const DEFAULT_TIME_ALLOWANCE_TABLE = [
+  { startTime:'07:00', endTime:'08:00', allowance:200 },
+  { startTime:'08:00', endTime:'19:00', allowance:0   },
+  { startTime:'19:00', endTime:'22:00', allowance:200 },
+  { startTime:'22:00', endTime:'01:00', allowance:300 },
+  { startTime:'01:00', endTime:'07:00', allowance:200 },
+];
+
 /** 法定年休付与スケジュール（入社からの月数 → 付与日数） */
 const STATUTORY_PL_SCHEDULE = [
   { months:  6, days: 10 },
@@ -1749,6 +1835,15 @@ const DEFAULT_WP_SETTINGS = {
   paidLeaveNextGrantDate:  '',
   paidLeaveNextGrantDays:  0,
   weeklyWorkDays:          5,
+  // 積み上げ方式（会社明細に完全一致させる給与計算）
+  useAccumulationMethod: false,
+  baseRate:              0,
+  dailyOTThreshold:      450,   // 7.5h 実働（分）
+  otRate:                0.25,
+  nightStart:           '22:00',
+  nightEnd:             '05:00',
+  nightRate:             0.25,
+  timeAllowanceTable:    [],    // 空配列 → DEFAULT_TIME_ALLOWANCE_TABLE を使用
 };
 
 // ══════════════════════════════════════
@@ -1762,6 +1857,7 @@ let editShiftId    = null;
 let editWPId       = null;
 let tempZones      = [];
 let tempPLSchedule = [];   // 勤務先編集中のカスタム有給スケジュール
+let tempAllowanceTable = []; // 勤務先編集中の時間帯手当テーブル
 let bdSelectedWPs    = new Set(); // 一括削除で選択中の勤務先ID
 let notices          = {};   // { id: { title,body,date,... } } グローバルお知らせ
 let readNotices      = {};   // { noticeId: true } 既読状態（ログインユーザー分）
@@ -2037,6 +2133,169 @@ function calcWageItems(items, multiplier) {
   }));
 }
 
+// ══════════════════════════════════════
+// 積み上げ方式 ── ヘルパー
+// ══════════════════════════════════════
+
+/** 時間帯手当テーブル → セグメント配列（深夜またぎ対応） */
+function buildAllowanceSegs(table) {
+  const segs = [];
+  for (const z of table) {
+    const s = t2m(z.startTime);
+    let e = t2m(z.endTime);
+    if (e === 0) e = 1440;
+    if (e < s) {
+      segs.push({ start: s, end: 1440, allowance: z.allowance });
+      segs.push({ start: 0, end: e,    allowance: z.allowance });
+    } else {
+      segs.push({ start: s, end: e, allowance: z.allowance });
+    }
+  }
+  segs.sort((a, b) => a.start - b.start);
+  return segs;
+}
+
+/** [sAbs, eAbs) を時間帯手当ゾーンに分解して返す */
+function calcAllowanceItems(sAbs, eAbs, aSegs) {
+  const allSegs = [
+    ...aSegs,
+    ...aSegs.map(s => ({ ...s, start: s.start + 1440, end: s.end + 1440 })),
+  ];
+  const items = [];
+  for (const seg of allSegs) {
+    if (seg.end <= sAbs || seg.start >= eAbs) continue;
+    const from = Math.max(seg.start, sAbs), to = Math.min(seg.end, eAbs);
+    const min = to - from; if (min <= 0) continue;
+    items.push({ from, to, min, allowance: seg.allowance });
+  }
+  return items;
+}
+
+/** 休憩を allowance=0（通常帯）から優先差し引き、不足分は低手当帯から補う */
+function applyBreakToAllowanceItems(items, breakMin) {
+  if (!breakMin) return items.map(it => ({ ...it }));
+  const res = items.map(it => ({ ...it }));
+  let rem = breakMin;
+  for (const it of res) {
+    if (rem <= 0 || it.allowance !== 0) continue;
+    const d = Math.min(rem, it.min); it.min -= d; rem -= d;
+  }
+  if (rem > 0) {
+    for (const it of [...res].sort((a, b) => a.allowance - b.allowance)) {
+      if (rem <= 0 || it.min <= 0) continue;
+      const d = Math.min(rem, it.min); it.min -= d; rem -= d;
+    }
+  }
+  return res.filter(it => it.min > 0);
+}
+
+/** items（実働済み）から深夜帯（nightStartStr〜nightEndStr）の分数を求める */
+function calcNightMinFromItems(items, nightStartStr, nightEndStr) {
+  const ns = t2m(nightStartStr);
+  const ne = t2m(nightEndStr);
+  const nightSegs = ns > ne
+    ? [[ns, 1440], [0, ne], [ns + 1440, 2880], [1440, ne + 1440]]
+    : [[ns, ne], [ns + 1440, ne + 1440]];
+  let total = 0;
+  for (const it of items) {
+    for (const [segS, segE] of nightSegs) {
+      total += Math.max(0, Math.min(it.to, segE) - Math.max(it.from, segS));
+    }
+  }
+  return total;
+}
+
+/**
+ * 積み上げ方式 給与計算（会社明細の①〜④を再現）
+ * ① 基本給   = 全実働 × baseRate
+ * ② 時間帯手当= Σ(ゾーン実働 × 手当額)
+ * ③ 時間外割増= max(0, 実働 − dailyOTThreshold) × baseRate × otRate
+ * ④ 深夜手当 = 深夜帯実働 × baseRate × nightRate
+ */
+function calcShiftWageAccumulation(shift, wp) {
+  const zero = {
+    totalWage:0, normalWage:0, normalBreakdown:[],
+    earlyOTBreakdown:[], earlyOTWage:0, earlyOTMin:0,
+    otBreakdown:[], overtimeWage:0, overtimeWorkMin:0,
+    earlyDeptBonus:0, workMin:0,
+    breakZoneId:null, breakZoneLabel:'',
+    isMonthly:false, scheduledOT:false, isAccumulation:true,
+    basicWage:0, allowanceWage:0, allowanceBreakdown:[],
+    otWage:0, nightWage:0, otMin:0, nightMin:0,
+  };
+  if (!shift.startTime || !shift.endTime) return zero;
+
+  const table = (wp.timeAllowanceTable && wp.timeAllowanceTable.length)
+    ? wp.timeAllowanceTable : DEFAULT_TIME_ALLOWANCE_TABLE;
+  const aSegs = buildAllowanceSegs(table);
+
+  const baseRate         = wp.baseRate || 0;
+  const dailyOTThreshold = wp.dailyOTThreshold ?? 450;
+  const otRate           = wp.otRate ?? 0.25;
+  const nightRate        = wp.nightRate ?? 0.25;
+  const nightStartStr    = wp.nightStart || '22:00';
+  const nightEndStr      = wp.nightEnd   || '05:00';
+
+  let schedS = t2m(shift.startTime), schedE = t2m(shift.endTime);
+  if (schedE <= schedS) schedE += 1440;
+  const breakMin = Math.max(0, shift.breakMinutes || 0);
+
+  let actualS = null;
+  if (shift.actualStart) {
+    actualS = t2m(shift.actualStart);
+    if (actualS > schedS + 720) actualS -= 1440;
+    if (actualS < schedS - 720) actualS += 1440;
+  }
+  let actualE = null;
+  if (shift.actualEnd) {
+    actualE = t2m(shift.actualEnd);
+    if (actualE < schedS) actualE += 1440;
+  }
+
+  const normStart = (actualS !== null && actualS > schedS) ? actualS : schedS;
+  const workStart = (actualS !== null && actualS < schedS) ? actualS : normStart;
+  const workEnd   = (actualE !== null && actualE > schedE) ? actualE : schedE;
+
+  const rawItems = calcAllowanceItems(workStart, workEnd, aSegs);
+  const items    = applyBreakToAllowanceItems(rawItems, breakMin);
+  const totalWorkMin = items.reduce((s, it) => s + it.min, 0);
+
+  // ① 基本給（切り上げ）
+  const basicWage = Math.ceil(totalWorkMin / 60 * baseRate);
+
+  // ② 時間帯手当（項目ごとに切り上げ）
+  const allowanceBreakdown = [];
+  let allowanceWage = 0;
+  for (const it of items) {
+    if (it.allowance <= 0) continue;
+    const w = Math.ceil(it.min / 60 * it.allowance);
+    allowanceBreakdown.push({ ...it, wage: w });
+    allowanceWage += w;
+  }
+
+  // ③ 時間外割増（切り上げ）
+  const otMin  = Math.max(0, totalWorkMin - dailyOTThreshold);
+  const otWage = Math.ceil(otMin / 60 * baseRate * otRate);
+
+  // ④ 深夜手当（切り上げ）
+  const nightMin  = calcNightMinFromItems(items, nightStartStr, nightEndStr);
+  const nightWage = Math.ceil(nightMin / 60 * baseRate * nightRate);
+
+  const totalWage = basicWage + allowanceWage + otWage + nightWage;
+
+  return {
+    totalWage,
+    normalWage: basicWage, normalBreakdown: [],
+    earlyOTBreakdown: [], earlyOTWage: 0, earlyOTMin: 0,
+    otBreakdown: [], overtimeWage: otWage, overtimeWorkMin: otMin,
+    earlyDeptBonus: 0, workMin: totalWorkMin,
+    breakZoneId: null, breakZoneLabel: '',
+    isMonthly: false, scheduledOT: false, isAccumulation: true,
+    basicWage, allowanceWage, allowanceBreakdown,
+    otWage, nightWage, otMin, nightMin,
+  };
+}
+
 /**
  * シフト全体の給与計算（3ゾーン方式）
  *
@@ -2049,6 +2308,7 @@ function calcWageItems(items, multiplier) {
 function calcShiftWage(shift, wp) {
   if (shift.isPaidLeave) return calcPaidLeaveWage(shift, wp);
   if (wp?.wageType === 'monthly') return calcMonthlyShiftWage(shift, wp);
+  if (wp?.useAccumulationMethod) return calcShiftWageAccumulation(shift, wp);
 
   const zero = {
     totalWage:0, normalWage:0, normalBreakdown:[],
@@ -4141,6 +4401,55 @@ function livePreview() {
   prev.style.display = 'block';
   let bh = '';
 
+  // ── 積み上げ方式の場合 ──
+  if (res.isAccumulation) {
+    const baseRate  = w?.baseRate || 0;
+    const otRate    = w?.otRate ?? 0.25;
+    const nightRate = w?.nightRate ?? 0.25;
+    // ① 基本給
+    bh += `<div class="wr">
+      <span>① 基本給</span>
+      <span>${minToHoursStr(res.workMin)} × ¥${baseRate.toLocaleString()} = ¥${res.basicWage.toLocaleString()}</span>
+    </div>`;
+    // ② 時間帯手当
+    if (res.allowanceBreakdown.length > 0) {
+      bh += `<div class="wr" style="margin-top:5px;border-top:1px dashed var(--bd);padding-top:4px">
+        <span>② 時間帯手当</span><span>¥${res.allowanceWage.toLocaleString()}</span>
+      </div>`;
+      for (const b of res.allowanceBreakdown)
+        bh += `<div class="wr" style="color:var(--muted)">
+          <span>　${absToHHMM(b.from)}〜${absToHHMM(b.to)} ${minToHoursStr(b.min)}</span>
+          <span>${minToHoursStr(b.min)} × ¥${b.allowance.toLocaleString()} = ¥${b.wage.toLocaleString()}</span>
+        </div>`;
+    } else {
+      bh += `<div class="wr" style="color:var(--muted)"><span>② 時間帯手当</span><span>¥0</span></div>`;
+    }
+    // ③ 時間外割増
+    if (res.otMin > 0) {
+      bh += `<div class="wr ot" style="margin-top:5px;border-top:1px dashed var(--bd);padding-top:4px">
+        <span>③ 時間外割増</span>
+        <span>${minToHoursStr(res.otMin)} × ¥${baseRate.toLocaleString()} × ${otRate} = ¥${res.otWage.toLocaleString()}</span>
+      </div>`;
+    } else {
+      bh += `<div class="wr" style="color:var(--muted)"><span>③ 時間外割増</span><span>¥0</span></div>`;
+    }
+    // ④ 深夜手当
+    if (res.nightMin > 0) {
+      bh += `<div class="wr" style="color:#7c3aed;font-weight:600;margin-top:5px;border-top:1px dashed var(--bd);padding-top:4px">
+        <span>④ 深夜手当</span>
+        <span>${minToHoursStr(res.nightMin)} × ¥${baseRate.toLocaleString()} × ${nightRate} = ¥${res.nightWage.toLocaleString()}</span>
+      </div>`;
+    } else {
+      bh += `<div class="wr" style="color:var(--muted)"><span>④ 深夜手当</span><span>¥0</span></div>`;
+    }
+    bh += `<div class="wr wr-sep"><span>実働時間</span><span>${minStr(res.workMin)}</span></div>`;
+    if (res.overtimeWorkMin > 0)
+      bh += `<div class="wr ot"><span>時間外（③対象）</span><span>${minStr(res.overtimeWorkMin)}</span></div>`;
+    document.getElementById('wBreakdown').innerHTML = bh;
+    document.getElementById('wTotal').textContent = `¥${res.totalWage.toLocaleString()}`;
+    return;
+  }
+
   // ── 月給制の場合は専用プレビューを表示 ──
   if (res.isMonthly) {
     const base = res.monthlyBaseSalary;
@@ -4429,6 +4738,21 @@ function openWPEdit(id) {
   tempZones   = src.map(z => ({ ...z }));
   renderZoneEditor();
 
+  // 積み上げ方式フィールドの初期化
+  const useAcc = !!(w?.useAccumulationMethod);
+  document.getElementById('wpUseAccumulation').checked = useAcc;
+  document.getElementById('accumulationFields').style.display = useAcc ? '' : 'none';
+  document.getElementById('wpBaseRate').value    = w?.baseRate ?? 1430;
+  document.getElementById('wpDailyOTHours').value = ((w?.dailyOTThreshold ?? 450) / 60);
+  document.getElementById('wpOTRate').value      = Math.round((w?.otRate ?? 0.25) * 100);
+  document.getElementById('wpNightStart').value  = w?.nightStart || '22:00';
+  document.getElementById('wpNightEnd').value    = w?.nightEnd   || '05:00';
+  document.getElementById('wpNightRate').value   = Math.round((w?.nightRate ?? 0.25) * 100);
+  const srcAT = (w?.timeAllowanceTable && w.timeAllowanceTable.length)
+    ? w.timeAllowanceTable : DEFAULT_TIME_ALLOWANCE_TABLE;
+  tempAllowanceTable = srcAT.map(e => ({ ...e }));
+  renderAllowanceEditor();
+
   document.getElementById('wpEditOverlay').classList.add('on');
 }
 
@@ -4469,6 +4793,63 @@ function renderZoneEditor() {
 
 function syncZone(i, field, val) {
   if (i >= 0 && i < tempZones.length) tempZones[i][field] = val;
+}
+
+// ── 積み上げ方式：時間帯手当テーブルエディタ ──
+
+function toggleAccumulationMethod() {
+  const checked = document.getElementById('wpUseAccumulation').checked;
+  document.getElementById('accumulationFields').style.display = checked ? '' : 'none';
+  if (checked && !tempAllowanceTable.length) {
+    tempAllowanceTable = DEFAULT_TIME_ALLOWANCE_TABLE.map(e => ({ ...e }));
+    renderAllowanceEditor();
+  }
+}
+
+function renderAllowanceEditor() {
+  const el = document.getElementById('allowanceEditor');
+  if (!el) return;
+  if (!tempAllowanceTable.length) {
+    el.innerHTML = '<div class="empty" style="padding:8px;font-size:12px;color:var(--muted)">エントリがありません。「＋ 追加」で追加してください。</div>';
+    return;
+  }
+  el.innerHTML = tempAllowanceTable.map((z, i) => `
+    <div class="zone-card">
+      <div class="zone-time-row">
+        <div>
+          <div class="zlbl">開始</div>
+          <input class="zinp" type="time" value="${z.startTime}" oninput="syncAllowanceEntry(${i},'startTime',this.value)">
+        </div>
+        <div>
+          <div class="zlbl">終了</div>
+          <input class="zinp" type="time" value="${z.endTime}" oninput="syncAllowanceEntry(${i},'endTime',this.value)">
+        </div>
+        <div>
+          <div class="zlbl">手当額</div>
+          <div style="display:flex;align-items:center;gap:2px">
+            <input class="zinp" type="number" value="${z.allowance}" min="0" style="text-align:right;width:60px" inputmode="numeric"
+                   oninput="syncAllowanceEntry(${i},'allowance',parseInt(this.value)||0)">
+            <span class="rsuffix">円</span>
+          </div>
+        </div>
+        <button class="zdel" onclick="deleteAllowanceEntry(${i})" title="削除">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+function syncAllowanceEntry(i, field, val) {
+  if (i >= 0 && i < tempAllowanceTable.length) tempAllowanceTable[i][field] = val;
+}
+
+function addAllowanceEntry() {
+  tempAllowanceTable.push({ startTime:'00:00', endTime:'00:00', allowance:0 });
+  renderAllowanceEditor();
+  const cards = document.querySelectorAll('#allowanceEditor .zone-card');
+  if (cards.length) cards[cards.length - 1].scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+function deleteAllowanceEntry(i) {
+  tempAllowanceTable.splice(i, 1); renderAllowanceEditor();
 }
 
 function addZone() {
@@ -4551,11 +4932,35 @@ async function saveWP() {
     paidLeaveGrantDays = Math.max(0, parseFloat(document.getElementById('wpPaidLeaveGrantDays').value) || 0);
   }
 
+  // 積み上げ方式フィールドの収集
+  const useAccumulationMethod = document.getElementById('wpUseAccumulation').checked;
+  const baseRateRaw    = parseInt(document.getElementById('wpBaseRate').value);
+  const baseRate       = isNaN(baseRateRaw) ? 0 : Math.max(0, baseRateRaw);
+  const dailyOTHoursRaw = parseFloat(document.getElementById('wpDailyOTHours').value);
+  const dailyOTThreshold = isNaN(dailyOTHoursRaw) ? 450 : Math.round(dailyOTHoursRaw * 60);
+  const otRatePctRaw   = parseFloat(document.getElementById('wpOTRate').value);
+  const otRate         = isNaN(otRatePctRaw) ? 0.25 : otRatePctRaw / 100;
+  const nightStart     = document.getElementById('wpNightStart').value || '22:00';
+  const nightEnd       = document.getElementById('wpNightEnd').value   || '05:00';
+  const nightRatePctRaw = parseFloat(document.getElementById('wpNightRate').value);
+  const nightRate      = isNaN(nightRatePctRaw) ? 0.25 : nightRatePctRaw / 100;
+  // DOM から最新の手当テーブルを同期
+  document.querySelectorAll('#allowanceEditor .zone-card').forEach((card, i) => {
+    if (i >= tempAllowanceTable.length) return;
+    const inps = card.querySelectorAll('.zinp');
+    tempAllowanceTable[i].startTime = inps[0].value || '00:00';
+    tempAllowanceTable[i].endTime   = inps[1].value || '00:00';
+    tempAllowanceTable[i].allowance = parseInt(inps[2].value) || 0;
+  });
+  const timeAllowanceTable = tempAllowanceTable.map(e => ({ ...e }));
+
   const wpData = { name, color, zones, overtimeThreshold, payPeriodStartDay, paymentDay, paymentMonthOffset,
     wageType, monthlyBaseSalary, monthlyOvertimeMethod, monthlyStdHours, monthlyOvertimeRate,
     paidLeaveGrantDays, paidLeaveHours, workDaysPerMonth, paidLeaveExpiry,
     hireDate, paidLeaveScheduleType, paidLeaveCustomSchedule, paidLeaveNextGrantDate,
-    paidLeaveNextGrantDays, weeklyWorkDays };
+    paidLeaveNextGrantDays, weeklyWorkDays,
+    useAccumulationMethod, baseRate, dailyOTThreshold, otRate,
+    nightStart, nightEnd, nightRate, timeAllowanceTable };
 
   const isEdit = !!editWPId;
   if (isEdit) {
