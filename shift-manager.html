@@ -1234,16 +1234,26 @@ HH:MM〜HH:MM
 
     <!-- Step 1: ファイル選択 -->
     <div id="aiImportStep1">
-      <div style="background:#ede9fe;border:1px solid #c4b5fd;border-radius:var(--rs);padding:11px 13px;margin-bottom:14px;line-height:1.8">
-        <div style="font-size:12px;font-weight:800;color:var(--pri);margin-bottom:4px">対応フォーマット</div>
-        <div style="font-size:12px;color:#4c1d95">
-          📋 <b>日別勤怠表PDF</b>：表形式のPDF（複数日分を一括解析）<br>
-          🗓 <b>勤務予定スクショ</b>：「勤務予定日 / 勤務予定時間 / 勤務予定」形式の画像
+      <div class="fg">
+        <label class="fl">入力タイプ</label>
+        <div style="display:flex;flex-direction:column;gap:7px">
+          <label style="display:flex;align-items:center;gap:9px;cursor:pointer;font-size:13px;font-weight:600;padding:10px 12px;background:var(--sur2);border:1.5px solid var(--bd);border-radius:var(--rs)">
+            <input type="radio" name="aiImportType" value="shift" checked onchange="onAiTypeChange()" style="width:16px;height:16px;cursor:pointer;accent-color:var(--pri)">
+            🗓 勤務予定スクショ（シフト予定）
+          </label>
+          <label style="display:flex;align-items:center;gap:9px;cursor:pointer;font-size:13px;font-weight:600;padding:10px 12px;background:var(--sur2);border:1.5px solid var(--bd);border-radius:var(--rs)">
+            <input type="radio" name="aiImportType" value="attend" onchange="onAiTypeChange()" style="width:16px;height:16px;cursor:pointer;accent-color:var(--pri)">
+            📋 日別勤怠表PDF（勤怠突合）
+          </label>
         </div>
       </div>
       <div class="fg">
         <label class="fl">インポート先（勤務先）</label>
         <select class="fc" id="aiImportWP"></select>
+      </div>
+      <div class="fg" id="aiImportYMRow" style="display:none">
+        <label class="fl">対象年月</label>
+        <input type="month" class="fc" id="aiImportYM">
       </div>
       <div class="fg">
         <label class="fl">ファイルを選択（複数可）</label>
@@ -1271,14 +1281,6 @@ HH:MM〜HH:MM
       <button class="btn" style="background:var(--sur2);border:1.5px solid var(--bd);margin-top:10px" onclick="aiImportBackToStep1()">戻る</button>
     </div>
 
-    <!-- Step 2: プレビュー -->
-    <div id="aiImportStep2" style="display:none">
-      <div id="aiParsedList"></div>
-      <div style="display:flex;gap:8px;margin-top:12px">
-        <button class="btn" style="background:var(--sur2);border:1.5px solid var(--bd);flex:1" onclick="aiImportBackToStep1()">戻る</button>
-        <button class="btn btn-pri" style="flex:2" onclick="doAiImport()">選択した行を登録</button>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -7256,24 +7258,30 @@ hideLoginScreen = function() {
 // ══════════════════════════════════════
 // AI画像/PDFインポート（Gemini API）
 // ══════════════════════════════════════
-let parsedAiImports = [];
 
 function openAiImport() {
   const sel = document.getElementById('aiImportWP');
   sel.innerHTML = workplaces.map(w => `<option value="${escHtml(w.id)}">${escHtml(w.name)}</option>`).join('');
+  // ラジオをシフト予定にリセット・年月フィールドを非表示に
+  document.querySelector('input[name="aiImportType"][value="shift"]').checked = true;
+  document.getElementById('aiImportYMRow').style.display = 'none';
+  const now = new Date();
+  document.getElementById('aiImportYM').value = `${now.getFullYear()}-${padZ(now.getMonth() + 1)}`;
   document.getElementById('aiImportFiles').value = '';
   document.getElementById('aiFileCount').textContent = 'ファイル未選択';
   document.getElementById('aiImportStep1').style.display = 'block';
   document.getElementById('aiImportLoading').style.display = 'none';
   document.getElementById('aiImportError').style.display = 'none';
-  document.getElementById('aiImportStep2').style.display = 'none';
-  parsedAiImports = [];
   document.getElementById('aiImportOverlay').classList.add('on');
 }
 
 function closeAiImport() {
   document.getElementById('aiImportOverlay').classList.remove('on');
-  parsedAiImports = [];
+}
+
+function onAiTypeChange() {
+  const type = document.querySelector('input[name="aiImportType"]:checked')?.value;
+  document.getElementById('aiImportYMRow').style.display = type === 'attend' ? 'block' : 'none';
 }
 
 function updateAiFileCount() {
@@ -7286,7 +7294,6 @@ function aiImportBackToStep1() {
   document.getElementById('aiImportStep1').style.display = 'block';
   document.getElementById('aiImportLoading').style.display = 'none';
   document.getElementById('aiImportError').style.display = 'none';
-  document.getElementById('aiImportStep2').style.display = 'none';
 }
 
 function _fileToBase64(file) {
@@ -7301,10 +7308,12 @@ function _fileToBase64(file) {
 async function runAiImport() {
   const files = document.getElementById('aiImportFiles').files;
   const wpId  = document.getElementById('aiImportWP').value;
+  const type  = document.querySelector('input[name="aiImportType"]:checked')?.value || 'shift';
+  const ym    = document.getElementById('aiImportYM').value;
+
   if (!files.length) { toast('ファイルを選択してください'); return; }
-  if (!GEMINI_API_KEY) {
-    toast('APIキーが設定されていません'); return;
-  }
+  if (type === 'attend' && !ym) { toast('対象年月を選択してください'); return; }
+  if (!GEMINI_API_KEY) { toast('APIキーが設定されていません'); return; }
 
   document.getElementById('aiImportStep1').style.display = 'none';
   document.getElementById('aiImportLoading').style.display = 'block';
@@ -7315,29 +7324,8 @@ async function runAiImport() {
       const { base64, mimeType } = await _fileToBase64(file);
       parts.push({ inlineData: { data: base64, mimeType } });
     }
-
-    const prompt =
-      '次のシフト表または勤怠表の画像・PDFを解析してください。\n' +
-      'JSON配列のみを出力し、それ以外のテキスト・説明・コードフェンスは一切出力しないでください。\n\n' +
-      '対応する入力の種類:\n' +
-      '1) 日別勤怠表（表形式PDF。複数日分が1枚に入っている）— 複数行を抽出すること\n' +
-      '2) 勤務予定スクリーンショット（「勤務予定日/勤務予定時間/勤務予定」のテキスト形式。1枚=1日分のことが多い）\n\n' +
-      '出力するJSONスキーマ（配列）:\n' +
-      '[\n' +
-      '  {\n' +
-      '    "date": "YYYY-MM-DD",\n' +
-      '    "startTime": "HH:MM または null（勤務予定開始）",\n' +
-      '    "endTime": "HH:MM または null（勤務予定終了）",\n' +
-      '    "actualStart": "HH:MM または null（実績開始）",\n' +
-      '    "actualEnd": "HH:MM または null（実績終了）",\n' +
-      '    "breakMinutes": 数値または null（休憩時間（分））,\n' +
-      '    "note": "残業・契休勤・場所コードなどの備考。なければ空文字"\n' +
-      '  }\n' +
-      ']\n\n' +
-      '注意: 日付はYYYY-MM-DD、時刻はHH:MM（24時間表記）、不明な項目は null、' +
-      '朝礼時刻・場所コードは note に含めること。JSON配列以外は絶対に出力しないこと。';
-
-    parts.push({ text: prompt });
+    // 実績のあるプロンプト定数をそのまま使用
+    parts.push({ text: type === 'shift' ? PROMPT_SHIFT : PROMPT_ATTEND });
 
     const resp = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
@@ -7354,54 +7342,25 @@ async function runAiImport() {
       throw new Error(`HTTP ${resp.status}`);
     }
 
-    const data    = await resp.json();
-    const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    const cleaned = rawText.replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/i, '').trim();
+    const data = await resp.json();
+    const text = (data.candidates?.[0]?.content?.parts?.[0]?.text || '')
+      .replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/i, '').trim();
 
-    let parsed;
-    try {
-      parsed = JSON.parse(cleaned);
-    } catch(_) {
-      document.getElementById('aiImportLoading').style.display = 'none';
-      document.getElementById('aiImportError').style.display = 'block';
-      document.getElementById('aiImportErrorMsg').innerHTML =
-        `<b>JSONの解析に失敗しました。AIの出力を確認してください：</b><br>` +
-        `<pre style="margin-top:8px;font-size:10px;white-space:pre-wrap;word-break:break-all;max-height:200px;overflow-y:auto;` +
-        `background:#fff;padding:8px;border-radius:6px;border:1px solid #fca5a5">${escHtml(rawText)}</pre>`;
-      return;
+    // AI import モーダルを閉じてから既存フローへ引き渡す
+    closeAiImport();
+
+    if (type === 'shift') {
+      openTextImport();
+      document.getElementById('importWP').value    = wpId;
+      document.getElementById('importText').value  = text;
+      runParseShifts();
+    } else {
+      openAttend();
+      document.getElementById('attendWP').value   = wpId;
+      document.getElementById('attendYM').value   = ym;
+      document.getElementById('attendText').value = text;
+      runParseAttend();
     }
-
-    if (!Array.isArray(parsed) || !parsed.length) {
-      document.getElementById('aiImportLoading').style.display = 'none';
-      document.getElementById('aiImportError').style.display = 'block';
-      document.getElementById('aiImportErrorMsg').textContent = 'シフト情報を抽出できませんでした。別の画像・PDFを試してください。';
-      return;
-    }
-
-    parsedAiImports = parsed
-      .filter(r => r.date && /^\d{4}-\d{2}-\d{2}$/.test(r.date))
-      .map(r => ({
-        date:         r.date,
-        startTime:    r.startTime   || null,
-        endTime:      r.endTime     || null,
-        actualStart:  r.actualStart || null,
-        actualEnd:    r.actualEnd   || null,
-        breakMinutes: typeof r.breakMinutes === 'number' ? r.breakMinutes : null,
-        note:         r.note || '',
-        hasDup:       shifts.some(s => s.date === r.date && s.workplaceId === wpId),
-        selected:    !shifts.some(s => s.date === r.date && s.workplaceId === wpId),
-      }));
-
-    if (!parsedAiImports.length) {
-      document.getElementById('aiImportLoading').style.display = 'none';
-      document.getElementById('aiImportError').style.display = 'block';
-      document.getElementById('aiImportErrorMsg').textContent = '有効な日付のシフトが見つかりませんでした。';
-      return;
-    }
-
-    document.getElementById('aiImportLoading').style.display = 'none';
-    renderAiParsedList(wpId);
-    document.getElementById('aiImportStep2').style.display = 'block';
 
   } catch(e) {
     document.getElementById('aiImportLoading').style.display = 'none';
@@ -7410,109 +7369,6 @@ async function runAiImport() {
     if (e.message === 'rate_limit') msg = '現在AIの利用が多いため少し待ってから再試行してください。';
     else if (e.message === 'auth')  msg = 'APIキーを確認してください（401/403 エラー）。';
     document.getElementById('aiImportErrorMsg').textContent = msg;
-  }
-}
-
-function renderAiParsedList(wpId) {
-  const el       = document.getElementById('aiParsedList');
-  const selCount = parsedAiImports.filter(r => r.selected).length;
-
-  let h = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-    <span style="font-size:12px;color:var(--muted)">${parsedAiImports.length}件抽出 / <b>${selCount}件</b>選択中</span>
-    <div style="display:flex;gap:5px">
-      <button onclick="toggleAllAiImports(true)"  class="btn btn-sm" style="background:var(--sur2);border:1px solid var(--bd);color:var(--tx)">全選択</button>
-      <button onclick="toggleAllAiImports(false)" class="btn btn-sm" style="background:var(--sur2);border:1px solid var(--bd);color:var(--tx)">全解除</button>
-    </div>
-  </div><div style="display:flex;flex-direction:column;gap:5px">`;
-
-  parsedAiImports.forEach((r, i) => {
-    const d       = new Date(r.date + 'T00:00:00');
-    const dateStr = `${d.getMonth()+1}/${padZ(d.getDate())}（${DOW[d.getDay()]}）`;
-    const dupBadge = r.hasDup
-      ? `<span style="font-size:9px;font-weight:700;background:#fee2e2;color:#b91c1c;padding:1px 5px;border-radius:3px;white-space:nowrap">既存あり</span>` : '';
-    const accent = r.hasDup ? 'var(--org)' : 'var(--grn)';
-    const chkBg  = r.selected ? accent : '#fff';
-    const chkBd  = r.selected ? accent : 'var(--bd)';
-    const rowBg  = r.selected ? (r.hasDup ? '#fff7ed' : '#f0fdf4') : 'var(--sur2)';
-    const rowBd  = r.selected ? accent : 'var(--bd)';
-    const schedStr  = (r.startTime || r.endTime)
-      ? `<div style="font-size:13px;color:var(--pri);font-weight:600;margin-top:1px">予定: ${r.startTime||'?'}〜${r.endTime||'?'}</div>` : '';
-    const actualStr = (r.actualStart || r.actualEnd)
-      ? `<div style="font-size:11px;color:var(--muted);margin-top:2px">実績: ${r.actualStart||'?'}〜${r.actualEnd||'?'}</div>` : '';
-    const brkStr    = r.breakMinutes !== null
-      ? `<div style="font-size:11px;color:var(--muted);margin-top:1px">休憩: ${r.breakMinutes}分</div>` : '';
-    const noteStr   = r.note
-      ? `<div style="font-size:11px;color:var(--muted);margin-top:1px">📝 ${escHtml(r.note)}</div>` : '';
-
-    h += `<div onclick="toggleAiImport(${i})"
-      style="display:flex;align-items:flex-start;gap:10px;padding:10px 11px;
-             background:${rowBg};border-radius:var(--rs);border:1.5px solid ${rowBd};
-             cursor:pointer;user-select:none;transition:background .12s">
-      <span style="width:17px;height:17px;border-radius:4px;flex-shrink:0;margin-top:2px;
-                   background:${chkBg};border:2px solid ${chkBd};
-                   display:flex;align-items:center;justify-content:center;
-                   font-size:10px;font-weight:800;color:#fff">${r.selected ? '✓' : ''}</span>
-      <div style="flex:1;min-width:0">
-        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-          <span style="font-size:13px;font-weight:700">${dateStr}</span>${dupBadge}
-        </div>
-        ${schedStr}${actualStr}${brkStr}${noteStr}
-      </div>
-    </div>`;
-  });
-  h += '</div>';
-  el.innerHTML = h;
-}
-
-function toggleAiImport(i) {
-  if (i >= 0 && i < parsedAiImports.length) {
-    parsedAiImports[i].selected = !parsedAiImports[i].selected;
-    renderAiParsedList(document.getElementById('aiImportWP').value);
-  }
-}
-
-function toggleAllAiImports(val) {
-  parsedAiImports.forEach(r => r.selected = val);
-  renderAiParsedList(document.getElementById('aiImportWP').value);
-}
-
-async function doAiImport() {
-  const wpId     = document.getElementById('aiImportWP').value;
-  const toImport = parsedAiImports.filter(r => r.selected && r.startTime);
-  if (!toImport.length) { toast('登録するシフトを選択してください（開始時刻のないものは除外されます）'); return; }
-
-  let added = 0, updated = 0;
-  for (const r of toImport) {
-    if (r.hasDup) {
-      const idx = shifts.findIndex(s => s.date === r.date && s.workplaceId === wpId);
-      if (idx >= 0) {
-        shifts[idx] = {
-          ...shifts[idx],
-          startTime:    r.startTime,
-          endTime:      r.endTime,
-          actualStart:  r.actualStart  || shifts[idx].actualStart,
-          actualEnd:    r.actualEnd    || shifts[idx].actualEnd,
-          breakMinutes: r.breakMinutes ?? shifts[idx].breakMinutes,
-          location:     r.note         || shifts[idx].location,
-        };
-        updated++; continue;
-      }
-    }
-    shifts.push({
-      id: uid(), date: r.date, workplaceId: wpId,
-      startTime: r.startTime, endTime: r.endTime,
-      breakMinutes: r.breakMinutes ?? 60, earlyDepartureMin: 0,
-      actualStart: r.actualStart || null, actualEnd: r.actualEnd || null,
-      location: r.note || '',
-    });
-    added++;
-  }
-  try {
-    await persist();
-    closeAiImport(); render();
-    toast(`${added}件を追加${updated ? `・${updated}件を更新` : ''}しました`);
-  } catch(_) {
-    toast('インポートの保存に失敗しました（通信エラー）');
   }
 }
 </script>
