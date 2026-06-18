@@ -1880,7 +1880,7 @@ const AUTH_SESSION_KEY  = 'shiftMgrSession'; // セッションは localStorage 
 const USERS_PATH        = 'users'; // Firebase のユーザーデータパス
 const NOTICES_PATH      = DB_BASE + '/notices'; // グローバルお知らせパス
 const FRIENDS_PATH      = 'friends'; // フレンドデータパス
-const GEMINI_API_KEY    = 'YOUR_GEMINI_API_KEY'; // Google Cloud Console でリファラー制限設定済みのキーに差し替える
+const GEMINI_API_KEY    = 'AQ.Ab8RN6IPahI0kMHMiiK04HQVsxzwq5zjMr8T2NmHKIy2xvHB9A'; // Google Cloud Console でリファラー制限設定済みのキーに差し替える
 const GEMINI_MODEL      = 'gemini-2.5-flash';
 const NOTICE_ADMIN_IDS  = new Set(['99999999', '72581646']); // お知らせ編集権限を常時付与するユーザーID
 const INIT_USERS_DATA = { // 初回起動時に Firebase に書き込む初期ユーザー
@@ -7302,7 +7302,7 @@ async function runAiImport() {
   const files = document.getElementById('aiImportFiles').files;
   const wpId  = document.getElementById('aiImportWP').value;
   if (!files.length) { toast('ファイルを選択してください'); return; }
-  if (!GEMINI_API_KEY || GEMINI_API_KEY === 'YOUR_GEMINI_API_KEY') {
+  if (!GEMINI_API_KEY) {
     toast('APIキーが設定されていません'); return;
   }
 
