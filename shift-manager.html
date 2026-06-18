@@ -3228,7 +3228,9 @@ function updateFriendBadge() {
 async function loadFriendShifts() {
   friendShifts = {};
   friendWorkplaces = {};
-  const accepted = Object.keys(friendsOutgoing).filter(id => friendsOutgoing[id].status === 'accepted');
+  const outAccepted = Object.keys(friendsOutgoing).filter(id => friendsOutgoing[id].status === 'accepted');
+  const inAccepted  = Object.keys(friendsIncoming).filter(id => friendsIncoming[id].status === 'accepted');
+  const accepted    = [...new Set([...outAccepted, ...inAccepted])];
   for (const fid of accepted) {
     try {
       const [sSnap, wSnap] = await Promise.all([
@@ -3375,7 +3377,15 @@ function renderFriendsList() {
     }
   }
 
-  const accepted = Object.entries(friendsOutgoing).filter(([, f]) => f.status === 'accepted');
+  // outgoing・incoming 双方の accepted を重複なくマージ（既存データ破損ケースに対応）
+  const acceptedMap = new Map();
+  for (const [uid, f] of Object.entries(friendsIncoming)) {
+    if (f.status === 'accepted') acceptedMap.set(uid, f);
+  }
+  for (const [uid, f] of Object.entries(friendsOutgoing)) {
+    if (f.status === 'accepted') acceptedMap.set(uid, f);
+  }
+  const accepted = [...acceptedMap.entries()];
   if (accepted.length) {
     h += `<div class="friend-section-ttl">✅ フレンド (${accepted.length}人)</div>`;
     for (const [uid, f] of accepted) {
@@ -3511,15 +3521,18 @@ async function sendFriendRequest() {
 
 async function acceptFriendRequest(fromId) {
   try {
+    const fromName = friendsIncoming[fromId]?.name || fromId;
+    const now = Date.now();
     const updates = {};
     updates[`${FRIENDS_PATH}/${currentUser.id}/incoming/${fromId}/status`] = 'accepted';
     updates[`${FRIENDS_PATH}/${fromId}/outgoing/${currentUser.id}/status`] = 'accepted';
+    // 承認側の outgoing にも保存しておかないと再起動後に消える
+    updates[`${FRIENDS_PATH}/${currentUser.id}/outgoing/${fromId}`] = { name: fromName, status: 'accepted', sentAt: now };
     await fdb.ref().update(updates);
 
     if (friendsIncoming[fromId]) friendsIncoming[fromId].status = 'accepted';
-    const fromName = friendsIncoming[fromId]?.name || fromId;
     if (!friendsOutgoing[fromId]) {
-      friendsOutgoing[fromId] = { name: fromName, status: 'accepted', sentAt: Date.now() };
+      friendsOutgoing[fromId] = { name: fromName, status: 'accepted', sentAt: now };
     } else {
       friendsOutgoing[fromId].status = 'accepted';
     }
