@@ -2642,7 +2642,7 @@ function calcPaidLeaveWage(shift, wp) {
     totalWage: wage, normalWage: wage, normalBreakdown: [],
     earlyOTBreakdown: [], earlyOTWage: 0, earlyOTMin: 0,
     otBreakdown: [], overtimeWage: 0, overtimeWorkMin: 0,
-    earlyDeptBonus: 0, workMin: Math.round(plHours * 60),
+    earlyDeptBonus: 0, workMin: 0,
     breakZoneId: null, breakZoneLabel: '',
     isMonthly: wp.wageType === 'monthly', isMonthlyPaidLeave: wp.wageType === 'monthly',
     isPaidLeave: true, paidLeaveWage: wage,
