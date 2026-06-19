@@ -1592,20 +1592,6 @@ DD(曜日) 予定開始:予定終了 実績開始-実績終了 休憩分 備考
 
     <hr class="sec-divider">
 
-    <!-- カレンダー連携 -->
-    <div class="sec-ttl"><span>📅 カレンダー連携</span></div>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.7">
-      iPhone カレンダー・TimeTree などで購読できる URL を発行します。<br>
-      URL を知っている人だけがアクセスできます。
-    </p>
-    <div id="icsTokenArea">
-      <button class="btn btn-pri" style="width:100%;min-height:40px" onclick="initIcsSection()">
-        📅 購読URLを発行する
-      </button>
-    </div>
-
-    <hr class="sec-divider">
-
     <!-- .ics 月次ダウンロード -->
     <div class="sec-ttl"><span>📥 .ics ファイル出力（TimeTree インポート用）</span></div>
     <p style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.7">
@@ -6276,13 +6262,6 @@ function openSettings() {
   _pendingImportData = null;
   const wsdSel = document.getElementById('weekStartDaySel');
   if (wsdSel) wsdSel.value = String(appSettings.weekStartDay || 0);
-  // ICS トークンが既にあれば購読URLを表示
-  if (currentUser) {
-    fdb.ref(`users/${currentUser.id}/icsToken`).get().then(snap => {
-      const token = snap.val();
-      if (token) _renderIcsSection(token);
-    }).catch(() => {});
-  }
   _populateIcsMonthSel();
   document.getElementById('settingsOverlay').classList.add('on');
 }
@@ -6293,106 +6272,8 @@ function saveWeekStartDay(val) {
 }
 
 // ══════════════════════════════════════
-// カレンダー連携（ICS）
+// .ics ファイル出力（クライアントサイド）
 // ══════════════════════════════════════
-
-const ICS_FUNCTIONS_URL = 'https://us-central1-shift-manager-de355.cloudfunctions.net/ics';
-
-function _genIcsToken() {
-  const arr = new Uint8Array(24);
-  crypto.getRandomValues(arr);
-  return btoa(String.fromCharCode(...arr)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-}
-
-function _makeIcsUrl(token, wpId) {
-  const base = `${ICS_FUNCTIONS_URL}?uid=${encodeURIComponent(currentUser.id)}&token=${encodeURIComponent(token)}`;
-  return wpId ? base + `&wpId=${encodeURIComponent(wpId)}` : base;
-}
-
-function _webcal(httpUrl) {
-  return httpUrl.replace(/^https?:\/\//, 'webcal://');
-}
-
-async function initIcsSection() {
-  if (!currentUser) { toast('ログインしてください'); return; }
-  try {
-    const snap = await fdb.ref(`users/${currentUser.id}/icsToken`).get();
-    let token = snap.val();
-    if (!token) {
-      token = _genIcsToken();
-      await fdb.ref(`users/${currentUser.id}/icsToken`).set(token);
-    }
-    _renderIcsSection(token);
-  } catch (e) {
-    toast('エラーが発生しました');
-  }
-}
-
-function _renderIcsSection(token) {
-  const area = document.getElementById('icsTokenArea');
-  if (!area) return;
-
-  const urlRow = (label, webcalUrl, showCopy) => {
-    const httpUrl = webcalUrl.replace(/^webcal:\/\//, 'https://');
-    return `
-      <div style="margin-bottom:12px">
-        <div style="font-size:12px;font-weight:600;margin-bottom:4px">${label}</div>
-        <div style="display:flex;gap:5px;align-items:center">
-          <input readonly value="${escHtml(webcalUrl)}" onclick="this.select()"
-            style="flex:1;font-size:10px;padding:5px 7px;border:1.5px solid var(--bd);border-radius:6px;background:var(--sur2);min-width:0;overflow:hidden;text-overflow:ellipsis">
-          ${showCopy ? `<button class="btn btn-sm" onclick="copyIcsUrl('${escHtml(webcalUrl)}')" style="white-space:nowrap;flex-shrink:0;padding:0 8px;height:30px">コピー</button>` : ''}
-          <a href="${escHtml(webcalUrl)}" style="flex-shrink:0">
-            <button class="btn btn-sm btn-pri" style="white-space:nowrap;padding:0 8px;height:30px">購読</button>
-          </a>
-        </div>
-      </div>`;
-  };
-
-  let h = urlRow('全勤務先まとめて', _webcal(_makeIcsUrl(token)), true);
-
-  if (workplaces.length > 0) {
-    h += `<div style="font-size:12px;font-weight:700;margin:10px 0 6px">勤務先ごと</div>`;
-    for (const wp of workplaces) {
-      const label = `<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${wp.color};margin-right:5px;vertical-align:middle"></span>${escHtml(wp.name)}`;
-      h += urlRow(label, _webcal(_makeIcsUrl(token, wp.id)), true);
-    }
-  }
-
-  h += `<div style="border-top:1px solid var(--bd);padding-top:10px;margin-top:6px">
-    <button class="btn" onclick="rotateIcsToken()"
-      style="width:100%;background:var(--sur2);border:1.5px solid var(--bd);color:var(--tx);font-size:12px;min-height:36px">
-      🔄 URLを無効化して再発行
-    </button>
-    <p style="font-size:11px;color:var(--muted);margin-top:5px;line-height:1.6">再発行すると既存の購読URLは無効になります。</p>
-  </div>`;
-
-  area.innerHTML = h;
-}
-
-async function rotateIcsToken() {
-  if (!confirm('既存の購読URLを無効にして新しいURLを発行しますか？')) return;
-  const token = _genIcsToken();
-  await fdb.ref(`users/${currentUser.id}/icsToken`).set(token);
-  _renderIcsSection(token);
-  toast('URLを再発行しました');
-}
-
-function copyIcsUrl(url) {
-  navigator.clipboard.writeText(url)
-    .then(() => toast('コピーしました'))
-    .catch(() => {
-      const ta = document.createElement('textarea');
-      ta.value = url;
-      ta.style.position = 'fixed'; ta.style.opacity = '0';
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
-      toast('コピーしました');
-    });
-}
-
-// ── .ics ファイル生成（クライアントサイド） ──
 
 function _icsEsc(s) {
   return (s || '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
