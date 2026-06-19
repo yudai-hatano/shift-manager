@@ -4175,6 +4175,47 @@ function renderBulkDeleteButton() {
   </div>`;
 }
 
+// ─ 給与内訳アコーディオン ─
+function buildBreakdownDetails(stats, w) {
+  const isAccum    = w?.useAccumulationMethod;
+  const baseRate   = w?.baseRate || 0;
+  const otRatePct  = Math.round((w?.otRate ?? 0.25) * 100);
+  const ngtRatePct = Math.round((w?.nightRate ?? 0.25) * 100);
+  const row  = 'display:flex;justify-content:space-between;font-size:11px;padding:2px 0';
+  const muted = row + ';color:var(--muted)';
+  const otRow = row + ';color:var(--org)';
+  const ngtRow = row + ';color:#7c3aed';
+  const plRow  = row + ';color:#16a34a';
+  const totRow = row + ';font-weight:700;color:var(--pri);margin-top:2px';
+  let rows = '';
+  if (stats.basicWage > 0) {
+    if (isAccum && baseRate > 0)
+      rows += `<div style="${muted}"><span>① 基本給</span><span>${fmtHM(stats.workMin)} × ¥${baseRate.toLocaleString()} = ¥${stats.basicWage.toLocaleString()}</span></div>`;
+    else
+      rows += `<div style="${muted}"><span>① 基本給</span><span>¥${stats.basicWage.toLocaleString()}</span></div>`;
+  }
+  if (isAccum)
+    rows += `<div style="${muted}"><span>② 時間帯手当</span><span>¥${(stats.allowanceWage||0).toLocaleString()}</span></div>`;
+  if (stats.otWage > 0) {
+    if (isAccum && baseRate > 0)
+      rows += `<div style="${otRow}"><span>③ 時間外割増</span><span>${fmtHM(stats.otMin)} × ¥${baseRate.toLocaleString()} × ${otRatePct}% = ¥${stats.otWage.toLocaleString()}</span></div>`;
+    else
+      rows += `<div style="${otRow}"><span>③ 時間外割増</span><span>¥${stats.otWage.toLocaleString()}</span></div>`;
+  }
+  if (stats.nightWage > 0) {
+    if (isAccum && baseRate > 0)
+      rows += `<div style="${ngtRow}"><span>④ 深夜手当</span><span>${fmtHM(stats.nightMin)} × ¥${baseRate.toLocaleString()} × ${ngtRatePct}% = ¥${stats.nightWage.toLocaleString()}</span></div>`;
+    else
+      rows += `<div style="${ngtRow}"><span>④ 深夜手当</span><span>¥${stats.nightWage.toLocaleString()}</span></div>`;
+  }
+  if (stats.paidLeaveCount > 0)
+    rows += `<div style="${plRow}"><span>🌴 有給手当 ×${stats.paidLeaveCount}日</span><span>¥${(stats.paidLeaveWage||0).toLocaleString()}</span></div>`;
+  if (!rows) return '';
+  rows += `<div style="border-top:1px dashed var(--bd);margin:4px 0"></div>`;
+  rows += `<div style="${totRow}"><span>合計</span><span>¥${stats.totalWage.toLocaleString()}</span></div>`;
+  return `<details style="text-align:left;margin-top:4px"><summary style="cursor:pointer;font-size:11px;color:var(--muted);list-style:none;-webkit-appearance:none">▸ 内訳を見る</summary><div style="padding:6px 0 2px;border-top:1px dashed var(--bd);margin-top:4px">${rows}</div></details>`;
+}
+
 // ─ 集計 ─
 function collectStats(startDate, days) {
   const byWP = {}; let totalW = 0, totalH = 0, totalOT = 0;
@@ -4183,11 +4224,21 @@ function collectStats(startDate, days) {
     for (const sh of shiftsOn(fmtDate(d))) {
       const w = getWP(sh.workplaceId);
       const res = calcShiftWage(sh, w);
-      if (!byWP[sh.workplaceId]) byWP[sh.workplaceId] = { wage:0, min:0, otMin:0, paidLeaveCount:0 };
-      byWP[sh.workplaceId].wage  += res.totalWage;
-      byWP[sh.workplaceId].min   += res.workMin;
-      byWP[sh.workplaceId].otMin += res.overtimeWorkMin;
-      if (sh.isPaidLeave) byWP[sh.workplaceId].paidLeaveCount++;
+      if (!byWP[sh.workplaceId]) byWP[sh.workplaceId] = { wage:0, min:0, otMin:0, paidLeaveCount:0, basicWage:0, allowanceWage:0, otWage:0, nightWage:0, nightMin:0, paidLeaveWage:0 };
+      const wpd = byWP[sh.workplaceId];
+      wpd.wage  += res.totalWage;
+      wpd.min   += res.workMin;
+      wpd.otMin += res.overtimeWorkMin;
+      if (sh.isPaidLeave) {
+        wpd.paidLeaveCount++;
+        wpd.paidLeaveWage += res.paidLeaveWage || 0;
+      } else {
+        wpd.basicWage     += res.basicWage ?? res.normalWage ?? 0;
+        wpd.allowanceWage += res.allowanceWage || 0;
+        wpd.otWage        += res.otWage ?? ((res.overtimeWage || 0) + (res.earlyOTWage || 0) + (res.earlyDeptBonus || 0));
+        wpd.nightWage     += res.nightWage || 0;
+        wpd.nightMin      += res.nightMin || 0;
+      }
       totalW += res.totalWage; totalH += res.workMin; totalOT += res.overtimeWorkMin;
     }
   }
@@ -4227,9 +4278,10 @@ function buildSummaryHTML({ byWP, totalW, totalH, totalOT }, title, year, month)
     const wageStr = isM
       ? `<span class="monthly-badge">月給制</span>${data.wage > 0 ? `<span style="margin-left:4px">+¥${data.wage.toLocaleString()}残業</span>` : ''}`
       : `<strong>¥${data.wage.toLocaleString()}</strong>`;
+    const detailsH = isM ? '' : buildBreakdownDetails({ workMin: data.min, otMin: data.otMin, totalWage: data.wage, basicWage: data.basicWage, allowanceWage: data.allowanceWage, otWage: data.otWage, nightWage: data.nightWage, nightMin: data.nightMin, paidLeaveWage: data.paidLeaveWage, paidLeaveCount: data.paidLeaveCount }, w);
     h += `<div class="sum-row">
       <div class="sum-left"><span class="dot" style="background:${w?.color||'#94a3b8'}"></span>${escHtml(w?.name||'(削除済)')}</div>
-      <div class="sum-right">${fmtHM(data.min)}${otS}${plS}<br>${wageStr}</div>
+      <div class="sum-right">${fmtHM(data.min)}${otS}${plS}<br>${wageStr}${detailsH}</div>
     </div>`;
   }
   if (totalOT > 0)
@@ -4276,12 +4328,22 @@ function renderPayPeriodSummary() {
     if (!pShifts.length) continue;
 
     let totalW = 0, totalOTMin = 0, totalWorkMin = 0, plCount = 0;
+    let totalBasicWage = 0, totalAllowanceWage = 0, totalOtWage = 0, totalNightWage = 0, totalNightMin = 0, totalPLWage = 0;
     for (const sh of pShifts) {
       const r = calcShiftWage(sh, wp);
       totalW += r.totalWage; totalOTMin += r.overtimeWorkMin; totalWorkMin += r.workMin;
-      if (sh.isPaidLeave) plCount++;
+      if (sh.isPaidLeave) {
+        plCount++;
+        totalPLWage += r.paidLeaveWage || 0;
+      } else {
+        totalBasicWage     += r.basicWage ?? r.normalWage ?? 0;
+        totalAllowanceWage += r.allowanceWage || 0;
+        totalOtWage        += r.otWage ?? ((r.overtimeWage || 0) + (r.earlyOTWage || 0) + (r.earlyDeptBonus || 0));
+        totalNightWage     += r.nightWage || 0;
+        totalNightMin      += r.nightMin || 0;
+      }
     }
-    sections.push({ wp, period, totalW, totalOTMin, totalWorkMin, plCount });
+    sections.push({ wp, period, totalW, totalOTMin, totalWorkMin, plCount, totalBasicWage, totalAllowanceWage, totalOtWage, totalNightWage, totalNightMin, totalPLWage });
   }
   if (!sections.length) return '';
 
@@ -4306,7 +4368,8 @@ function renderPayPeriodSummary() {
       if (otPay > 0) wageDisplay += `<div style="font-size:11px;color:var(--muted)">残業代 +¥${otPay.toLocaleString()}</div>`;
       wageDisplay += `<div style="font-size:16px;font-weight:800;color:var(--pri);margin-top:3px">¥${grandTotal.toLocaleString()}</div>`;
     } else {
-      wageDisplay = `<div style="font-size:16px;font-weight:800;color:var(--pri);margin-top:3px">¥${s.totalW.toLocaleString()}</div>`;
+      const ppDetails = buildBreakdownDetails({ workMin: s.totalWorkMin, otMin: s.totalOTMin, totalWage: s.totalW, basicWage: s.totalBasicWage, allowanceWage: s.totalAllowanceWage, otWage: s.totalOtWage, nightWage: s.totalNightWage, nightMin: s.totalNightMin, paidLeaveWage: s.totalPLWage, paidLeaveCount: s.plCount }, s.wp);
+      wageDisplay = `<div style="font-size:16px;font-weight:800;color:var(--pri);margin-top:3px">¥${s.totalW.toLocaleString()}</div>${ppDetails}`;
     }
 
     h += `<div class="sum-row" style="align-items:flex-start">
