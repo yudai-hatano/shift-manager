@@ -1625,6 +1625,9 @@ DD(曜日) 予定開始:予定終了 実績開始-実績終了 休憩分 備考
           <option value="">全勤務先</option>
         </select>
       </div>
+      <div style="text-align:center;margin-bottom:10px">
+        <button class="ai-howto-link" onclick="openTimeTreeGuide()">📅 TimeTreeへの連携方法はこちら →</button>
+      </div>
       <button class="btn btn-pri" style="width:100%;height:40px" onclick="downloadRangeICS()">
         ⬇ ダウンロード
       </button>
@@ -1781,6 +1784,71 @@ DD(曜日) 予定開始:予定終了 実績開始-実績終了 休憩分 備考
             このアプリのインポート画面に戻り、テキストエリアにコピーした内容を貼り付けてから「解析する」ボタンを押してください。
           </div>
           <div class="ai-guide-illus">✅ テキストエリアに貼り付け → 「解析する」を押して完了！</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── TimeTree Guide Modal ── -->
+<div class="overlay" id="timeTreeGuideOverlay" role="dialog" aria-modal="true">
+  <div class="modal" style="max-height:88vh;display:flex;flex-direction:column">
+    <div class="modal-hdr">
+      <div class="modal-ttl">📅 TimeTreeへの連携方法</div>
+      <button class="close-btn" id="closeTimeTreeGuideBtn" aria-label="閉じる">✕</button>
+    </div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.65">
+      ダウンロードした .ics ファイルを TimeTree の共有カレンダーに追加する手順です。
+    </p>
+    <div style="overflow-y:auto;flex:1">
+      <div class="ai-guide-step">
+        <div class="ai-guide-num">1</div>
+        <div class="ai-guide-content">
+          <div class="ai-guide-title">.ics ファイルをダウンロード</div>
+          <div class="ai-guide-body">期間を選んで「⬇ ダウンロード」ボタンを押す。</div>
+          <div class="ai-guide-illus">📥 開始日・終了日を選択 → ダウンロードボタンを押す</div>
+        </div>
+      </div>
+      <div class="ai-guide-step">
+        <div class="ai-guide-num">2</div>
+        <div class="ai-guide-content">
+          <div class="ai-guide-title">iPhone に送る</div>
+          <div class="ai-guide-body">
+            ダウンロードした .ics ファイルを Gmail 等に添付して、自分のアドレス宛に送信する。
+          </div>
+          <div class="ai-guide-illus">📧 .ics ファイルをメールに添付 → 自分宛に送信</div>
+        </div>
+      </div>
+      <div class="ai-guide-step">
+        <div class="ai-guide-num">3</div>
+        <div class="ai-guide-content">
+          <div class="ai-guide-title">iPhone の標準カレンダーに追加</div>
+          <div class="ai-guide-body">
+            ① iPhone でメールアプリを開いて自分が送ったメールを開く<br>
+            ② 添付の .ics ファイルをタップ<br>
+            ③「カレンダーに追加」→「すべてのイベントを追加」をタップ
+          </div>
+          <div class="ai-guide-illus">📱 メール → .ics タップ → カレンダーに追加 → すべてのイベントを追加</div>
+        </div>
+      </div>
+      <div class="ai-guide-step">
+        <div class="ai-guide-num" style="background:var(--grn)">4</div>
+        <div class="ai-guide-content">
+          <div class="ai-guide-title">TimeTree にインポートして完了！</div>
+          <div class="ai-guide-body">
+            ① TimeTree アプリを開く<br>
+            ② 画面下部 左から2番目のリストアイコン（☰）をタップ<br>
+            ③ 共有カレンダーを選択<br>
+            ④ 右上の「□が4つ並んだアイコン」をタップ<br>
+            ⑤「外部カレンダーの予定をインポート」をタップ<br>
+            ⑥ 標準カレンダーの予定にチェック →「インポート」→ 完了🎉
+          </div>
+          <div class="ai-guide-illus">☰ → 共有カレンダー → 右上アイコン → 外部カレンダーをインポート → 完了</div>
+          <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:var(--rs);padding:8px 10px;margin-top:10px;font-size:11px;color:#92400e;line-height:1.65">
+            ⚠️ <b>注意</b><br>
+            ・シフトを更新したら STEP 1〜4 をやり直してください<br>
+            ・重複防止のため、更新時は TimeTree 側の古い予定を先に削除してください
+          </div>
         </div>
       </div>
     </div>
@@ -3291,6 +3359,12 @@ function openAiGuide() {
 }
 function closeAiGuide() {
   document.getElementById('aiGuideOverlay').classList.remove('on');
+}
+function openTimeTreeGuide() {
+  document.getElementById('timeTreeGuideOverlay').classList.add('on');
+}
+function closeTimeTreeGuide() {
+  document.getElementById('timeTreeGuideOverlay').classList.remove('on');
 }
 
 // ══════════════════════════════════════
@@ -7326,7 +7400,7 @@ document.getElementById('delWP').onclick       = deleteWP;
   el.addEventListener('change', livePreview);
 });
 
-['shiftOverlay','wpOverlay','wpEditOverlay','hyOverlay','bulkDeleteOverlay','importChoiceOverlay','importOverlay','attendOverlay','adminOverlay','changePasswordOverlay','settingsOverlay','restoreOverlay','aiGuideOverlay','dayDetailOverlay','friendsOverlay','noticesOverlay','noticeEditOverlay'].forEach(id => {
+['shiftOverlay','wpOverlay','wpEditOverlay','hyOverlay','bulkDeleteOverlay','importChoiceOverlay','importOverlay','attendOverlay','adminOverlay','changePasswordOverlay','settingsOverlay','restoreOverlay','aiGuideOverlay','timeTreeGuideOverlay','dayDetailOverlay','friendsOverlay','noticesOverlay','noticeEditOverlay'].forEach(id => {
   document.getElementById(id).addEventListener('click', function(e) {
     if (e.target === this) this.classList.remove('on');
   });
@@ -7344,7 +7418,8 @@ document.getElementById('noticesMarkAllBtn').onclick = markAllNoticesRead;
 document.getElementById('noticesAddBtn').onclick    = () => openNoticeEdit(null);
 document.getElementById('closeNoticeEditBtn').onclick = closeNoticeEdit;
 document.getElementById('noticeEditSubmitBtn').onclick = submitNoticeEdit;
-document.getElementById('closeAiGuideBtn').onclick    = closeAiGuide;
+document.getElementById('closeAiGuideBtn').onclick         = closeAiGuide;
+document.getElementById('closeTimeTreeGuideBtn').onclick   = closeTimeTreeGuide;
 
 // null チェック付きイベント登録ヘルパー（要素が存在しない場合は初期化を止めない）
 function _on(id, event, handler) {
