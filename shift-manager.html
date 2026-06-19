@@ -1590,6 +1590,41 @@ DD(曜日) 予定開始:予定終了 実績開始-実績終了 休憩分 備考
       </div>
     </div>
 
+    <hr class="sec-divider">
+
+    <!-- カレンダー連携 -->
+    <div class="sec-ttl"><span>📅 カレンダー連携</span></div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.7">
+      iPhone カレンダー・TimeTree などで購読できる URL を発行します。<br>
+      URL を知っている人だけがアクセスできます。
+    </p>
+    <div id="icsTokenArea">
+      <button class="btn btn-pri" style="width:100%;min-height:40px" onclick="initIcsSection()">
+        📅 購読URLを発行する
+      </button>
+    </div>
+
+    <hr class="sec-divider">
+
+    <!-- .ics 月次ダウンロード -->
+    <div class="sec-ttl"><span>📥 .ics ファイル出力（TimeTree インポート用）</span></div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.7">
+      1ヶ月分のシフトを .ics ファイルとしてダウンロードできます。<br>
+      TimeTree の共有カレンダーへのインポートに使えます。
+    </p>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:4px">
+      <select id="icsMonthSel" class="fc" style="flex:1;font-size:13px;padding:5px 8px;border-radius:6px;height:36px"></select>
+      <button class="btn btn-pri" style="flex-shrink:0;height:36px;padding:0 14px" onclick="downloadMonthICS()">
+        ⬇ ダウンロード
+      </button>
+    </div>
+    <div style="margin-bottom:4px">
+      <label style="font-size:12px;color:var(--muted)">勤務先を絞り込む（任意）</label>
+      <select id="icsWpSel" class="fc" style="width:100%;font-size:13px;padding:5px 8px;border-radius:6px;height:36px;margin-top:4px">
+        <option value="">全勤務先</option>
+      </select>
+    </div>
+
   </div>
 </div>
 
@@ -6241,12 +6276,267 @@ function openSettings() {
   _pendingImportData = null;
   const wsdSel = document.getElementById('weekStartDaySel');
   if (wsdSel) wsdSel.value = String(appSettings.weekStartDay || 0);
+  // ICS トークンが既にあれば購読URLを表示
+  if (currentUser) {
+    fdb.ref(`users/${currentUser.id}/icsToken`).get().then(snap => {
+      const token = snap.val();
+      if (token) _renderIcsSection(token);
+    }).catch(() => {});
+  }
+  _populateIcsMonthSel();
   document.getElementById('settingsOverlay').classList.add('on');
 }
 
 function saveWeekStartDay(val) {
   saveAppSetting('weekStartDay', parseInt(val) || 0);
   render();
+}
+
+// ══════════════════════════════════════
+// カレンダー連携（ICS）
+// ══════════════════════════════════════
+
+const ICS_FUNCTIONS_URL = 'https://us-central1-shift-manager-de355.cloudfunctions.net/ics';
+
+function _genIcsToken() {
+  const arr = new Uint8Array(24);
+  crypto.getRandomValues(arr);
+  return btoa(String.fromCharCode(...arr)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+}
+
+function _makeIcsUrl(token, wpId) {
+  const base = `${ICS_FUNCTIONS_URL}?uid=${encodeURIComponent(currentUser.id)}&token=${encodeURIComponent(token)}`;
+  return wpId ? base + `&wpId=${encodeURIComponent(wpId)}` : base;
+}
+
+function _webcal(httpUrl) {
+  return httpUrl.replace(/^https?:\/\//, 'webcal://');
+}
+
+async function initIcsSection() {
+  if (!currentUser) { toast('ログインしてください'); return; }
+  try {
+    const snap = await fdb.ref(`users/${currentUser.id}/icsToken`).get();
+    let token = snap.val();
+    if (!token) {
+      token = _genIcsToken();
+      await fdb.ref(`users/${currentUser.id}/icsToken`).set(token);
+    }
+    _renderIcsSection(token);
+  } catch (e) {
+    toast('エラーが発生しました');
+  }
+}
+
+function _renderIcsSection(token) {
+  const area = document.getElementById('icsTokenArea');
+  if (!area) return;
+
+  const urlRow = (label, webcalUrl, showCopy) => {
+    const httpUrl = webcalUrl.replace(/^webcal:\/\//, 'https://');
+    return `
+      <div style="margin-bottom:12px">
+        <div style="font-size:12px;font-weight:600;margin-bottom:4px">${label}</div>
+        <div style="display:flex;gap:5px;align-items:center">
+          <input readonly value="${escHtml(webcalUrl)}" onclick="this.select()"
+            style="flex:1;font-size:10px;padding:5px 7px;border:1.5px solid var(--bd);border-radius:6px;background:var(--sur2);min-width:0;overflow:hidden;text-overflow:ellipsis">
+          ${showCopy ? `<button class="btn btn-sm" onclick="copyIcsUrl('${escHtml(webcalUrl)}')" style="white-space:nowrap;flex-shrink:0;padding:0 8px;height:30px">コピー</button>` : ''}
+          <a href="${escHtml(webcalUrl)}" style="flex-shrink:0">
+            <button class="btn btn-sm btn-pri" style="white-space:nowrap;padding:0 8px;height:30px">購読</button>
+          </a>
+        </div>
+      </div>`;
+  };
+
+  let h = urlRow('全勤務先まとめて', _webcal(_makeIcsUrl(token)), true);
+
+  if (workplaces.length > 0) {
+    h += `<div style="font-size:12px;font-weight:700;margin:10px 0 6px">勤務先ごと</div>`;
+    for (const wp of workplaces) {
+      const label = `<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${wp.color};margin-right:5px;vertical-align:middle"></span>${escHtml(wp.name)}`;
+      h += urlRow(label, _webcal(_makeIcsUrl(token, wp.id)), true);
+    }
+  }
+
+  h += `<div style="border-top:1px solid var(--bd);padding-top:10px;margin-top:6px">
+    <button class="btn" onclick="rotateIcsToken()"
+      style="width:100%;background:var(--sur2);border:1.5px solid var(--bd);color:var(--tx);font-size:12px;min-height:36px">
+      🔄 URLを無効化して再発行
+    </button>
+    <p style="font-size:11px;color:var(--muted);margin-top:5px;line-height:1.6">再発行すると既存の購読URLは無効になります。</p>
+  </div>`;
+
+  area.innerHTML = h;
+}
+
+async function rotateIcsToken() {
+  if (!confirm('既存の購読URLを無効にして新しいURLを発行しますか？')) return;
+  const token = _genIcsToken();
+  await fdb.ref(`users/${currentUser.id}/icsToken`).set(token);
+  _renderIcsSection(token);
+  toast('URLを再発行しました');
+}
+
+function copyIcsUrl(url) {
+  navigator.clipboard.writeText(url)
+    .then(() => toast('コピーしました'))
+    .catch(() => {
+      const ta = document.createElement('textarea');
+      ta.value = url;
+      ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      toast('コピーしました');
+    });
+}
+
+// ── .ics ファイル生成（クライアントサイド） ──
+
+function _icsEsc(s) {
+  return (s || '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
+}
+
+function _icsdt(dateStr, timeStr) {
+  const [y, mo, d] = dateStr.split('-');
+  const [h, mi]    = timeStr.split(':');
+  return `${y}${mo.padStart(2,'0')}${d.padStart(2,'0')}T${h.padStart(2,'0')}${mi.padStart(2,'0')}00`;
+}
+
+function _buildClientICS(targetShifts, calName) {
+  const now   = new Date();
+  const stamp = [
+    now.getUTCFullYear(),
+    String(now.getUTCMonth()+1).padStart(2,'0'),
+    String(now.getUTCDate()).padStart(2,'0'),
+    'T',
+    String(now.getUTCHours()).padStart(2,'0'),
+    String(now.getUTCMinutes()).padStart(2,'0'),
+    String(now.getUTCSeconds()).padStart(2,'0'),
+    'Z'
+  ].join('');
+
+  const lines = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//ShiM//Shift Manager//JA',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    `X-WR-CALNAME:${_icsEsc(calName)}`,
+    'X-WR-TIMEZONE:Asia/Tokyo',
+    'BEGIN:VTIMEZONE',
+    'TZID:Asia/Tokyo',
+    'BEGIN:STANDARD',
+    'DTSTART:19700101T000000',
+    'TZOFFSETFROM:+0900',
+    'TZOFFSETTO:+0900',
+    'TZNAME:JST',
+    'END:STANDARD',
+    'END:VTIMEZONE',
+  ];
+
+  for (const s of targetShifts) {
+    if (!s.date || !s.startTime || !s.endTime) continue;
+    const wp     = getWP(s.workplaceId);
+    const wpName = wp?.name || '';
+    const plMark = s.isPaidLeave ? '🌴有給 ' : '';
+    const dtstart = _icsdt(s.date, s.startTime);
+    const [sh, sm] = s.startTime.split(':').map(Number);
+    const [eh, em] = s.endTime.split(':').map(Number);
+    let dtend;
+    if (eh * 60 + em <= sh * 60 + sm) {
+      const nd = new Date(s.date + 'T00:00:00+09:00');
+      nd.setDate(nd.getDate() + 1);
+      dtend = _icsdt(nd.toISOString().slice(0,10), s.endTime);
+    } else {
+      dtend = _icsdt(s.date, s.endTime);
+    }
+    const summary = wpName
+      ? `${plMark}${s.startTime}〜${s.endTime} ${wpName}`
+      : `${plMark}${s.startTime}〜${s.endTime}`;
+    const desc = [s.location].filter(Boolean).join(' / ');
+
+    lines.push('BEGIN:VEVENT');
+    lines.push(`UID:${s.id || stamp}@shim`);
+    lines.push(`DTSTAMP:${stamp}`);
+    lines.push(`DTSTART;TZID=Asia/Tokyo:${dtstart}`);
+    lines.push(`DTEND;TZID=Asia/Tokyo:${dtend}`);
+    lines.push(`SUMMARY:${_icsEsc(summary)}`);
+    if (desc) lines.push(`DESCRIPTION:${_icsEsc(desc)}`);
+    lines.push('END:VEVENT');
+  }
+  lines.push('END:VCALENDAR');
+  return lines.join('\r\n');
+}
+
+function downloadMonthICS() {
+  const sel = document.getElementById('icsMonthSel');
+  const wpSel = document.getElementById('icsWpSel');
+  if (!sel) return;
+  const [y, m] = sel.value.split('-').map(Number);
+  const filterWpId = wpSel?.value || '';
+  const ym = `${y}-${String(m).padStart(2,'0')}`;
+  const targetShifts = shifts.filter(s =>
+    s.date && s.date.startsWith(ym) &&
+    (!filterWpId || s.workplaceId === filterWpId)
+  );
+  if (!targetShifts.length) { toast('該当月のシフトがありません'); return; }
+  const wpName = filterWpId ? (getWP(filterWpId)?.name || '') : '';
+  const calName = wpName ? `ShiM ${wpName} ${y}年${m}月` : `ShiM シフト ${y}年${m}月`;
+  const icsText = _buildClientICS(targetShifts, calName);
+  const blob = new Blob([icsText], { type: 'text/calendar; charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `shim-${ym}${filterWpId ? '-' + filterWpId.slice(0,8) : ''}.ics`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast(`.ics を出力しました（${targetShifts.length}件）`);
+}
+
+function _populateIcsMonthSel() {
+  const sel = document.getElementById('icsMonthSel');
+  const wpSel = document.getElementById('icsWpSel');
+  if (!sel) return;
+  sel.innerHTML = '';
+  const months = new Set();
+  const now = new Date();
+  for (let i = -3; i <= 3; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    months.add(`${d.getFullYear()}-${d.getMonth()+1}`);
+  }
+  for (const s of shifts) {
+    if (s.date) {
+      const [y, m] = s.date.split('-');
+      months.add(`${parseInt(y)}-${parseInt(m)}`);
+    }
+  }
+  const sorted = [...months].sort((a, b) => {
+    const [ay, am] = a.split('-').map(Number);
+    const [by, bm] = b.split('-').map(Number);
+    return ay !== by ? by - ay : bm - am;
+  });
+  const curYM = `${now.getFullYear()}-${now.getMonth()+1}`;
+  for (const ym of sorted) {
+    const [y, m] = ym.split('-').map(Number);
+    const opt = document.createElement('option');
+    opt.value = ym;
+    opt.textContent = `${y}年${m}月`;
+    if (ym === curYM) opt.selected = true;
+    sel.appendChild(opt);
+  }
+  if (wpSel) {
+    wpSel.innerHTML = '<option value="">全勤務先</option>';
+    for (const wp of workplaces) {
+      const opt = document.createElement('option');
+      opt.value = wp.id;
+      opt.textContent = wp.name;
+      wpSel.appendChild(opt);
+    }
+  }
 }
 function closeSettings() {
   document.getElementById('settingsOverlay').classList.remove('on');
