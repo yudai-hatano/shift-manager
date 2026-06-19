@@ -6342,10 +6342,11 @@ function _buildClientICS(targetShifts, calName) {
     } else {
       dtend = _icsdt(s.date, s.endTime);
     }
-    const summary = wpName
-      ? `${plMark}${s.startTime}〜${s.endTime} ${wpName}`
-      : `${plMark}${s.startTime}〜${s.endTime}`;
-    const desc = [s.location].filter(Boolean).join(' / ');
+    const timeRange = `${s.startTime}〜${s.endTime}`;
+    const summary = s.location
+      ? `${plMark}${s.location}`
+      : `${plMark}${wpName || timeRange}`;
+    const desc = wpName ? `${timeRange} ${wpName}` : timeRange;
 
     lines.push('BEGIN:VEVENT');
     lines.push(`UID:${s.id || stamp}@shim`);
@@ -6353,7 +6354,7 @@ function _buildClientICS(targetShifts, calName) {
     lines.push(`DTSTART;TZID=Asia/Tokyo:${dtstart}`);
     lines.push(`DTEND;TZID=Asia/Tokyo:${dtend}`);
     lines.push(`SUMMARY:${_icsEsc(summary)}`);
-    if (desc) lines.push(`DESCRIPTION:${_icsEsc(desc)}`);
+    lines.push(`DESCRIPTION:${_icsEsc(desc)}`);
     lines.push('END:VEVENT');
   }
   lines.push('END:VCALENDAR');
