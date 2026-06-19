@@ -5594,14 +5594,14 @@ function calcAttendDiffs(shift, att) {
 
   // 実績開始
   const curAS = shift.actualStart || null;
-  if (att.actual.start && curAS !== att.actual.start)
+  if (att.actual.start && (curAS === null || t2m(curAS) !== t2m(att.actual.start)))
     diffs.push({ field: 'actualStart', label: '実績開始',
       registered: curAS || '未設定', actual: att.actual.start,
       applyValue: att.actual.start });
 
   // 実績終了
   const curAE = shift.actualEnd || null;
-  if (att.actual.end && curAE !== att.actual.end)
+  if (att.actual.end && (curAE === null || t2m(curAE) !== t2m(att.actual.end)))
     diffs.push({ field: 'actualEnd', label: '実績終了',
       registered: curAE || '未設定', actual: att.actual.end,
       applyValue: att.actual.end });
