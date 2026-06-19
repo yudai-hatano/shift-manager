@@ -1543,82 +1543,92 @@ DD(曜日) 予定開始:予定終了 実績開始-実績終了 休憩分 備考
 
     <hr class="sec-divider">
 
-    <div class="sec-ttl"><span>旧データのインポート</span></div>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.7">
-      旧バージョン（<code style="font-size:11px;background:var(--sur2);padding:1px 5px;border-radius:4px">yudai-hatano.github.io</code>）のデータを現在のアカウントにインポートします。<b>既存データは上書きされます。</b>
-    </p>
+    <button class="settings-nav-btn" style="justify-content:space-between;margin-bottom:0"
+      onclick="toggleSettingsAcc('importAcc')">
+      <span>旧データのインポート</span><span id="importAccArrow">▶</span>
+    </button>
+    <div id="importAcc" style="display:none;padding-top:10px">
+      <p style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.7">
+        旧バージョン（<code style="font-size:11px;background:var(--sur2);padding:1px 5px;border-radius:4px">yudai-hatano.github.io</code>）のデータを現在のアカウントにインポートします。<b>既存データは上書きされます。</b>
+      </p>
 
-    <!-- Step 1: 方法選択 -->
-    <div id="settingsImportStep1">
-      <!-- 方法A: Firebase旧パス -->
-      <div style="background:var(--sur2);border:1px solid var(--bd);border-radius:var(--rs);padding:12px;margin-bottom:10px">
-        <div style="font-size:12px;font-weight:700;margin-bottom:4px">方法A — 旧FirebaseデータをURLから自動読み込み</div>
-        <p style="font-size:11px;color:var(--muted);margin-bottom:8px;line-height:1.6">
-          旧バージョンがFirebase（同じプロジェクト）を使っていた場合、<code style="background:var(--bd);padding:1px 4px;border-radius:3px">shift-manager</code> パスのデータを自動取得します。
-        </p>
-        <button class="btn btn-pri btn-sm" id="btnImportOldFB" style="width:100%;min-height:40px">
-          🔥 旧Firebaseデータを自動読み込み
-        </button>
-      </div>
-
-      <!-- 方法B: JSON貼り付け -->
-      <div style="background:var(--sur2);border:1px solid var(--bd);border-radius:var(--rs);padding:12px">
-        <div style="font-size:12px;font-weight:700;margin-bottom:4px">方法B — JSONデータを手動で貼り付け</div>
-        <p style="font-size:11px;color:var(--muted);margin-bottom:4px;line-height:1.6">
-          旧バージョンをブラウザで開き、DevTools（F12）→ Console で以下を実行してコピー：
-        </p>
-        <div style="background:var(--tx);color:#a5f3fc;border-radius:6px;padding:7px 10px;font-family:monospace;font-size:11px;margin-bottom:8px;word-break:break-all">
-          copy(localStorage.getItem('shift-manager'))
+      <!-- Step 1: 方法選択 -->
+      <div id="settingsImportStep1">
+        <!-- 方法A: Firebase旧パス -->
+        <div style="background:var(--sur2);border:1px solid var(--bd);border-radius:var(--rs);padding:12px;margin-bottom:10px">
+          <div style="font-size:12px;font-weight:700;margin-bottom:4px">方法A — 旧FirebaseデータをURLから自動読み込み</div>
+          <p style="font-size:11px;color:var(--muted);margin-bottom:8px;line-height:1.6">
+            旧バージョンがFirebase（同じプロジェクト）を使っていた場合、<code style="background:var(--bd);padding:1px 4px;border-radius:3px">shift-manager</code> パスのデータを自動取得します。
+          </p>
+          <button class="btn btn-pri btn-sm" id="btnImportOldFB" style="width:100%;min-height:40px">
+            🔥 旧Firebaseデータを自動読み込み
+          </button>
         </div>
-        <textarea class="fc" id="settingsImportJson"
-          style="height:90px;resize:vertical;font-size:11px;font-family:monospace;line-height:1.5"
-          placeholder='{"workplaces":[...],"shifts":[...]}'></textarea>
-        <button class="btn btn-sm" id="btnParseImportJson"
-          style="width:100%;margin-top:8px;min-height:38px;background:var(--bd);border:none">
-          📋 JSONを解析して確認する
-        </button>
-      </div>
-    </div>
 
-    <!-- Step 2: 確認 -->
-    <div id="settingsImportStep2" style="display:none">
-      <div id="settingsImportPreview" style="margin-bottom:12px"></div>
-      <div style="display:flex;gap:8px">
-        <button class="btn" id="btnSettingsImportBack"
-          style="flex:1;background:var(--sur2);border:1.5px solid var(--bd);color:var(--tx)">← 戻る</button>
-        <button class="btn btn-pri" id="btnSettingsImportExec" style="flex:2">インポートする</button>
+        <!-- 方法B: JSON貼り付け -->
+        <div style="background:var(--sur2);border:1px solid var(--bd);border-radius:var(--rs);padding:12px">
+          <div style="font-size:12px;font-weight:700;margin-bottom:4px">方法B — JSONデータを手動で貼り付け</div>
+          <p style="font-size:11px;color:var(--muted);margin-bottom:4px;line-height:1.6">
+            旧バージョンをブラウザで開き、DevTools（F12）→ Console で以下を実行してコピー：
+          </p>
+          <div style="background:var(--tx);color:#a5f3fc;border-radius:6px;padding:7px 10px;font-family:monospace;font-size:11px;margin-bottom:8px;word-break:break-all">
+            copy(localStorage.getItem('shift-manager'))
+          </div>
+          <textarea class="fc" id="settingsImportJson"
+            style="height:90px;resize:vertical;font-size:11px;font-family:monospace;line-height:1.5"
+            placeholder='{"workplaces":[...],"shifts":[...]}'></textarea>
+          <button class="btn btn-sm" id="btnParseImportJson"
+            style="width:100%;margin-top:8px;min-height:38px;background:var(--bd);border:none">
+            📋 JSONを解析して確認する
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 2: 確認 -->
+      <div id="settingsImportStep2" style="display:none;margin-top:10px">
+        <div id="settingsImportPreview" style="margin-bottom:12px"></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn" id="btnSettingsImportBack"
+            style="flex:1;background:var(--sur2);border:1.5px solid var(--bd);color:var(--tx)">← 戻る</button>
+          <button class="btn btn-pri" id="btnSettingsImportExec" style="flex:2">インポートする</button>
+        </div>
       </div>
     </div>
 
     <hr class="sec-divider">
 
     <!-- .ics ダウンロード -->
-    <div class="sec-ttl"><span>📥 .ics ファイル出力（TimeTree インポート用）</span></div>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.7">
-      期間を指定してシフトを .ics ファイルとしてダウンロードできます。<br>
-      TimeTree の共有カレンダーへのインポートに使えます。
-    </p>
-    <div style="display:flex;gap:8px;margin-bottom:8px">
-      <div style="flex:1">
-        <label style="font-size:12px;color:var(--muted)">開始日</label>
-        <input type="date" id="icsStartDate" class="fc"
-          style="width:100%;font-size:13px;padding:5px 8px;border-radius:6px;height:36px;margin-top:4px">
-      </div>
-      <div style="flex:1">
-        <label style="font-size:12px;color:var(--muted)">終了日</label>
-        <input type="date" id="icsEndDate" class="fc"
-          style="width:100%;font-size:13px;padding:5px 8px;border-radius:6px;height:36px;margin-top:4px">
-      </div>
-    </div>
-    <div style="margin-bottom:8px">
-      <label style="font-size:12px;color:var(--muted)">勤務先を絞り込む（任意）</label>
-      <select id="icsWpSel" class="fc" style="width:100%;font-size:13px;padding:5px 8px;border-radius:6px;height:36px;margin-top:4px">
-        <option value="">全勤務先</option>
-      </select>
-    </div>
-    <button class="btn btn-pri" style="width:100%;height:40px" onclick="downloadRangeICS()">
-      ⬇ ダウンロード
+    <button class="settings-nav-btn" style="justify-content:space-between;margin-bottom:0"
+      onclick="toggleSettingsAcc('icsAcc')">
+      <span>📥 .ics ファイル出力（TimeTree インポート用）</span><span id="icsAccArrow">▶</span>
     </button>
+    <div id="icsAcc" style="display:none;padding-top:10px">
+      <p style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.7">
+        期間を指定してシフトを .ics ファイルとしてダウンロードできます。<br>
+        TimeTree の共有カレンダーへのインポートに使えます。
+      </p>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <div style="flex:1">
+          <label style="font-size:12px;color:var(--muted)">開始日</label>
+          <input type="date" id="icsStartDate" class="fc"
+            style="width:100%;font-size:13px;padding:5px 8px;border-radius:6px;height:36px;margin-top:4px">
+        </div>
+        <div style="flex:1">
+          <label style="font-size:12px;color:var(--muted)">終了日</label>
+          <input type="date" id="icsEndDate" class="fc"
+            style="width:100%;font-size:13px;padding:5px 8px;border-radius:6px;height:36px;margin-top:4px">
+        </div>
+      </div>
+      <div style="margin-bottom:8px">
+        <label style="font-size:12px;color:var(--muted)">勤務先を絞り込む（任意）</label>
+        <select id="icsWpSel" class="fc" style="width:100%;font-size:13px;padding:5px 8px;border-radius:6px;height:36px;margin-top:4px">
+          <option value="">全勤務先</option>
+        </select>
+      </div>
+      <button class="btn btn-pri" style="width:100%;height:40px" onclick="downloadRangeICS()">
+        ⬇ ダウンロード
+      </button>
+    </div>
 
   </div>
 </div>
@@ -6264,7 +6274,23 @@ async function stopViewingUserData() {
 // ══════════════════════════════════════
 let _pendingImportData = null;
 
+function toggleSettingsAcc(id) {
+  const body  = document.getElementById(id);
+  const arrow = document.getElementById(id + 'Arrow');
+  if (!body) return;
+  const isOpen = body.style.display !== 'none';
+  body.style.display = isOpen ? 'none' : 'block';
+  if (arrow) arrow.textContent = isOpen ? '▶' : '▼';
+}
+
 function openSettings() {
+  // アコーディオンを閉じた状態にリセット
+  ['importAcc', 'icsAcc'].forEach(id => {
+    const body  = document.getElementById(id);
+    const arrow = document.getElementById(id + 'Arrow');
+    if (body)  body.style.display = 'none';
+    if (arrow) arrow.textContent  = '▶';
+  });
   document.getElementById('settingsImportStep1').style.display = 'block';
   document.getElementById('settingsImportStep2').style.display = 'none';
   document.getElementById('settingsImportJson').value = '';
