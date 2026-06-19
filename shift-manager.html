@@ -1592,24 +1592,33 @@ DD(曜日) 予定開始:予定終了 実績開始-実績終了 休憩分 備考
 
     <hr class="sec-divider">
 
-    <!-- .ics 月次ダウンロード -->
+    <!-- .ics ダウンロード -->
     <div class="sec-ttl"><span>📥 .ics ファイル出力（TimeTree インポート用）</span></div>
     <p style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.7">
-      1ヶ月分のシフトを .ics ファイルとしてダウンロードできます。<br>
+      期間を指定してシフトを .ics ファイルとしてダウンロードできます。<br>
       TimeTree の共有カレンダーへのインポートに使えます。
     </p>
-    <div style="display:flex;gap:8px;align-items:center;margin-bottom:4px">
-      <select id="icsMonthSel" class="fc" style="flex:1;font-size:13px;padding:5px 8px;border-radius:6px;height:36px"></select>
-      <button class="btn btn-pri" style="flex-shrink:0;height:36px;padding:0 14px" onclick="downloadMonthICS()">
-        ⬇ ダウンロード
-      </button>
+    <div style="display:flex;gap:8px;margin-bottom:8px">
+      <div style="flex:1">
+        <label style="font-size:12px;color:var(--muted)">開始日</label>
+        <input type="date" id="icsStartDate" class="fc"
+          style="width:100%;font-size:13px;padding:5px 8px;border-radius:6px;height:36px;margin-top:4px">
+      </div>
+      <div style="flex:1">
+        <label style="font-size:12px;color:var(--muted)">終了日</label>
+        <input type="date" id="icsEndDate" class="fc"
+          style="width:100%;font-size:13px;padding:5px 8px;border-radius:6px;height:36px;margin-top:4px">
+      </div>
     </div>
-    <div style="margin-bottom:4px">
+    <div style="margin-bottom:8px">
       <label style="font-size:12px;color:var(--muted)">勤務先を絞り込む（任意）</label>
       <select id="icsWpSel" class="fc" style="width:100%;font-size:13px;padding:5px 8px;border-radius:6px;height:36px;margin-top:4px">
         <option value="">全勤務先</option>
       </select>
     </div>
+    <button class="btn btn-pri" style="width:100%;height:40px" onclick="downloadRangeICS()">
+      ⬇ ダウンロード
+    </button>
 
   </div>
 </div>
@@ -6351,26 +6360,28 @@ function _buildClientICS(targetShifts, calName) {
   return lines.join('\r\n');
 }
 
-function downloadMonthICS() {
-  const sel = document.getElementById('icsMonthSel');
-  const wpSel = document.getElementById('icsWpSel');
-  if (!sel) return;
-  const [y, m] = sel.value.split('-').map(Number);
+function downloadRangeICS() {
+  const startVal = document.getElementById('icsStartDate')?.value;
+  const endVal   = document.getElementById('icsEndDate')?.value;
+  const wpSel    = document.getElementById('icsWpSel');
+  if (!startVal || !endVal) { toast('開始日と終了日を入力してください'); return; }
+  if (endVal < startVal) { toast('終了日は開始日以降にしてください'); return; }
+  const diffDays = (new Date(endVal) - new Date(startVal)) / 86400000;
+  if (diffDays > 366) { toast('期間は1年以内にしてください'); return; }
   const filterWpId = wpSel?.value || '';
-  const ym = `${y}-${String(m).padStart(2,'0')}`;
   const targetShifts = shifts.filter(s =>
-    s.date && s.date.startsWith(ym) &&
+    s.date && s.date >= startVal && s.date <= endVal &&
     (!filterWpId || s.workplaceId === filterWpId)
   );
-  if (!targetShifts.length) { toast('該当月のシフトがありません'); return; }
-  const wpName = filterWpId ? (getWP(filterWpId)?.name || '') : '';
-  const calName = wpName ? `ShiM ${wpName} ${y}年${m}月` : `ShiM シフト ${y}年${m}月`;
+  if (!targetShifts.length) { toast('該当期間のシフトがありません'); return; }
+  const wpName  = filterWpId ? (getWP(filterWpId)?.name || '') : '';
+  const calName = wpName ? `ShiM ${wpName}` : 'ShiM シフト';
   const icsText = _buildClientICS(targetShifts, calName);
   const blob = new Blob([icsText], { type: 'text/calendar; charset=utf-8' });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
   a.href     = url;
-  a.download = `shim-${ym}${filterWpId ? '-' + filterWpId.slice(0,8) : ''}.ics`;
+  a.download = `shim_${startVal.replace(/-/g,'')}_${endVal.replace(/-/g,'')}.ics`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -6379,36 +6390,16 @@ function downloadMonthICS() {
 }
 
 function _populateIcsMonthSel() {
-  const sel = document.getElementById('icsMonthSel');
   const wpSel = document.getElementById('icsWpSel');
-  if (!sel) return;
-  sel.innerHTML = '';
-  const months = new Set();
-  const now = new Date();
-  for (let i = -3; i <= 3; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
-    months.add(`${d.getFullYear()}-${d.getMonth()+1}`);
-  }
-  for (const s of shifts) {
-    if (s.date) {
-      const [y, m] = s.date.split('-');
-      months.add(`${parseInt(y)}-${parseInt(m)}`);
-    }
-  }
-  const sorted = [...months].sort((a, b) => {
-    const [ay, am] = a.split('-').map(Number);
-    const [by, bm] = b.split('-').map(Number);
-    return ay !== by ? by - ay : bm - am;
-  });
-  const curYM = `${now.getFullYear()}-${now.getMonth()+1}`;
-  for (const ym of sorted) {
-    const [y, m] = ym.split('-').map(Number);
-    const opt = document.createElement('option');
-    opt.value = ym;
-    opt.textContent = `${y}年${m}月`;
-    if (ym === curYM) opt.selected = true;
-    sel.appendChild(opt);
-  }
+  const now   = new Date();
+  const y = now.getFullYear(), m = now.getMonth();
+  const firstDay = `${y}-${String(m + 1).padStart(2,'0')}-01`;
+  const lastDay  = new Date(y, m + 1, 0);
+  const lastStr  = `${lastDay.getFullYear()}-${String(lastDay.getMonth()+1).padStart(2,'0')}-${String(lastDay.getDate()).padStart(2,'0')}`;
+  const startEl = document.getElementById('icsStartDate');
+  const endEl   = document.getElementById('icsEndDate');
+  if (startEl && !startEl.value) startEl.value = firstDay;
+  if (endEl   && !endEl.value)   endEl.value   = lastStr;
   if (wpSel) {
     wpSel.innerHTML = '<option value="">全勤務先</option>';
     for (const wp of workplaces) {
