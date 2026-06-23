@@ -821,6 +821,19 @@ select.fc{font-size:14px}
           ※ 時間帯手当は「その時間帯の実働 × 手当額」で加算（基本給とは別）<br>
           ※ 24h を隙間なくカバーしてください（07:00〜07:00 形式でもOK）
         </p>
+        <div class="sec-ttl" style="margin-top:12px"><span>⑤ 解消手当</span></div>
+        <div class="setting-area">
+          <div class="setting-row">
+            <div class="setting-label">
+              <b>解消手当の倍率（⑤）</b>
+              <small>解消手当 = 解消時間 × 基本時給 × 倍率（例: 0.5）</small>
+            </div>
+            <div class="setting-ctrl">
+              <input class="sinp" type="number" id="wpEarlyDeptRate" value="0.5" min="0" max="2" step="0.1" inputmode="decimal" style="width:70px">
+              <span class="smuted">倍</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- ── 時給そのままモードの設定 ── -->
@@ -2087,6 +2100,7 @@ const DEFAULT_WP_SETTINGS = {
   nightRate:             0.25,
   timeAllowanceTable:    [],    // 空配列 → DEFAULT_TIME_ALLOWANCE_TABLE を使用
   includeEdInTarget:     true,  // 目標時間の集計に一部解消を含める
+  earlyDeptRate:         0.5,   // 解消手当の倍率（例: 0.5 → baseRate × 0.5）
   oneWayFare:            0,     // 片道交通費（円）
   monthlyPass:           0,     // 月定期代上限（円）0=上限なし
 };
@@ -2504,10 +2518,12 @@ function calcShiftWageAccumulation(shift, wp) {
 
   const rawItems = calcAllowanceItems(workStart, workEnd, aSegs);
   const items    = applyBreakToAllowanceItems(rawItems, breakMin);
-  const totalWorkMin = items.reduce((s, it) => s + it.min, 0);
+  const totalWorkMin   = items.reduce((s, it) => s + it.min, 0);
+  // 一部解消分を除いた実働時間（基本給・時間外・深夜の計算基準）
+  const actualWorkMin  = Math.max(0, totalWorkMin - edMin);
 
   // ① 基本給（切り上げ）
-  const basicWage = Math.ceil(totalWorkMin / 60 * baseRate);
+  const basicWage = Math.ceil(actualWorkMin / 60 * baseRate);
 
   // ② 時間帯手当（項目ごとに切り上げ）
   const allowanceBreakdown = [];
@@ -2519,8 +2535,8 @@ function calcShiftWageAccumulation(shift, wp) {
     allowanceWage += w;
   }
 
-  // ③ 時間外割増（切り上げ）
-  const otMin  = Math.max(0, totalWorkMin - dailyOTThreshold);
+  // ③ 時間外割増（切り上げ）— actualWorkMin を基準に
+  const otMin  = Math.max(0, actualWorkMin - dailyOTThreshold);
   const otWage = Math.ceil(otMin / 60 * baseRate * otRate);
 
   // ④ 深夜手当（切り上げ）
@@ -2528,9 +2544,10 @@ function calcShiftWageAccumulation(shift, wp) {
   const nightWage = Math.ceil(nightMin / 60 * baseRate * nightRate);
 
   // ⑤ 一部解消補填（切り上げ）
+  const earlyDeptRate = wp.earlyDeptRate ?? 0.5;
   let earlyDeptBonus = 0;
   if (edMin > 0) {
-    earlyDeptBonus = Math.ceil(edMin / 60 * baseRate * 0.6);
+    earlyDeptBonus = Math.ceil(edMin / 60 * baseRate * earlyDeptRate);
   }
 
   const totalWage = basicWage + allowanceWage + otWage + nightWage + earlyDeptBonus;
@@ -2555,7 +2572,7 @@ function calcShiftWageAccumulation(shift, wp) {
  * ・予定拘束 ≤ 閾値 → 予定内は通常、退勤時刻(actualEnd)が予定終了超なら当日残業 ×1.25
  * ・早出(actualStart < schedStart): 勤怠インポート時のみ → ×1.25
  * ・遅刻(actualStart > schedStart): 通常開始を実績開始にずらして実働を減らす
- * ・一部解消: earlyDepartureMin × 0.6 補填（別途手動入力）
+ * ・一部解消: earlyDepartureMin × earlyDeptRate 補填（別途手動入力）
  */
 function calcShiftWage(shift, wp) {
   if (shift.isPaidLeave) return calcPaidLeaveWage(shift, wp);
@@ -2645,10 +2662,11 @@ function calcShiftWage(shift, wp) {
 
   const overtimeWorkMin = earlyOTMin + otMin;
 
-  // 一部解消補填: [schedE - edMin, schedE] × 0.6
+  // 一部解消補填: [schedE - edMin, schedE] × earlyDeptRate
+  const earlyDeptRate = wp.earlyDeptRate ?? 0.5;
   let earlyDeptBonus = 0;
   if (edMin > 0) {
-    earlyDeptBonus = calcWageItems(calcZoneBreakdown(schedE - edMin, schedE, segs), 0.6)
+    earlyDeptBonus = calcWageItems(calcZoneBreakdown(schedE - edMin, schedE, segs), earlyDeptRate)
       .reduce((sum, it) => sum + it.wage, 0);
   }
 
@@ -4804,8 +4822,10 @@ function livePreview() {
       bh += `<div class="wr" style="color:var(--muted)"><span>④ 深夜手当</span><span>¥0</span></div>`;
     }
     // ⑤ 一部解消補填
-    if (res.earlyDeptBonus > 0)
-      bh += `<div class="wr ed" style="margin-top:5px;border-top:1px dashed var(--bd);padding-top:4px"><span>🔄 解消手当（${res.edMin}分）× ¥${baseRate.toLocaleString()} × 0.6</span><span>+¥${res.earlyDeptBonus.toLocaleString()}</span></div>`;
+    if (res.earlyDeptBonus > 0) {
+      const edRate = wp.earlyDeptRate ?? 0.5;
+      bh += `<div class="wr ed" style="margin-top:5px;border-top:1px dashed var(--bd);padding-top:4px"><span>🔄 解消手当（${res.edMin}分）× ¥${baseRate.toLocaleString()} × ${edRate}</span><span>+¥${res.earlyDeptBonus.toLocaleString()}</span></div>`;
+    }
     bh += `<div class="wr wr-sep"><span>実働時間</span><span>${minStr(res.workMin)}</span></div>`;
     if (res.overtimeWorkMin > 0)
       bh += `<div class="wr ot"><span>時間外（③対象）</span><span>${minStr(res.overtimeWorkMin)}</span></div>`;
@@ -4890,8 +4910,10 @@ function livePreview() {
   }
 
   // ── 一部解消補填 ──
-  if (res.earlyDeptBonus > 0)
-    bh += `<div class="wr ed"><span>🏃 一部解消補填（${earlyD}分）× 0.6</span><span>+¥${res.earlyDeptBonus.toLocaleString()}</span></div>`;
+  if (res.earlyDeptBonus > 0) {
+    const edRate = wp?.earlyDeptRate ?? 0.5;
+    bh += `<div class="wr ed"><span>🏃 一部解消補填（${earlyD}分）× ${edRate}</span><span>+¥${res.earlyDeptBonus.toLocaleString()}</span></div>`;
+  }
 
   // ── フッター情報 ──
   bh += `<div class="wr wr-sep"><span>実働時間</span><span>${minStr(res.workMin)}</span></div>`;
@@ -5116,8 +5138,9 @@ function openWPEdit(id) {
   document.getElementById('wpNightStart').value   = w?.nightStart || '22:00';
   document.getElementById('wpNightEnd').value     = w?.nightEnd   || '05:00';
   document.getElementById('wpNightRate').value    = Math.round((w?.nightRate ?? 0.25) * 100);
-  document.getElementById('wpOneWayFare').value  = w?.oneWayFare  ?? 0;
-  document.getElementById('wpMonthlyPass').value = w?.monthlyPass ?? 0;
+  document.getElementById('wpEarlyDeptRate').value = w?.earlyDeptRate ?? 0.5;
+  document.getElementById('wpOneWayFare').value    = w?.oneWayFare  ?? 0;
+  document.getElementById('wpMonthlyPass').value   = w?.monthlyPass ?? 0;
   const srcAT = (w?.timeAllowanceTable && w.timeAllowanceTable.length)
     ? w.timeAllowanceTable : DEFAULT_TIME_ALLOWANCE_TABLE;
   tempAllowanceTable = srcAT.map(e => ({ ...e }));
@@ -5323,6 +5346,8 @@ async function saveWP() {
   const nightEnd       = document.getElementById('wpNightEnd').value   || '05:00';
   const nightRatePctRaw = parseFloat(document.getElementById('wpNightRate').value);
   const nightRate      = isNaN(nightRatePctRaw) ? 0.25 : nightRatePctRaw / 100;
+  const earlyDeptRateRaw = parseFloat(document.getElementById('wpEarlyDeptRate').value);
+  const earlyDeptRate    = isNaN(earlyDeptRateRaw) ? 0.5 : Math.max(0, earlyDeptRateRaw);
   const oneWayFareRaw  = parseInt(document.getElementById('wpOneWayFare').value);
   const oneWayFare     = isNaN(oneWayFareRaw) ? 0 : Math.max(0, oneWayFareRaw);
   const monthlyPassRaw = parseInt(document.getElementById('wpMonthlyPass').value);
@@ -5344,7 +5369,7 @@ async function saveWP() {
     paidLeaveNextGrantDays, weeklyWorkDays,
     useAccumulationMethod, baseRate, dailyOTThreshold, otRate,
     nightStart, nightEnd, nightRate, timeAllowanceTable,
-    includeEdInTarget, oneWayFare, monthlyPass };
+    includeEdInTarget, earlyDeptRate, oneWayFare, monthlyPass };
 
   const isEdit = !!editWPId;
   if (isEdit) {
