@@ -5678,6 +5678,15 @@ function closeAttend() {
   noShiftChecked.clear();
 }
 
+/** PDFテキストから月合計実働時間（分）を抽出する */
+function extractPdfTotalMin(text) {
+  const m = text.match(/実働[時間]*\s*[:：]?\s*(\d+):(\d{2})/);
+  if (m) return parseInt(m[1]) * 60 + parseInt(m[2]);
+  const m2 = text.match(/合計[^\n]*?(\d{3,}):(\d{2})/);
+  if (m2) return parseInt(m2[1]) * 60 + parseInt(m2[2]);
+  return null;
+}
+
 function parseAttendanceLine(line, yearMonth) {
   // 行頭: DD(曜) or DD（曜）
   const dayMatch = line.match(/^(\d{1,2})\s*[\(（]([月火水木金土日])[\)）]/);
@@ -5689,6 +5698,9 @@ function parseAttendanceLine(line, yearMonth) {
 
   // 年休・有休キーワード検出（時刻が無くてもOK）
   const isYearlyLeave = /年休|有休|年次有給|有給休暇/.test(line);
+
+  // 非勤務日: 休日出勤以外の「休日」「契休」「本人休」「欠勤」「振休」はスキップ
+  const isNonWorkDay  = /(?<!出勤)休日(?!出勤)|契休|本人休|欠勤|振休/.test(line);
 
   // 時刻範囲をすべて抽出: H:MM - H:MM
   const timeRe = /(\d{1,2}):(\d{2})\s*[-－]\s*(\d{1,2}):(\d{2})/g;
@@ -5704,6 +5716,9 @@ function parseAttendanceLine(line, yearMonth) {
       lastEnd = tm.index + tm[0].length;
     }
   }
+
+  // 非勤務日（休日・欠勤等）は年休でもなければスキップ
+  if (isNonWorkDay && !isYearlyLeave) return null;
 
   // 年休行は時刻なしでもパース成功
   if (isYearlyLeave && ranges.length < 2) {
@@ -5738,31 +5753,39 @@ function calcAttendDiffs(shift, att) {
   const diffs = [];
   if (!shift) return diffs;
 
-  // 予定開始
-  if (att.scheduled.start && t2m(shift.startTime) !== t2m(att.scheduled.start))
-    diffs.push({ field: 'startTime', label: '予定開始',
-      registered: shift.startTime, actual: att.scheduled.start,
-      applyValue: att.scheduled.start });
+  const actualEndMin = att.actual.end  ? t2m(att.actual.end)  : null;
+  const schedEndMin  = att.scheduled.end ? t2m(att.scheduled.end) : null;
+  const isEarlyDep   = (actualEndMin !== null && schedEndMin !== null) && actualEndMin < schedEndMin;
 
-  // 予定終了
-  if (att.scheduled.end && t2m(shift.endTime) !== t2m(att.scheduled.end))
-    diffs.push({ field: 'endTime', label: '予定終了',
-      registered: shift.endTime, actual: att.scheduled.end,
-      applyValue: att.scheduled.end });
-
-  // 実績開始
-  const curAS = shift.actualStart || null;
-  if (att.actual.start && (curAS === null || t2m(curAS) !== t2m(att.actual.start)))
-    diffs.push({ field: 'actualStart', label: '実績開始',
-      registered: curAS || '未設定', actual: att.actual.start,
+  // 出勤時刻: 実績開始 → startTime
+  if (att.actual.start && t2m(shift.startTime) !== t2m(att.actual.start))
+    diffs.push({ field: 'startTime', label: '出勤時刻',
+      registered: shift.startTime, actual: att.actual.start,
       applyValue: att.actual.start });
 
-  // 実績終了
-  const curAE = shift.actualEnd || null;
-  if (att.actual.end && (curAE === null || t2m(curAE) !== t2m(att.actual.end)))
-    diffs.push({ field: 'actualEnd', label: '実績終了',
-      registered: curAE || '未設定', actual: att.actual.end,
-      applyValue: att.actual.end });
+  if (isEarlyDep) {
+    // 一部解消: endTime は予定終了を維持し earlyDepartureMin を差異として生成
+    if (schedEndMin !== null && t2m(shift.endTime) !== schedEndMin)
+      diffs.push({ field: 'endTime', label: '退勤時刻（予定）',
+        registered: shift.endTime, actual: att.scheduled.end,
+        applyValue: att.scheduled.end });
+    const edMin = schedEndMin - actualEndMin;
+    if ((shift.earlyDepartureMin || 0) !== edMin)
+      diffs.push({ field: 'earlyDepartureMin', label: '一部解消',
+        registered: `${shift.earlyDepartureMin || 0}分`, actual: `${edMin}分`,
+        applyValue: edMin });
+  } else {
+    // 通常 / 残業: 実績終了 → endTime
+    if (att.actual.end && t2m(shift.endTime) !== t2m(att.actual.end))
+      diffs.push({ field: 'endTime', label: '退勤時刻',
+        registered: shift.endTime, actual: att.actual.end,
+        applyValue: att.actual.end });
+    // earlyDepartureMin が残っていればリセット
+    if ((shift.earlyDepartureMin || 0) !== 0)
+      diffs.push({ field: 'earlyDepartureMin', label: '一部解消',
+        registered: `${shift.earlyDepartureMin}分`, actual: '0分',
+        applyValue: 0 });
+  }
 
   // 休憩時間
   if (att.breakMinutes !== null && shift.breakMinutes !== att.breakMinutes)
@@ -5772,6 +5795,8 @@ function calcAttendDiffs(shift, att) {
 
   return diffs;
 }
+
+let pdfTotalMin = null; // PDF から抽出した月合計実働時間（分）
 
 function runParseAttend() {
   const text = document.getElementById('attendText').value;
@@ -5785,6 +5810,9 @@ function runParseAttend() {
     .filter(Boolean);
 
   if (!parsed.length) { toast('勤怠データを抽出できませんでした'); return; }
+
+  // PDF の「実働時間」合計を自動抽出
+  pdfTotalMin = extractPdfTotalMin(text);
 
   attendResults = parsed.map(att => {
     const shift   = shifts.find(s => s.date === att.date && s.workplaceId === wpId);
@@ -5815,6 +5843,16 @@ function renderAttendList(wpId) {
   const isNoshiftFilter = attendFilter === 'noshift';
   const selNoShift = [...noShiftChecked].filter(i => i < attendResults.length && !attendResults[i]?.hasShift).length;
 
+  // 実働時間合計を実績から計算
+  const calcTotalMin = attendResults.reduce((sum, r) => {
+    if (r.isYearlyLeave || !r.att.actual.start || !r.att.actual.end) return sum;
+    const s = t2m(r.att.actual.start), e = t2m(r.att.actual.end);
+    const dur = (e <= s ? e + 1440 - s : e - s);
+    return sum + Math.max(0, dur - (r.att.breakMinutes || 0));
+  }, 0);
+  const calcH = Math.floor(calcTotalMin / 60), calcM = calcTotalMin % 60;
+  const calcStr = `${calcH}:${padZ(calcM)}`;
+
   // サマリー
   let sumH = `<div class="att-stat-box">
     <div class="att-stat-cell" style="background:var(--sur2);border-color:var(--bd)">
@@ -5840,6 +5878,28 @@ function renderAttendList(wpId) {
       <div style="font-size:10px;color:${isNoshiftFilter?'#166534':'var(--muted)'}">未登録${isNoshiftFilter?' ✓':noShift>0?' 📋':''}</div>
     </div>
   </div>`;
+
+  // 実働時間合計の検証バー
+  if (pdfTotalMin !== null) {
+    const pdfH = Math.floor(pdfTotalMin / 60), pdfM = pdfTotalMin % 60;
+    const pdfStr  = `${pdfH}:${padZ(pdfM)}`;
+    const diff    = calcTotalMin - pdfTotalMin;
+    const ok      = diff === 0;
+    const diffStr = diff === 0 ? '' : (diff > 0 ? `（+${Math.floor(diff/60)}:${padZ(diff%60)}）` : `（${Math.ceil(diff/60)}:${padZ(Math.abs(diff)%60)}）`);
+    const bg      = ok ? '#f0fdf4' : '#fff7ed';
+    const bd      = ok ? '#bbf7d0' : '#fed7aa';
+    const ic      = ok ? '✅' : '⚠️';
+    sumH += `<div style="background:${bg};border:1px solid ${bd};border-radius:var(--rs);padding:8px 12px;margin-bottom:8px;font-size:11px;line-height:1.8">
+      <span style="font-weight:700">${ic} 実働時間照合</span><br>
+      <span style="color:var(--muted)">PDF合計: </span><b>${pdfStr}</b>
+      　<span style="color:var(--muted)">抽出合計: </span><b>${calcStr}</b>
+      ${ok ? '<span style="color:#166534;font-weight:700">　一致 ✓</span>' : `<span style="color:#92400e;font-weight:700">　差異あり ${diffStr}</span>`}
+    </div>`;
+  } else {
+    sumH += `<div style="background:var(--sur2);border:1px solid var(--bd);border-radius:var(--rs);padding:7px 12px;margin-bottom:8px;font-size:11px;color:var(--muted)">
+      📊 抽出した実働合計: <b style="color:var(--tx)">${calcStr}</b>　（PDF の「実働時間」欄が検出されませんでした）
+    </div>`;
+  }
 
   if (isDiffFilter && withDiff > 0) {
     sumH += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
@@ -6000,7 +6060,7 @@ function renderAttendList(wpId) {
       h += `<div class="att-cmp">
         <div></div>
         <div class="att-cmp-hd">シフト登録</div>
-        <div class="att-cmp-hd">勤怠${isEarlyDep ? '予定' : '実績'}</div>
+        <div class="att-cmp-hd">勤怠実績</div>
         <div class="att-cmp-lbl">開始</div>
         <div class="${startDiff ? 'att-val-old' : 'att-val-same'}">${r.shift.startTime}</div>
         <div class="${startDiff ? 'att-val-new' : 'att-val-same'}">${r.att.actual.start}</div>`;
@@ -6082,11 +6142,12 @@ async function applyOneDiff(i) {
   if (idx < 0) return;
 
   for (const diff of r.diffs) {
-    if (diff.field === 'startTime')    shifts[idx].startTime    = diff.applyValue;
-    if (diff.field === 'endTime')      shifts[idx].endTime      = diff.applyValue;
-    if (diff.field === 'actualStart')  shifts[idx].actualStart  = diff.applyValue;
-    if (diff.field === 'actualEnd')    shifts[idx].actualEnd    = diff.applyValue;
-    if (diff.field === 'breakMinutes') shifts[idx].breakMinutes = diff.applyValue;
+    if (diff.field === 'startTime')       shifts[idx].startTime       = diff.applyValue;
+    if (diff.field === 'endTime')         shifts[idx].endTime         = diff.applyValue;
+    if (diff.field === 'actualStart')     shifts[idx].actualStart     = diff.applyValue;
+    if (diff.field === 'actualEnd')       shifts[idx].actualEnd       = diff.applyValue;
+    if (diff.field === 'earlyDepartureMin') shifts[idx].earlyDepartureMin = diff.applyValue;
+    if (diff.field === 'breakMinutes')    shifts[idx].breakMinutes    = diff.applyValue;
   }
 
   try {
@@ -6119,11 +6180,12 @@ async function bulkApplyAttend() {
     const idx = shifts.findIndex(s => s.id === r.shift.id);
     if (idx < 0) continue;
     for (const diff of r.diffs) {
-      if (diff.field === 'startTime')    shifts[idx].startTime    = diff.applyValue;
-      if (diff.field === 'endTime')      shifts[idx].endTime      = diff.applyValue;
-      if (diff.field === 'actualStart')  shifts[idx].actualStart  = diff.applyValue;
-      if (diff.field === 'actualEnd')    shifts[idx].actualEnd    = diff.applyValue;
-      if (diff.field === 'breakMinutes') shifts[idx].breakMinutes = diff.applyValue;
+      if (diff.field === 'startTime')         shifts[idx].startTime         = diff.applyValue;
+      if (diff.field === 'endTime')           shifts[idx].endTime           = diff.applyValue;
+      if (diff.field === 'actualStart')       shifts[idx].actualStart       = diff.applyValue;
+      if (diff.field === 'actualEnd')         shifts[idx].actualEnd         = diff.applyValue;
+      if (diff.field === 'earlyDepartureMin') shifts[idx].earlyDepartureMin = diff.applyValue;
+      if (diff.field === 'breakMinutes')      shifts[idx].breakMinutes      = diff.applyValue;
     }
     updated++;
   }
@@ -6958,7 +7020,12 @@ async function registerSelectedNoShifts() {
     const { att } = r;
     const d  = new Date(att.date + 'T00:00:00');
     if (r.isYearlyLeave) return `・${d.getMonth()+1}/${padZ(d.getDate())}（${DOW[d.getDay()]}）: 年休`;
-    return `・${d.getMonth()+1}/${padZ(d.getDate())}（${DOW[d.getDay()]}）: ${att.scheduled.start}〜${att.scheduled.end}（実績${att.actual.start}〜${att.actual.end}）`;
+    const aEndMin = t2m(att.actual.end), sEndMin = t2m(att.scheduled.end);
+    const isED  = aEndMin < sEndMin;
+    const rEnd  = isED ? att.scheduled.end : att.actual.end;
+    const rEdM  = isED ? (sEndMin - aEndMin) : 0;
+    const brk   = att.breakMinutes ?? 60;
+    return `・${d.getMonth()+1}/${padZ(d.getDate())}（${DOW[d.getDay()]}）: 実績 ${att.actual.start}〜${rEnd}（休憩${brk}分${rEdM > 0 ? `・一部解消${rEdM}分` : ''}）`;
   });
   if (!confirm(`以下の${idxs.length}件を新規シフトとして登録します。\n\n${previews.join('\n')}\n\nよろしいですか？`)) return;
 
@@ -6977,14 +7044,19 @@ async function registerSelectedNoShifts() {
       added++;
       continue;
     }
+    const actualEndMin  = t2m(att.actual.end);
+    const schedEndMin   = t2m(att.scheduled.end);
+    const isEarlyDep    = actualEndMin < schedEndMin;
+    const regEnd        = isEarlyDep ? att.scheduled.end : att.actual.end;
+    const regEdMin      = isEarlyDep ? (schedEndMin - actualEndMin) : 0;
     shifts.push({
       id: uid(), date: att.date, workplaceId: wpId,
-      startTime:  att.scheduled.start,
-      endTime:    att.scheduled.end,
-      actualStart: att.actual.start,
-      actualEnd:  att.actual.end,
+      startTime:  att.actual.start,
+      endTime:    regEnd,
+      actualStart: null,
+      actualEnd:  null,
       breakMinutes: att.breakMinutes ?? 60,
-      earlyDepartureMin: 0,
+      earlyDepartureMin: regEdMin,
       breakZoneId: null,
       location: '',
       isPaidLeave: false,
