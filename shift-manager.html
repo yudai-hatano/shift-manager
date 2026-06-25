@@ -2522,32 +2522,32 @@ function calcShiftWageAccumulation(shift, wp) {
   // 一部解消分を除いた実働時間（基本給・時間外・深夜の計算基準）
   const actualWorkMin  = Math.max(0, totalWorkMin - edMin);
 
-  // ① 基本給（切り上げ）
-  const basicWage = Math.ceil(actualWorkMin / 60 * baseRate);
+  // ① 基本給（切り捨て）
+  const basicWage = Math.floor(actualWorkMin / 60 * baseRate);
 
-  // ② 時間帯手当（項目ごとに切り上げ）
+  // ② 時間帯手当（項目ごとに切り捨て）
   const allowanceBreakdown = [];
   let allowanceWage = 0;
   for (const it of items) {
     if (it.allowance <= 0) continue;
-    const w = Math.ceil(it.min / 60 * it.allowance);
+    const w = Math.floor(it.min / 60 * it.allowance);
     allowanceBreakdown.push({ ...it, wage: w });
     allowanceWage += w;
   }
 
-  // ③ 時間外割増（切り上げ）— actualWorkMin を基準に
+  // ③ 時間外割増（切り捨て）— actualWorkMin を基準に
   const otMin  = Math.max(0, actualWorkMin - dailyOTThreshold);
-  const otWage = Math.ceil(otMin / 60 * baseRate * otRate);
+  const otWage = Math.floor(otMin / 60 * baseRate * otRate);
 
-  // ④ 深夜手当（切り上げ）
+  // ④ 深夜手当（切り捨て）
   const nightMin  = calcNightMinFromItems(items, nightStartStr, nightEndStr);
-  const nightWage = Math.ceil(nightMin / 60 * baseRate * nightRate);
+  const nightWage = Math.floor(nightMin / 60 * baseRate * nightRate);
 
-  // ⑤ 一部解消補填（切り上げ）
+  // ⑤ 一部解消補填（切り捨て）
   const earlyDeptRate = wp.earlyDeptRate ?? 0.5;
   let earlyDeptBonus = 0;
   if (edMin > 0) {
-    earlyDeptBonus = Math.ceil(edMin / 60 * baseRate * earlyDeptRate);
+    earlyDeptBonus = Math.floor(edMin / 60 * baseRate * earlyDeptRate);
   }
 
   const totalWage = basicWage + allowanceWage + otWage + nightWage + earlyDeptBonus;
