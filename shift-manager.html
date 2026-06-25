@@ -2557,7 +2557,7 @@ function calcShiftWageAccumulation(shift, wp) {
     normalWage: basicWage, normalBreakdown: [],
     earlyOTBreakdown: [], earlyOTWage: 0, earlyOTMin: 0,
     otBreakdown: [], overtimeWage: otWage, overtimeWorkMin: otMin,
-    earlyDeptBonus, edMin, workMin: totalWorkMin,
+    earlyDeptBonus, edMin, workMin: totalWorkMin, actualWorkMin,
     breakZoneId: null, breakZoneLabel: '',
     isMonthly: false, scheduledOT: false, isAccumulation: true,
     basicWage, allowanceWage, allowanceBreakdown,
@@ -4788,7 +4788,7 @@ function livePreview() {
     // ① 基本給
     bh += `<div class="wr">
       <span>① 基本給</span>
-      <span>${minToHoursStr(res.workMin)} × ¥${baseRate.toLocaleString()} = ¥${res.basicWage.toLocaleString()}</span>
+      <span>${minToHoursStr(res.actualWorkMin ?? res.workMin)} × ¥${baseRate.toLocaleString()} = ¥${res.basicWage.toLocaleString()}</span>
     </div>`;
     // ② 時間帯手当
     if (res.allowanceBreakdown.length > 0) {
@@ -4823,7 +4823,7 @@ function livePreview() {
     }
     // ⑤ 一部解消補填
     if (res.earlyDeptBonus > 0) {
-      const edRate = wp.earlyDeptRate ?? 0.5;
+      const edRate = w?.earlyDeptRate ?? 0.5;
       bh += `<div class="wr ed" style="margin-top:5px;border-top:1px dashed var(--bd);padding-top:4px"><span>🔄 解消手当（${res.edMin}分）× ¥${baseRate.toLocaleString()} × ${edRate}</span><span>+¥${res.earlyDeptBonus.toLocaleString()}</span></div>`;
     }
     bh += `<div class="wr wr-sep"><span>実働時間</span><span>${minStr(res.workMin)}</span></div>`;
