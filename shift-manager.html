@@ -4411,7 +4411,7 @@ function collectStats(startDate, days) {
       if (!byWP[sh.workplaceId]) byWP[sh.workplaceId] = { wage:0, min:0, otMin:0, workDays:0, paidLeaveCount:0, basicWage:0, allowanceWage:0, otWage:0, nightWage:0, nightMin:0, paidLeaveWage:0, earlyDeptBonus:0, commuteWage:0 };
       const wpd = byWP[sh.workplaceId];
       wpd.wage  += res.totalWage;
-      wpd.min   += res.workMin;
+      if (!sh.isPaidLeave) wpd.min += res.workMin;
       wpd.otMin += res.overtimeWorkMin;
       if (sh.isPaidLeave) {
         wpd.paidLeaveCount++;
@@ -4425,7 +4425,7 @@ function collectStats(startDate, days) {
         wpd.nightMin      += res.nightMin || 0;
         if (w?.useAccumulationMethod) wpd.earlyDeptBonus += res.earlyDeptBonus || 0;
       }
-      totalW += res.totalWage; totalH += res.workMin; totalOT += res.overtimeWorkMin;
+      totalW += res.totalWage; if (!sh.isPaidLeave) { totalH += res.workMin; totalOT += res.overtimeWorkMin; }
     }
   }
   for (const [id, wpd] of Object.entries(byWP)) {
