@@ -4432,9 +4432,25 @@ function collectStats(startDate, days) {
     const w = getWP(id);
     const cw = calcCommuteWage(w, wpd.workDays);
     wpd.commuteWage = cw;
+    // 積み上げ方式: 基本給を月合計実働で一括再計算（端数の積み重ね防止）
+    if (w?.useAccumulationMethod) {
+      const recalcBasic = Math.ceil(wpd.min / 60 * (w?.baseRate || 0));
+      const basicDiff   = recalcBasic - wpd.basicWage;
+      wpd.basicWage     = recalcBasic;
+      wpd.wage         += basicDiff;
+      totalW           += basicDiff;
+    }
     wpd.wage  += cw;
     totalW    += cw;
+    // 積み上げ方式: totalWage を各項目の合算で上書き
+    if (w?.useAccumulationMethod) {
+      wpd.wage = wpd.basicWage + wpd.allowanceWage + wpd.otWage
+               + wpd.nightWage + wpd.earlyDeptBonus + wpd.paidLeaveWage
+               + wpd.commuteWage;
+    }
   }
+  // totalW を byWP の wage 合算で再算出（積み上げ方式の補正を反映）
+  totalW = Object.values(byWP).reduce((s, d) => s + d.wage, 0);
   return { byWP, totalW, totalH, totalOT };
 }
 
@@ -4524,7 +4540,8 @@ function renderPayPeriodSummary() {
     let totalBasicWage = 0, totalAllowanceWage = 0, totalOtWage = 0, totalNightWage = 0, totalNightMin = 0, totalPLWage = 0, totalEarlyDeptBonus = 0, workDays = 0;
     for (const sh of pShifts) {
       const r = calcShiftWage(sh, wp);
-      totalW += r.totalWage; totalOTMin += r.overtimeWorkMin; totalWorkMin += r.workMin;
+      totalW += r.totalWage;
+      if (!sh.isPaidLeave) { totalOTMin += r.overtimeWorkMin; totalWorkMin += r.workMin; }
       if (sh.isPaidLeave) {
         plCount++;
         totalPLWage += r.paidLeaveWage || 0;
@@ -4539,7 +4556,15 @@ function renderPayPeriodSummary() {
       }
     }
     const commuteWage = calcCommuteWage(wp, workDays);
-    totalW += commuteWage;
+    // 積み上げ方式: 基本給を締め期間の実働合計で一括再計算（端数の積み重ね防止）
+    if (wp.useAccumulationMethod) {
+      totalBasicWage = Math.ceil(totalWorkMin / 60 * (wp.baseRate || 0));
+      totalW = totalBasicWage + totalAllowanceWage + totalOtWage
+             + totalNightWage + totalEarlyDeptBonus + totalPLWage
+             + commuteWage;
+    } else {
+      totalW += commuteWage;
+    }
     sections.push({ wp, period, totalW, totalOTMin, totalWorkMin, plCount, totalBasicWage, totalAllowanceWage, totalOtWage, totalNightWage, totalNightMin, totalPLWage, totalEarlyDeptBonus, workDays, commuteWage });
   }
   if (!sections.length) return '';
