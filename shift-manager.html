@@ -2547,7 +2547,7 @@ function calcShiftWageAccumulation(shift, wp) {
   const earlyDeptRate = wp.earlyDeptRate ?? 0.5;
   let earlyDeptBonus = 0;
   if (edMin > 0) {
-    earlyDeptBonus = Math.round(edMin / 60 * baseRate * earlyDeptRate);
+    earlyDeptBonus = Math.ceil(edMin / 60 * baseRate * earlyDeptRate);
   }
 
   const totalWage = basicWage + allowanceWage + otWage + nightWage + earlyDeptBonus;
