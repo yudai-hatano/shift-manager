@@ -4423,7 +4423,10 @@ function collectStats(startDate, days) {
         wpd.otWage        += res.otWage ?? ((res.overtimeWage || 0) + (res.earlyOTWage || 0) + (res.earlyDeptBonus || 0));
         wpd.nightWage     += res.nightWage || 0;
         wpd.nightMin      += res.nightMin || 0;
-        if (w?.useAccumulationMethod) wpd.earlyDeptBonus += res.earlyDeptBonus || 0;
+        if (w?.useAccumulationMethod) {
+          wpd.earlyDeptBonus += res.earlyDeptBonus || 0;
+          wpd.edMin = (wpd.edMin || 0) + (res.edMin || 0);
+        }
       }
       totalW += res.totalWage; if (!sh.isPaidLeave) { totalH += res.workMin; totalOT += res.overtimeWorkMin; }
     }
@@ -4432,18 +4435,13 @@ function collectStats(startDate, days) {
     const w = getWP(id);
     const cw = calcCommuteWage(w, wpd.workDays);
     wpd.commuteWage = cw;
-    // 積み上げ方式: 基本給を月合計実働で一括再計算（端数の積み重ね防止）
-    if (w?.useAccumulationMethod) {
-      const recalcBasic = Math.ceil(wpd.min / 60 * (w?.baseRate || 0));
-      const basicDiff   = recalcBasic - wpd.basicWage;
-      wpd.basicWage     = recalcBasic;
-      wpd.wage         += basicDiff;
-      totalW           += basicDiff;
-    }
     wpd.wage  += cw;
     totalW    += cw;
-    // 積み上げ方式: totalWage を各項目の合算で上書き
+    // 積み上げ方式: 基本給・解消手当を月合計で一括再計算（端数の積み重ね防止）
     if (w?.useAccumulationMethod) {
+      wpd.basicWage     = Math.ceil(wpd.min / 60 * (w?.baseRate || 0));
+      const edRate      = w?.earlyDeptRate ?? 0.5;
+      wpd.earlyDeptBonus = Math.ceil((wpd.edMin || 0) / 60 * (w?.baseRate || 0) * edRate);
       wpd.wage = wpd.basicWage + wpd.allowanceWage + wpd.otWage
                + wpd.nightWage + wpd.earlyDeptBonus + wpd.paidLeaveWage
                + wpd.commuteWage;
