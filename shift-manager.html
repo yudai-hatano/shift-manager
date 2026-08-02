@@ -166,6 +166,31 @@ body{
 .close-btn:hover{background:var(--bd)}
 #wpEditOverlay{z-index:300}
 
+/* ── サイドバーメニュー ── */
+.sidebar-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:400;
+  opacity:0;pointer-events:none;transition:opacity .22s;
+}
+.sidebar-overlay.on{opacity:1;pointer-events:all}
+.sidebar-panel{
+  position:fixed;top:0;right:0;bottom:0;width:240px;max-width:80vw;
+  background:var(--sur);box-shadow:var(--shl);
+  transform:translateX(100%);transition:transform .26s cubic-bezier(.25,.46,.45,.94);
+  display:flex;flex-direction:column;padding-top:env(safe-area-inset-top);
+  padding-bottom:env(safe-area-inset-bottom);overflow-y:auto;
+}
+.sidebar-overlay.on .sidebar-panel{transform:translateX(0)}
+.sidebar-item{
+  display:flex;align-items:center;gap:12px;width:100%;
+  padding:14px 20px;border:none;background:transparent;cursor:pointer;
+  font-size:14px;font-weight:600;color:var(--tx);text-align:left;transition:background .15s;
+}
+.sidebar-item:hover,.sidebar-item:active{background:var(--sur2)}
+.sidebar-item-icon{font-size:18px;position:relative;display:inline-flex;align-items:center;justify-content:center;width:22px;flex-shrink:0}
+.sidebar-item-label{flex:1}
+.sidebar-divider{border:none;border-top:1px solid var(--bd);margin:8px 0}
+.sidebar-item.danger{color:var(--red)}
+
 /* ── Form ── */
 .fg{margin-bottom:11px}
 .fl{display:block;font-size:10.5px;font-weight:700;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px}
@@ -335,7 +360,6 @@ select.fc{font-size:14px}
 .btn-danger:disabled{background:#f1f5f9;color:var(--muted);border-color:var(--bd);cursor:not-allowed}
 .bd-wp-check{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--sur2);border:1.5px solid var(--bd);border-radius:var(--rs);cursor:pointer;font-size:13px;font-weight:600;transition:all .15s}
 .bd-wp-check.on{background:#fee2e2;border-color:#fca5a5;color:#b91c1c}
-.notice-bell{position:relative}
 #noticeBadge{position:absolute;top:0;right:0;min-width:17px;height:17px;background:#ef4444;border-radius:9px;font-size:10px;font-weight:700;color:#fff;display:none;align-items:center;justify-content:center;padding:0 4px;pointer-events:none;line-height:1;border:2px solid var(--bg,#f8fafc);box-sizing:border-box}
 .notice-item{border-radius:var(--rs);padding:10px 12px;margin-bottom:8px;border:1.5px solid var(--bd);transition:background .2s,border-color .2s}
 .notice-item.unread{background:#fff;border-color:#93c5fd}
@@ -571,13 +595,7 @@ select.fc{font-size:14px}
   <div class="hdr-top">
     <div class="app-title"><img src="icons/icon.png" alt="ShiM" style="width:88px;height:88px;object-fit:contain;border-radius:20px;display:block"></div>
     <div class="icon-row">
-      <button class="icon-btn notice-bell" id="btnNotices" title="お知らせ">🔔<span id="noticeBadge"></span></button>
-      <button class="icon-btn notice-bell" id="btnFriends" title="フレンド" style="position:relative">👥<span id="friendBadge"></span></button>
-      <button class="icon-btn" id="btnTutorial" title="使い方">🔰</button>
-      <button class="icon-btn" id="btnImport" title="インポート">📥</button>
-      <button class="icon-btn" id="btnHY" title="半期集計">📊</button>
-      <button class="icon-btn" id="btnRefresh" title="更新">🔄</button>
-      <button class="icon-btn" id="btnSettings" title="設定">⚙️</button>
+      <button class="icon-btn" id="btnMenu" title="メニュー">☰</button>
     </div>
   </div>
   <div class="hdr-nav">
@@ -594,6 +612,44 @@ select.fc{font-size:14px}
     <button class="icon-btn" id="btnNext" style="font-size:22px;padding:0 6px">›</button>
   </div>
 </header>
+
+<div class="sidebar-overlay" id="sidebarOverlay">
+  <nav class="sidebar-panel" id="sidebarPanel">
+    <button class="sidebar-item" id="btnNotices" title="お知らせ">
+      <span class="sidebar-item-icon">🔔<span id="noticeBadge"></span></span>
+      <span class="sidebar-item-label">お知らせ</span>
+    </button>
+    <button class="sidebar-item" id="btnFriends" title="フレンド">
+      <span class="sidebar-item-icon">👥<span id="friendBadge"></span></span>
+      <span class="sidebar-item-label">フレンド</span>
+    </button>
+    <button class="sidebar-item" id="btnTutorial" title="使い方">
+      <span class="sidebar-item-icon">🔰</span>
+      <span class="sidebar-item-label">使い方</span>
+    </button>
+    <button class="sidebar-item" id="btnImport" title="インポート">
+      <span class="sidebar-item-icon">📥</span>
+      <span class="sidebar-item-label">インポート</span>
+    </button>
+    <button class="sidebar-item" id="btnHY" title="半期集計">
+      <span class="sidebar-item-icon">📊</span>
+      <span class="sidebar-item-label">半期集計</span>
+    </button>
+    <button class="sidebar-item" id="btnRefresh" title="更新">
+      <span class="sidebar-item-icon">🔄</span>
+      <span class="sidebar-item-label">更新</span>
+    </button>
+    <button class="sidebar-item" id="btnSettings" title="設定">
+      <span class="sidebar-item-icon">⚙️</span>
+      <span class="sidebar-item-label">設定</span>
+    </button>
+    <hr class="sidebar-divider">
+    <button class="sidebar-item danger" id="btnSidebarLogout" title="ログアウト">
+      <span class="sidebar-item-icon">🚪</span>
+      <span class="sidebar-item-label">ログアウト</span>
+    </button>
+  </nav>
+</div>
 
 <div class="cal-wrap" id="calWrap"></div>
 <button class="fab" id="fab" aria-label="シフトを追加">＋</button>
@@ -3316,14 +3372,14 @@ const TUTORIAL_STEPS = [
   {
     title: '勤務先を登録しよう',
     icon: '🏢',
-    body: '右上の ⚙️ ボタンから「勤務先の登録・編集」を開き、「＋ 勤務先を追加」で勤務先の名称・雇用形態・時給を登録しましょう。',
-    target: 'btnSettings',
+    body: '右上の ☰ メニューボタンを開いて「設定」をタップし、「勤務先の登録・編集」から「＋ 勤務先を追加」で勤務先の名称・雇用形態・時給を登録しましょう。',
+    target: 'btnMenu',
   },
   {
     title: '有給・時給を設定しよう',
     icon: '📋',
     body: '勤務先リストの「編集」ボタンから、年休残・換算時間・雇用開始日・週の契約日数を設定できます。\n有給が「法定」の場合は雇用開始日を入力すると自動計算されます。',
-    target: 'btnSettings',
+    target: 'btnMenu',
   },
   {
     title: 'シフトをカレンダーに登録しよう',
@@ -3334,14 +3390,14 @@ const TUTORIAL_STEPS = [
   {
     title: 'テキストでシフトを一括インポートしよう',
     icon: '📥',
-    body: '右上の 📥 ボタン →「シフトのテキストインポート」から、AIで文字起こしした内容を貼り付けてシフトを一括登録できます。\nプロンプトのコピーボタンも活用してください。',
-    target: 'btnImport',
+    body: '右上の ☰ を開いて「インポート」をタップ →「シフトのテキストインポート」から、AIで文字起こしした内容を貼り付けてシフトを一括登録できます。\nプロンプトのコピーボタンも活用してください。',
+    target: 'btnMenu',
   },
   {
     title: '日別勤怠表と突合しよう',
     icon: '🔍',
-    body: '同じく 📥 ボタン →「日別勤怠表との突合」から、会社の勤怠記録と登録したシフトを比較・修正できます。\nAIで文字起こしたテキストをそのまま貼り付けて使えます。',
-    target: 'btnImport',
+    body: '同じく ☰ を開いて「インポート」をタップ →「日別勤怠表との突合」から、会社の勤怠記録と登録したシフトを比較・修正できます。\nAIで文字起こしたテキストをそのまま貼り付けて使えます。',
+    target: 'btnMenu',
   },
 ];
 
@@ -4673,43 +4729,60 @@ function updateBreakZoneSelect(wpId, st, en) {
   fgEl.style.display = 'block';
 }
 
+// id の要素が存在する場合のみ値・状態をセットする（存在しないフィールドへの
+// アクセスによる openShift のクラッシュを防ぐための防御的ヘルパー）
+function setVal(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.value = val;
+}
+function setChecked(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.checked = val;
+}
+function setDisplay(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.style.display = val;
+}
+
 function openShift(id, date) {
   editShiftId = id || null;
   const sel = document.getElementById('sWP');
-  sel.innerHTML = workplaces.map(w => `<option value="${escHtml(w.id)}">${escHtml(w.name)}</option>`).join('');
+  if (sel) sel.innerHTML = workplaces.map(w => `<option value="${escHtml(w.id)}">${escHtml(w.name)}</option>`).join('');
 
   if (id) {
     const sh = shifts.find(s => s.id === id); if (!sh) return;
-    document.getElementById('shiftTitle').textContent = 'シフトを編集';
-    document.getElementById('sDate').value    = sh.date;
-    sel.value                                 = sh.workplaceId;
-    document.getElementById('sStart').value  = sh.startTime;
-    document.getElementById('sEnd').value    = sh.endTime;
-    document.getElementById('sBreak').value  = sh.breakMinutes || 0;
-    document.getElementById('sActualEnd').value = sh.actualEnd || '';
-    document.getElementById('sEarlyDep').value  = sh.earlyDepartureMin || 0;
-    document.getElementById('sLocation').value  = sh.location || '';
-    document.getElementById('delShift').style.display = 'block';
+    const titleEl = document.getElementById('shiftTitle');
+    if (titleEl) titleEl.textContent = 'シフトを編集';
+    setVal('sDate', sh.date);
+    if (sel) sel.value = sh.workplaceId;
+    setVal('sStart', sh.startTime);
+    setVal('sEnd', sh.endTime);
+    setVal('sBreak', sh.breakMinutes || 0);
+    setVal('sActualEnd', sh.actualEnd || '');
+    setVal('sEarlyDep', Math.max(0, parseInt(sh.earlyDepartureMin) || 0));
+    setVal('sLocation', sh.location || '');
+    setDisplay('delShift', 'block');
     // 休憩ゾーンのセレクトをシフト時間帯で更新し、保存値を復元
     updateBreakZoneSelect(sh.workplaceId, sh.startTime, sh.endTime);
-    document.getElementById('sBreakZone').value = sh.breakZoneId || '';
+    setVal('sBreakZone', sh.breakZoneId || '');
   } else {
-    document.getElementById('shiftTitle').textContent = 'シフトを追加';
-    document.getElementById('sDate').value   = date || fmtDate(new Date());
-    sel.value                                = workplaces[0]?.id || '';
-    document.getElementById('sStart').value = '09:00';
-    document.getElementById('sEnd').value   = '17:00';
-    document.getElementById('sBreak').value = '60';
-    document.getElementById('sActualEnd').value = '';
-    document.getElementById('sEarlyDep').value  = '0';
-    document.getElementById('sLocation').value  = '';
-    document.getElementById('sBreakZone').value = '';
-    document.getElementById('delShift').style.display = 'none';
+    const titleEl = document.getElementById('shiftTitle');
+    if (titleEl) titleEl.textContent = 'シフトを追加';
+    setVal('sDate', date || fmtDate(new Date()));
+    if (sel) sel.value = workplaces[0]?.id || '';
+    setVal('sStart', '09:00');
+    setVal('sEnd', '17:00');
+    setVal('sBreak', '60');
+    setVal('sActualEnd', '');
+    setVal('sEarlyDep', '0');
+    setVal('sLocation', '');
+    setVal('sBreakZone', '');
+    setDisplay('delShift', 'none');
   }
   // 有給チェックボックスの状態復元
-  document.getElementById('sPaidLeave').checked = id ? (shifts.find(s => s.id === id)?.isPaidLeave || false) : false;
+  setChecked('sPaidLeave', id ? (shifts.find(s => s.id === id)?.isPaidLeave || false) : false);
   livePreview();
-  document.getElementById('shiftOverlay').classList.add('on');
+  document.getElementById('shiftOverlay')?.classList.add('on');
 }
 
 function closeShift() {
@@ -4723,7 +4796,7 @@ function livePreview() {
   const en     = document.getElementById('sEnd').value;
   const brk    = parseInt(document.getElementById('sBreak').value) || 0;
   const actualEnd = document.getElementById('sActualEnd').value || null;
-  const earlyD   = parseInt(document.getElementById('sEarlyDep').value) || 0;
+  const earlyD   = Math.max(0, parseInt(document.getElementById('sEarlyDep').value) || 0);
   const prev   = document.getElementById('wPreview');
   const isPL   = document.getElementById('sPaidLeave').checked;
 
@@ -7594,11 +7667,25 @@ document.getElementById('delWP').onclick       = deleteWP;
   el.addEventListener('change', livePreview);
 });
 
-['shiftOverlay','wpOverlay','wpEditOverlay','hyOverlay','bulkDeleteOverlay','importChoiceOverlay','importOverlay','attendOverlay','adminOverlay','changePasswordOverlay','settingsOverlay','restoreOverlay','aiGuideOverlay','timeTreeGuideOverlay','dayDetailOverlay','friendsOverlay','noticesOverlay','noticeEditOverlay'].forEach(id => {
+['shiftOverlay','wpOverlay','wpEditOverlay','hyOverlay','bulkDeleteOverlay','importChoiceOverlay','importOverlay','attendOverlay','adminOverlay','changePasswordOverlay','settingsOverlay','restoreOverlay','aiGuideOverlay','timeTreeGuideOverlay','dayDetailOverlay','friendsOverlay','noticesOverlay','noticeEditOverlay','sidebarOverlay'].forEach(id => {
   document.getElementById(id).addEventListener('click', function(e) {
     if (e.target === this) this.classList.remove('on');
   });
 });
+
+// ☰ サイドバーメニュー
+_on('btnMenu', 'onclick', () => document.getElementById('sidebarOverlay').classList.add('on'));
+_on('btnSidebarLogout', 'onclick', doLogout);
+{
+  const sidebarPanelEl = document.getElementById('sidebarPanel');
+  if (sidebarPanelEl) {
+    sidebarPanelEl.addEventListener('click', e => {
+      if (e.target.closest('.sidebar-item')) {
+        document.getElementById('sidebarOverlay')?.classList.remove('on');
+      }
+    });
+  }
+}
 
 document.getElementById('btnTutorial').onclick      = () => openTutorial(0);
 document.getElementById('btnFriends').onclick       = openFriends;
