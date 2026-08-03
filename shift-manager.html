@@ -2201,6 +2201,20 @@ function fbArr(v) {
   return Object.values(v);
 }
 
+// シフトの欠落フィールドをデフォルト値で補完する（自分/フレンド/インポート共通）。
+// earlyDepartureMin が null/undefined のままだと一部解消の判定・表示が崩れるため必ず 0 にフォールバックする。
+function normalizeShift(s) {
+  if (s.breakMinutes      == null) s.breakMinutes      = 60;
+  if (s.manualOvertimeMin == null) s.manualOvertimeMin = 0;
+  if (s.earlyDepartureMin == null) s.earlyDepartureMin = 0;
+  if (s.location          === undefined) s.location    = '';
+  if (s.isPaidLeave       === undefined) s.isPaidLeave = false;
+  if (s.actualStart       === undefined) s.actualStart = null;
+  if (s.actualEnd         === undefined) s.actualEnd   = null;
+  s.breakMinutes = Number(s.breakMinutes);
+  return s;
+}
+
 // 閲覧モード中は保存しない。それ以外はユーザー別パスに保存する
 function persist() {
   if (viewingUserId) return Promise.resolve(); // 閲覧モードでは読み取り専用
@@ -2258,16 +2272,7 @@ async function loadData(uid) {
     if (w.weeklyWorkDays === undefined) w.weeklyWorkDays = 5;
   }
   // シフトのフィールド補完
-  for (const s of shifts) {
-    if (s.breakMinutes      == null) s.breakMinutes      = 60;
-    if (s.manualOvertimeMin == null) s.manualOvertimeMin = 0;
-    if (s.earlyDepartureMin == null) s.earlyDepartureMin = 0;
-    if (s.location          === undefined) s.location    = '';
-    if (s.isPaidLeave       === undefined) s.isPaidLeave = false;
-    if (s.actualStart       === undefined) s.actualStart = null;
-    if (s.actualEnd         === undefined) s.actualEnd   = null;
-    s.breakMinutes = Number(s.breakMinutes);
-  }
+  for (const s of shifts) normalizeShift(s);
 
   // データが存在しない（初回起動）ときだけデフォルト勤務先を作成
   if (!workplaces.length) {
@@ -3527,7 +3532,7 @@ async function loadFriendShifts() {
         fdb.ref(getDBPath(fid) + '/shifts').get(),
         fdb.ref(getDBPath(fid) + '/workplaces').get()
       ]);
-      if (sSnap.exists()) friendShifts[fid]     = fbArr(sSnap.val());
+      if (sSnap.exists()) friendShifts[fid]     = fbArr(sSnap.val()).map(normalizeShift);
       if (wSnap.exists()) friendWorkplaces[fid]  = fbArr(wSnap.val());
     } catch(e) {}
   }
@@ -4750,7 +4755,11 @@ function openShift(id, date) {
   if (sel) sel.innerHTML = workplaces.map(w => `<option value="${escHtml(w.id)}">${escHtml(w.name)}</option>`).join('');
 
   if (id) {
-    const sh = shifts.find(s => s.id === id); if (!sh) return;
+    const sh = shifts.find(s => s.id === id);
+    if (!sh) {
+      console.error('[openShift] シフトが見つかりません id=', id, '現在の shifts のID一覧:', shifts.map(s => s.id));
+      return;
+    }
     const titleEl = document.getElementById('shiftTitle');
     if (titleEl) titleEl.textContent = 'シフトを編集';
     setVal('sDate', sh.date);
@@ -6859,15 +6868,7 @@ async function executeSettingsImport() {
         for (const [k, v] of Object.entries(DEFAULT_WP_SETTINGS))
           if (w[k] == null) w[k] = v;
       }
-      for (const s of shifts) {
-        if (s.breakMinutes == null) s.breakMinutes = 60;
-        if (s.manualOvertimeMin == null) s.manualOvertimeMin = 0;
-        if (s.earlyDepartureMin == null) s.earlyDepartureMin = 0;
-        if (s.location === undefined) s.location = '';
-        if (s.actualStart === undefined) s.actualStart = null;
-        if (s.actualEnd   === undefined) s.actualEnd   = null;
-        s.breakMinutes = Number(s.breakMinutes);
-      }
+      for (const s of shifts) normalizeShift(s);
       render();
     }
 
