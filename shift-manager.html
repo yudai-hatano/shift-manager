@@ -4371,8 +4371,15 @@ function renderMonth() {
         if (!isFriendWpVisible(fid, fs.workplaceId)) continue;
         const fc     = getFriendWpColor(fid, fs.workplaceId);
         const wpName = getFriendWP(fid, fs.workplaceId)?.name || '';
+        const wpHtml  = wpName
+          ? `🏢 ${escHtml(wpName)}` : '';
+        const locHtml = fs.location
+          ? `📍 ${escHtml(fs.location.split('\n').slice(0,2).join(' / '))}` : '';
+        const subLine = (wpHtml || locHtml)
+          ? `<br><span style="font-size:8px;opacity:.88;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${[wpHtml, locHtml].filter(Boolean).join(' ')}</span>`
+          : '';
         h += `<div class="chip mo fc" style="background:${fc}" title="${escHtml(fname)}: ${escHtml(wpName)}" onclick="event.stopPropagation()">
-          ${escHtml(short)}: ${fs.startTime}〜
+          ${escHtml(short)}: ${fs.startTime}〜${subLine}
         </div>`;
       }
     }
@@ -5069,12 +5076,16 @@ async function saveShift() {
   } else {
     shifts.push({ id: uid(), ...data });
   }
+  const btn = document.getElementById('saveShift');
+  if (btn) btn.disabled = true;
   try {
     await persist();
     toast(isEdit ? 'シフトを更新しました' : 'シフトを追加しました');
     closeShift(); render();
   } catch(e) {
     toast('保存に失敗しました（通信エラー）');
+  } finally {
+    if (btn) btn.disabled = false;
   }
 }
 
@@ -5082,11 +5093,15 @@ async function deleteShift() {
   if (!editShiftId) return;
   if (!confirm('このシフトを削除しますか？')) return;
   shifts = shifts.filter(s => s.id !== editShiftId);
+  const btn = document.getElementById('delShift');
+  if (btn) btn.disabled = true;
   try {
     await persist();
     closeShift(); render(); toast('削除しました');
   } catch(e) {
     toast('削除に失敗しました（通信エラー）');
+  } finally {
+    if (btn) btn.disabled = false;
   }
 }
 
@@ -5483,12 +5498,16 @@ async function saveWP() {
   } else {
     workplaces.push({ id: uid(), ...wpData });
   }
+  const btn = document.getElementById('saveWP');
+  if (btn) btn.disabled = true;
   try {
     await persist();
     toast(isEdit ? '勤務先を更新しました' : '勤務先を追加しました');
     closeWPEdit(); renderWPList(); render();
   } catch(e) {
     toast('保存に失敗しました（通信エラー）');
+  } finally {
+    if (btn) btn.disabled = false;
   }
 }
 
@@ -5498,11 +5517,15 @@ async function deleteWP() {
   if (!confirm(`「${w?.name}」を削除しますか？\n関連するシフトも全て削除されます。`)) return;
   workplaces = workplaces.filter(x => x.id !== editWPId);
   shifts     = shifts.filter(s => s.workplaceId !== editWPId);
+  const btn = document.getElementById('delWP');
+  if (btn) btn.disabled = true;
   try {
     await persist();
     closeWPEdit(); closeWPList(); render(); toast('削除しました');
   } catch(e) {
     toast('削除に失敗しました（通信エラー）');
+  } finally {
+    if (btn) btn.disabled = false;
   }
 }
 
@@ -6394,7 +6417,8 @@ async function doLogin() {
     await loadNotices().catch(() => {});
     await loadFriends().catch(() => {});
     document.getElementById('loadingOverlay').style.display = 'none';
-    updateUserBar(); render();
+    updateUserBar();
+    _setView(localStorage.getItem('shimDefaultView') || 'month');
     if (!appSettings.tutorialDone) openTutorial(0);
   } catch(e) {
     showAuthErr(err, '接続エラーが発生しました。再試行してください。');
@@ -6427,7 +6451,8 @@ async function doRegister() {
     await loadNotices().catch(() => {});
     await loadFriends().catch(() => {});
     document.getElementById('loadingOverlay').style.display = 'none';
-    updateUserBar(); render();
+    updateUserBar();
+    _setView(localStorage.getItem('shimDefaultView') || 'month');
     openTutorial(0);
   } catch(e) {
     showAuthErr(err, '登録に失敗しました。再試行してください。');
@@ -7564,6 +7589,7 @@ document.getElementById('btnToday').onclick = () => {
 
 function _setView(v) {
   view = v;
+  localStorage.setItem('shimDefaultView', v);
   ['btnWeek','btnMonth','btnDay'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.toggle('on', id === 'btn' + v.charAt(0).toUpperCase() + v.slice(1));
@@ -7764,7 +7790,8 @@ async function _startup() {
     await loadNotices().catch(() => {});
     await loadFriends().catch(() => {});
     updateUserBar();
-    render();
+    const savedView = localStorage.getItem('shimDefaultView') || 'month';
+    _setView(savedView);
     if (!appSettings.tutorialDone) openTutorial(0);
     startFriendListener();
   } else {
