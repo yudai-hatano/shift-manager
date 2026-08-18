@@ -93,6 +93,7 @@ body{
 }
 .chip.wk{font-size:10.5px;padding:3px 5px;white-space:normal;word-break:break-all;line-height:1.35}
 .chip.mo{white-space:normal;word-break:break-all;line-height:1.35}
+.shift-loc{font-size:8px;opacity:.88;line-height:1.3}
 .ot-dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:rgba(255,210,0,.95);margin-left:2px;vertical-align:middle;flex-shrink:0}
 .ed-dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:rgba(100,230,100,.95);margin-left:2px;vertical-align:middle;flex-shrink:0}
 
@@ -1622,6 +1623,18 @@ DD(曜日) 予定開始:予定終了 実績開始-実績終了 休憩分 備考
           <select id="weekStartDaySel" class="fc" style="font-size:13px;padding:5px 8px;border-radius:6px;height:36px" onchange="saveWeekStartDay(this.value)">
             <option value="0">日曜始まり</option>
             <option value="1">月曜始まり</option>
+          </select>
+        </div>
+      </div>
+      <div class="setting-row">
+        <div class="setting-label">
+          <b>月表示のロケーション表示</b>
+          <small>月ビューのシフトカードに表示する位置情報の行数</small>
+        </div>
+        <div class="setting-ctrl">
+          <select id="monthLocLinesSel" class="fc" style="font-size:13px;padding:5px 8px;border-radius:6px;height:36px" onchange="saveMonthLocLines(this.value)">
+            <option value="1">1行のみ表示</option>
+            <option value="all">全行表示</option>
           </select>
         </div>
       </div>
@@ -4319,6 +4332,16 @@ function renderWeek() {
   return h;
 }
 
+// 月ビューのシフトカードに表示するロケーション行を生成
+// shimMonthLocLines: '1'=1行のみ（デフォルト）, 'all'=全行表示
+function renderLocLines(location) {
+  if (!location) return '';
+  let lines = location.split('\n').filter(Boolean);
+  const mode = localStorage.getItem('shimMonthLocLines') || '1';
+  if (mode !== 'all') lines = lines.slice(0, 1);
+  return lines.map(l => `<div class="shift-loc">${escHtml(l)}</div>`).join('');
+}
+
 // ─ 月ビュー ─
 function renderMonth() {
   const y = cur.getFullYear(), m = cur.getMonth(), td = today0();
@@ -4355,7 +4378,7 @@ function renderMonth() {
       const res     = calcShiftWage(sh, w);
       const otIcon  = (res.overtimeWage > 0 || res.earlyOTWage > 0) ? '<span class="ot-dot" style="width:4px;height:4px"></span>' : '';
       const plDotMo = sh.isPaidLeave ? '<span class="pl-dot" style="width:4px;height:4px;margin-left:2px;vertical-align:middle"></span>' : '';
-      const locLine = sh.location ? `<br><span style="font-size:8px;opacity:.88">${escHtml(sh.location.split('\n')[0])}</span>` : '';
+      const locLine = renderLocLines(sh.location);
       const moLabel = sh.isPaidLeave ? '有休' : `${sh.startTime}〜${sh.endTime}`;
       h += `<div class="chip mo" style="background:${w?.color||'#94a3b8'};${sh.isPaidLeave?'opacity:.82':''}" data-sid="${sh.id}" onclick="event.stopPropagation()">
         ${moLabel}${otIcon}${plDotMo}${locLine}
@@ -4371,15 +4394,9 @@ function renderMonth() {
         if (!isFriendWpVisible(fid, fs.workplaceId)) continue;
         const fc     = getFriendWpColor(fid, fs.workplaceId);
         const wpName = getFriendWP(fid, fs.workplaceId)?.name || '';
-        const wpHtml  = wpName
-          ? `🏢 ${escHtml(wpName)}` : '';
-        const locHtml = fs.location
-          ? `📍 ${escHtml(fs.location.split('\n').slice(0,2).join(' / '))}` : '';
-        const subLine = (wpHtml || locHtml)
-          ? `<br><span style="font-size:8px;opacity:.88;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${[wpHtml, locHtml].filter(Boolean).join(' ')}</span>`
-          : '';
+        const locHtml = renderLocLines(fs.location);
         h += `<div class="chip mo fc" style="background:${fc}" title="${escHtml(fname)}: ${escHtml(wpName)}" onclick="event.stopPropagation()">
-          ${escHtml(short)}: ${fs.startTime}〜${subLine}
+          ${escHtml(short)}: ${fs.startTime}〜${locHtml}
         </div>`;
       }
     }
@@ -6662,12 +6679,19 @@ function openSettings() {
   _pendingImportData = null;
   const wsdSel = document.getElementById('weekStartDaySel');
   if (wsdSel) wsdSel.value = String(appSettings.weekStartDay || 0);
+  const mllSel = document.getElementById('monthLocLinesSel');
+  if (mllSel) mllSel.value = localStorage.getItem('shimMonthLocLines') || '1';
   _populateIcsMonthSel();
   document.getElementById('settingsOverlay').classList.add('on');
 }
 
 function saveWeekStartDay(val) {
   saveAppSetting('weekStartDay', parseInt(val) || 0);
+  render();
+}
+
+function saveMonthLocLines(val) {
+  localStorage.setItem('shimMonthLocLines', val === 'all' ? 'all' : '1');
   render();
 }
 
