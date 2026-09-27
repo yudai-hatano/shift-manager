@@ -362,6 +362,8 @@ select.fc{font-size:14px}
 .bd-wp-check{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--sur2);border:1.5px solid var(--bd);border-radius:var(--rs);cursor:pointer;font-size:13px;font-weight:600;transition:all .15s}
 .bd-wp-check.on{background:#fee2e2;border-color:#fca5a5;color:#b91c1c}
 #noticeBadge{position:absolute;top:0;right:0;min-width:17px;height:17px;background:#ef4444;border-radius:9px;font-size:10px;font-weight:700;color:#fff;display:none;align-items:center;justify-content:center;padding:0 4px;pointer-events:none;line-height:1;border:2px solid var(--bg,#f8fafc);box-sizing:border-box}
+#btnMenu{position:relative}
+#menuUnreadDot{position:absolute;top:2px;right:2px;width:9px;height:9px;background:#ef4444;border-radius:50%;display:none;pointer-events:none;border:2px solid var(--bg,#f8fafc);box-sizing:border-box}
 .notice-item{border-radius:var(--rs);padding:10px 12px;margin-bottom:8px;border:1.5px solid var(--bd);transition:background .2s,border-color .2s}
 .notice-item.unread{background:#fff;border-color:#93c5fd}
 .notice-item.unread .notice-title{color:#111827;font-weight:700}
@@ -596,7 +598,7 @@ select.fc{font-size:14px}
   <div class="hdr-top">
     <div class="app-title"><img src="icons/icon.png" alt="ShiM" style="width:88px;height:88px;object-fit:contain;border-radius:20px;display:block"></div>
     <div class="icon-row">
-      <button class="icon-btn" id="btnMenu" title="メニュー">☰</button>
+      <button class="icon-btn" id="btnMenu" title="メニュー">☰<span id="menuUnreadDot"></span></button>
     </div>
   </div>
   <div class="hdr-nav">
@@ -3269,14 +3271,17 @@ function getUnreadCount() {
 
 function updateNoticeBell() {
   const badge = document.getElementById('noticeBadge');
-  if (!badge) return;
+  const menuDot = document.getElementById('menuUnreadDot');
   const count = getUnreadCount();
-  if (count > 0) {
-    badge.textContent = count > 9 ? '9+' : String(count);
-    badge.style.display = 'flex';
-  } else {
-    badge.style.display = 'none';
+  if (badge) {
+    if (count > 0) {
+      badge.textContent = count > 9 ? '9+' : String(count);
+      badge.style.display = 'flex';
+    } else {
+      badge.style.display = 'none';
+    }
   }
+  if (menuDot) menuDot.style.display = count > 0 ? 'block' : 'none';
 }
 
 function openNotices() {
