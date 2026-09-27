@@ -2096,8 +2096,8 @@ const AUTH_SESSION_KEY  = 'shiftMgrSession'; // セッションは localStorage 
 const USERS_PATH        = 'users'; // Firebase のユーザーデータパス
 const NOTICES_PATH      = DB_BASE + '/notices'; // グローバルお知らせパス
 const FRIENDS_PATH      = 'friends'; // フレンドデータパス
-const GEMINI_API_KEY    = 'AIzaSyAyhi8-NFEdsr-E0R_R0p2JlXZSg27Tms4'; // Google Cloud Console でリファラー制限設定済みのキーに差し替える
-const GEMINI_MODEL      = 'gemini-2.5-flash';
+const GEMINI_PROXY_URL  = 'https://shim-gemini-proxy.shim-app.workers.dev';
+const GEMINI_MODEL      = 'gemini-3.5-flash';
 const NOTICE_ADMIN_IDS  = new Set(['99999999', '72581646']); // お知らせ編集権限を常時付与するユーザーID
 const INIT_USERS_DATA = { // 初回起動時に Firebase に書き込む初期ユーザー
   '72581646': { password: '1', name: '幡野 雄大', isAdmin: true },
@@ -7973,7 +7973,6 @@ async function runAiImport() {
 
   if (!files.length) { toast('ファイルを選択してください'); return; }
   if (type === 'attend' && !ym) { toast('対象年月を選択してください'); return; }
-  if (!GEMINI_API_KEY) { toast('APIキーが設定されていません'); return; }
 
   document.getElementById('aiImportStep1').style.display = 'none';
   document.getElementById('aiImportLoading').style.display = 'block';
@@ -7988,11 +7987,11 @@ async function runAiImport() {
     parts.push({ text: type === 'shift' ? PROMPT_SHIFT : PROMPT_ATTEND });
 
     const resp = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+      GEMINI_PROXY_URL,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts }] }),
+        body: JSON.stringify({ model: GEMINI_MODEL, contents: [{ parts }] }),
       }
     );
 
